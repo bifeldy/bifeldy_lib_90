@@ -1,0 +1,248 @@
+﻿using bifeldy_lib_90.Databases;
+using bifeldy_lib_90.Exceptions;
+using bifeldy_lib_90.Models;
+using bifeldy_lib_90.Services;
+using Dapper;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
+using System.Text.RegularExpressions;
+
+namespace bifeldy_lib_90.Repositories {
+
+    public interface IServerConfigRepository {
+        string CurrentLoadedKodeServerKunciDc(HttpContext httpContext = null);
+        Task<bool> AddKodeServerKunciDc(string kodeDc, string kunciGxxx, string serverTarget);
+        Task<bool> EditKodeServerKunciDc(string kodeDc, string kunciGxxx, string serverTarget);
+        Task<bool> RemoveKodeServerKunciDc(string kodeDc);
+        Task<IEnumerable<ServerConfigKunci>> GetKodeServerKunciDc(string kodeDc = null);
+        Task<ServerConfigKunci> UseKodeServerKunciDc(string kodeDc, string kunciGxxx = null, string serverTarget = null);
+    }
+
+    public sealed class CServerConfigRepository : IServerConfigRepository {
+
+        private readonly EnvVar _env;
+
+        private readonly IHttpContextAccessor _hca;
+        private readonly ISqlite _sqlite;
+        private readonly IGlobalService _gs;
+
+        private string KunciGxxx = null;
+
+        public CServerConfigRepository(
+            IOptions<EnvVar> env,
+            IHttpContextAccessor hca,
+            ISqlite sqlite,
+            IGlobalService gs
+        ) {
+            this._env = env.Value;
+            this._hca = hca;
+            this._sqlite = sqlite;
+            this._gs = gs;
+        }
+
+        public string CurrentLoadedKodeServerKunciDc(HttpContext httpContext = null) {
+            string kunciGxxx = this._env.KUNCI_GXXX;
+            if (!string.IsNullOrEmpty(kunciGxxx)) {
+                if (!kunciGxxx.StartsWith("/")) {
+                    return kunciGxxx;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(this.KunciGxxx)) {
+                return this.KunciGxxx;
+            }
+
+            string serverTarget = null;
+
+            HttpRequest request = httpContext?.Request ?? this._hca.HttpContext?.Request;
+            HttpResponse response = httpContext?.Response ?? this._hca.HttpContext?.Response;
+
+            if (request != null) {
+                RequestJson reqBody = this._gs.GetHttpRequestBody(request, RequestJsonSerializerContext.Default.RequestJson).Result;
+
+                if (!string.IsNullOrEmpty(request.Headers["x-server"])) {
+                    serverTarget = request.Headers["x-server"];
+                }
+                else if (request.Headers.TryGetValue(Bifeldy.NGINX_PATH_NAME, out StringValues pathBase)) {
+                    serverTarget = pathBase.Last();
+                }
+                else if (!string.IsNullOrEmpty(request.Headers.Host)) {
+                    string host = request.Headers.Host;
+                    if (!host.StartsWith("http")) {
+                        host = $"http://{host}";
+                    }
+
+                    serverTarget = new Uri(host).Host;
+                }
+                else if (!string.IsNullOrEmpty(request.Query["server"])) {
+                    serverTarget = request.Query["server"];
+                }
+                else if (!string.IsNullOrEmpty(reqBody?.secret)) {
+                    serverTarget = reqBody.server;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(serverTarget)) {
+                var rgxLs = new List<string>() {
+                    "g[0-9]{3}",
+                    "dcho|whho",
+                    "kcbn|pgcbn",
+                    "rltm|realtime|timescale"
+                };
+
+                string kodeDc = null;
+                foreach (string rgxStr in rgxLs) {
+                    var rgx = new Regex($"({rgxStr})", RegexOptions.IgnoreCase);
+                    Match match = rgx.Match(serverTarget);
+                    if (match.Success) {
+                        kodeDc = match.Groups[1].Value.ToLower().Trim();
+                        break;
+                    }
+                }
+
+                if (string.IsNullOrEmpty(kodeDc)) {
+                    string errMsg = "Kunci Server Tidak Tersedia, Silahkan Atur & Pilih Terlebih Dahulu!";
+
+                    if (request != null) {
+                        if (response != null) {
+                            throw new KunciServerTidakTersediaException(errMsg);
+                        }
+                    }
+
+                    throw new Exception(errMsg);
+                }
+
+                if (kodeDc.ToLower() == "pgcbn") {
+                    kodeDc = "kcbn";
+                }
+                else if (kodeDc.ToLower() is "realtime" or "timescale") {
+                    kodeDc = "rltm";
+                }
+
+                _ = this.UseKodeServerKunciDc(kodeDc, null, serverTarget).Result;
+            }
+
+            if (string.IsNullOrEmpty(this.KunciGxxx)) {
+                throw new Exception("Kunci Server Belum Di Set!");
+            }
+
+            return this.KunciGxxx;
+        }
+
+        public async Task<bool> AddKodeServerKunciDc(string kodeDc, string kunciGxxx, string serverTarget) {
+            if (string.IsNullOrEmpty(kodeDc) || string.IsNullOrEmpty(kunciGxxx) || string.IsNullOrEmpty(serverTarget)) {
+                throw new TidakMemenuhiException("Kode DC / Kunci GXXX / Server Target Tidak Boleh Kosong!");
+            }
+
+            var sqlParameters = new DynamicParameters();
+            sqlParameters.Add("kode_dc", kodeDc.ToLower());
+            sqlParameters.Add("kunci_gxxx", kunciGxxx);
+            sqlParameters.Add("server_target", serverTarget);
+
+            return await this._sqlite.ExecQueryAsync(
+                $@"
+                    INSERT INTO server_kunci (kode_dc, kunci_gxxx, server_target)
+                    VALUES (:kode_dc, :kunci_gxxx, :server_target)
+                ",
+                sqlParameters
+            );
+        }
+
+        public async Task<bool> EditKodeServerKunciDc(string kodeDc, string kunciGxxx, string serverTarget) {
+            if (string.IsNullOrEmpty(kodeDc) || string.IsNullOrEmpty(kunciGxxx) || string.IsNullOrEmpty(serverTarget)) {
+                throw new TidakMemenuhiException("Kode DC / Kunci GXXX / Server Target Tidak Boleh Kosong!");
+            }
+
+            var sqlParameters = new DynamicParameters();
+            sqlParameters.Add("kode_dc", kodeDc.ToLower());
+            sqlParameters.Add("kunci_gxxx", kunciGxxx);
+            sqlParameters.Add("server_target", serverTarget);
+
+            return await this._sqlite.ExecQueryAsync(
+                $@"
+                    UPDATE server_kunci
+                    SET kunci_gxxx = :kunci_gxxx, server_target = :server_target
+                    WHERE LOWER(kode_dc) = :kode_dc
+                ",
+                sqlParameters
+            );
+        }
+
+        public async Task<bool> RemoveKodeServerKunciDc(string kodeDc) {
+            if (string.IsNullOrEmpty(kodeDc)) {
+                throw new TidakMemenuhiException("Kode DC Tidak Boleh Kosong!");
+            }
+
+            var sqlParameters = new DynamicParameters();
+            sqlParameters.Add("kode_dc", kodeDc.ToLower());
+
+            return await this._sqlite.ExecQueryAsync(
+                $@"
+                    DELETE FROM server_kunci
+                    WHERE LOWER(kode_dc) = :kode_dc
+                ",
+                sqlParameters
+            );
+        }
+
+        public async Task<IEnumerable<ServerConfigKunci>> GetKodeServerKunciDc(string kodeDc = null) {
+            string kunciGxxx = this._env.KUNCI_GXXX;
+            if (!string.IsNullOrEmpty(kunciGxxx)) {
+                if (!kunciGxxx.StartsWith("/")) {
+                    return new List<ServerConfigKunci>() {
+                        new() {
+                            kode_dc = null,
+                            kunci_gxxx = kunciGxxx,
+                            server_target = null
+                        }
+                    };
+                }
+            }
+
+            string sqlQuery = "SELECT * FROM server_kunci";
+            var sqlParameters = new DynamicParameters();
+
+            if (!string.IsNullOrEmpty(kodeDc)) {
+                sqlQuery += " WHERE LOWER(kode_dc) = :kode_dc";
+                sqlParameters.Add("kode_dc", kodeDc.ToLower());
+            }
+
+            sqlQuery += " ORDER BY kode_dc ASC";
+            return await this._sqlite.GetEnumerableAsync(ServerConfigJsonSerializerContext.Default.ServerConfigKunci, sqlQuery, sqlParameters);
+        }
+
+        // Panggil Ini Dulu Sebelum Resolve Menggunakan Service Provider (_sp.GetService / _sp.GetRequiredService)
+        public async Task<ServerConfigKunci> UseKodeServerKunciDc(string kodeDc, string kunciGxxx = null, string serverTarget = null) {
+            var sc = new ServerConfigKunci() {
+                kode_dc = kodeDc,
+                kunci_gxxx = kunciGxxx,
+                server_target = serverTarget
+            };
+
+            if (string.IsNullOrEmpty(sc.kunci_gxxx)) {
+                if (string.IsNullOrEmpty(sc.kode_dc)) {
+                    throw new Exception("Kode DC Tidak Boleh Kosong!");
+                }
+
+                IEnumerable<ServerConfigKunci> __sc = await this.GetKodeServerKunciDc(sc.kode_dc);
+                ServerConfigKunci _sc = __sc.FirstOrDefault();
+
+                if (_sc == null) {
+                    _ = await this.AddKodeServerKunciDc(sc.kode_dc, $"kunci{kodeDc}".ToLower(), serverTarget);
+                    __sc = await this.GetKodeServerKunciDc(sc.kode_dc);
+                    _sc = __sc.First();
+                }
+
+                sc = _sc;
+            }
+
+            this.KunciGxxx = sc.kunci_gxxx?.Trim();
+
+            return sc;
+        }
+
+    }
+
+}
