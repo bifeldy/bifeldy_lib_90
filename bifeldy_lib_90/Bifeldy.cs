@@ -1,4 +1,5 @@
 ﻿using bifeldy_lib_90.Databases;
+using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Middlewares;
 using bifeldy_lib_90.Models;
@@ -20,6 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Events;
 using System.Diagnostics;
@@ -40,7 +42,7 @@ namespace bifeldy_lib_90 {
         public static bool IS_USING_API_KEY = false;
         public static bool IS_USING_JWT = false;
 
-        public static string API_PREFIX = "api";
+        public static string API_PREFIX = null;
         public static string NGINX_PATH_NAME = "x-forwarded-prefix";
 
         public static WebApplicationBuilder Builder = null;
@@ -145,8 +147,15 @@ namespace bifeldy_lib_90 {
             string title = "Open API",
             string description = "Documentation ~",
             bool enableApiKey = true,
-            bool enableJwt = false
+            bool enableJwt = false,
+            string apiPrefix = "api"
         ) {
+            if (string.IsNullOrWhiteSpace(apiPrefix)) {
+                throw new Exception("API Prefix Wajib Di Isi");
+            }
+
+            API_PREFIX ??= apiPrefix;
+
             _ = Services.AddSingleton(new OpenApiDocumentOptions(title, description, enableApiKey, enableJwt));
 
             _ = Services.AddOpenApi(options => {
@@ -154,8 +163,21 @@ namespace bifeldy_lib_90 {
             });
         }
 
-        public static void MapOpenApi() {
-            _ = App.MapOpenApi();
+        public static void MapOpenApi(string jsonFileName = "openapi.json", ScalarDocument[] documents = null) {
+            if (string.IsNullOrWhiteSpace(jsonFileName)) {
+                throw new Exception("Json File Name Wajib Di Isi");
+            }
+
+            _ = App.MapOpenApi($"/{jsonFileName}");
+            _ = App.MapScalarApiReference(API_PREFIX, opt => {
+                _ = opt.WithOpenApiRoutePattern($"/{jsonFileName}");
+                _ = opt.WithTheme(ScalarTheme.DeepSpace);
+                _ = opt.HideModels();
+
+                if (documents != null) {
+                    _ = opt.AddDocuments(documents);
+                }
+            });
         }
 
         public static void AddRedisDistributedCache(IConfigurationManager configurationManager = null) {
@@ -312,7 +334,13 @@ namespace bifeldy_lib_90 {
             IS_USING_JWT = true;
         }
 
-        public static void Handle500ApiError<T>() {
+        public static void Handle500ApiError<T>(string apiPrefix = "api") {
+            if (string.IsNullOrWhiteSpace(apiPrefix)) {
+                throw new Exception("API Prefix Wajib Di Isi");
+            }
+
+            API_PREFIX ??= apiPrefix;
+
             _ = App.Use(async (context, next) => {
 
                 // Khusus API Path :: Akan Di Handle Error Dengan Balikan Data JSON
@@ -402,12 +430,12 @@ namespace bifeldy_lib_90 {
             });
         }
 
-        public static RouteGroupBuilder StartApiWithPrefix(string apiPrefix, bool redirectIndexToApi = true) {
-            API_PREFIX = apiPrefix;
-
-            if (string.IsNullOrWhiteSpace(API_PREFIX)) {
+        public static RouteGroupBuilder StartApiWithPrefix(string apiPrefix = "api", bool redirectIndexToApi = true) {
+            if (string.IsNullOrWhiteSpace(apiPrefix)) {
                 throw new Exception("API Prefix Wajib Di Isi");
             }
+
+            API_PREFIX ??= apiPrefix;
 
             _ = App.Use(async (context, next) => {
                 await next();
@@ -432,7 +460,10 @@ namespace bifeldy_lib_90 {
                 });
             }
 
-            return App.MapGroup($"/{API_PREFIX}");
+            RouteGroupBuilder routeGroupBuilder = App.MapGroup($"/{API_PREFIX}");
+            routeGroupBuilder.MapDefaultEndpoints();
+
+            return routeGroupBuilder;
         }
 
     }

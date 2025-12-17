@@ -46,11 +46,10 @@ namespace bifeldy_lib_90.Middlewares {
             }
 
             bool isApi = apiPathRequested.StartsWith($"/{Bifeldy.API_PREFIX}/", StringComparison.InvariantCultureIgnoreCase);
-            bool isSwagger = apiPathRequested.StartsWith($"/{Bifeldy.API_PREFIX}/swagger", StringComparison.InvariantCultureIgnoreCase);
 
             string secret = context.Items["secret"]?.ToString();
             bool haveSecret = !string.IsNullOrEmpty(secret);
-            if (!isApi || isSwagger || haveSecret) {
+            if (!isApi || haveSecret) {
                 await this._next(context);
                 return;
             }

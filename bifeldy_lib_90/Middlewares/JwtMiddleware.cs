@@ -1,7 +1,9 @@
 ﻿using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using System.Net;
 using System.Security.Claims;
 
 namespace bifeldy_lib_90.Middlewares {
@@ -35,12 +37,11 @@ namespace bifeldy_lib_90.Middlewares {
                 return;
             }
 
-            string apiPathRequestedForGrpc = apiPathRequested.Split('/').Where(u => !string.IsNullOrEmpty(u)).FirstOrDefault();
+            Endpoint endpoint = context.GetEndpoint();
+            IAllowAnonymous allowAnonymous = endpoint?.Metadata.GetMetadata<IAllowAnonymous>();
 
             bool isApi = apiPathRequested.StartsWith($"/{Bifeldy.API_PREFIX}/", StringComparison.InvariantCultureIgnoreCase);
-            bool isSwagger = apiPathRequested.StartsWith($"/{Bifeldy.API_PREFIX}/swagger", StringComparison.InvariantCultureIgnoreCase);
-
-            if (!isApi || isSwagger) {
+            if (!isApi || allowAnonymous != null) {
                 await this._next(context);
                 return;
             }
