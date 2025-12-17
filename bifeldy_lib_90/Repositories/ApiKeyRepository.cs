@@ -2,8 +2,6 @@
 using bifeldy_lib_90.Services;
 using bifeldy_lib_90.TableView;
 using Dapper;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using System.Diagnostics.Metrics;
 
 namespace bifeldy_lib_90.Repositories {
 

@@ -3,7 +3,6 @@ using bifeldy_lib_90.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.Net;
 using System.Security.Claims;
 
 namespace bifeldy_lib_90.Middlewares {
