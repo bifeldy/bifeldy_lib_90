@@ -64,9 +64,9 @@ namespace bifeldy_lib_90.Middlewares {
                         throw new Exception("Format Token Salah / Expired!");
                     }
 
-                    var userInfo = new UserApiSession() {
+                    var userInfo = new JwtSession() {
                         name = _claimName.Value,
-                        role = (UserSessionRole)Enum.Parse(typeof(UserSessionRole), _claimRole.Value)
+                        role = (ESessionRole)Enum.Parse(typeof(ESessionRole), _claimRole.Value)
                     };
 
                     context.Items["user"] = userInfo;

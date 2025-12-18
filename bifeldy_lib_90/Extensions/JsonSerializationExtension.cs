@@ -1,5 +1,6 @@
 ﻿using bifeldy_lib_90.Abstractions;
 using bifeldy_lib_90.Models;
+using bifeldy_lib_90.Resolvers;
 using bifeldy_lib_90.TableView;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Serialization.Metadata;
@@ -16,6 +17,9 @@ namespace bifeldy_lib_90.Extensions {
             ResponseJsonSerializerContext.Default,
             RequestJsonSerializerContext.Default,
             ServerConfigJsonSerializerContext.Default,
+            LoginInfoJsonSerializerContext.Default,
+            API_KEY_T_JsonSerializerContext.Default,
+            API_TOKEN_T_JsonSerializerContext.Default,
             DC_TABEL_DC_T_JsonSerializerContext.Default,
             DC_USER_T_JsonSerializerContext.Default,
         ];
@@ -24,9 +28,8 @@ namespace bifeldy_lib_90.Extensions {
             return services.ConfigureHttpJsonOptions(options => {
                 options.SerializerOptions.PropertyNamingPolicy = null;
 
-                foreach (IJsonTypeInfoResolver resolver in JsonTypeInfoResolvers.Concat(jsonTypeInfoResolversExtended)) {
-                    options.SerializerOptions.TypeInfoResolverChain.Add(resolver);
-                }
+                IJsonTypeInfoResolver[] resolvers = [.. JsonTypeInfoResolvers, .. jsonTypeInfoResolversExtended];
+                options.SerializerOptions.TypeInfoResolver = new JsonSerDeTypeInfoResolver(resolvers);
             });
         }
 

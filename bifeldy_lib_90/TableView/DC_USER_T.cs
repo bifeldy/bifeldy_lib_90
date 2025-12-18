@@ -11,7 +11,7 @@ namespace bifeldy_lib_90.TableView {
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public sealed class DC_USER_T : JsonSerDe {
         [Key] public string USER_NAME { get; set; }
-        [JsonIgnore] public string USER_PASSWORD { get; set; }
+        public string USER_PASSWORD { get; set; }
         public string USER_APP_MODUL { get; set; }
         public string USER_PRIVS { get; set; }
         public string USER_GROUP { get; set; }
@@ -26,6 +26,8 @@ namespace bifeldy_lib_90.TableView {
         public string USER_FLAG_HO { get; set; }
         public DateTime? LAST_PASS_CHANGE { get; set; }
         public decimal? PASS_VALID_DAYS { get; set; }
+
+        public override string[] HiddenProperties() => ["USER_PASSWORD"];
     }
 
     [JsonSerializable(typeof(DC_USER_T))]

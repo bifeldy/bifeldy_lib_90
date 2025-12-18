@@ -6,12 +6,12 @@ using Dapper;
 namespace bifeldy_lib_90.Repositories {
 
     public interface IApiKeyRepository {
-        Task<bool> Create(bool isPg, IDatabase db, API_KEY_T apiKey);
-        Task<IEnumerable<API_KEY_T>> GetAll(bool isPg, IDatabase db, string key = null);
-        Task<API_KEY_T> GetByKey(bool isPg, IDatabase db, string key);
-        Task<bool> Delete(bool isPg, IDatabase db, string key);
-        Task<API_KEY_T> SecretLogin(bool isPg, IDatabase db, string key);
-        Task<bool> CheckKeyOrigin(bool isPg, IDatabase db, string ipOrigin, string key);
+        Task<bool> Create(IDatabase db, API_KEY_T apiKey);
+        Task<IEnumerable<API_KEY_T>> GetAll(IDatabase db, string key = null);
+        Task<API_KEY_T> GetByKey(IDatabase db, string key);
+        Task<bool> Delete(IDatabase db, string key);
+        Task<API_KEY_T> SecretLogin(IDatabase db, string key);
+        Task<bool> CheckKeyOrigin(IDatabase db, string ipOrigin, string key);
     }
 
     public sealed class CApiKeyRepository : CRepository, IApiKeyRepository {
@@ -24,7 +24,7 @@ namespace bifeldy_lib_90.Repositories {
             this._gs = gs;
         }
 
-        public async Task<bool> Create(bool isPg, IDatabase db, API_KEY_T apiKey) {
+        public async Task<bool> Create(IDatabase db, API_KEY_T apiKey) {
             var sqlParameters = new DynamicParameters();
             sqlParameters.Add("ip_origin", apiKey.IP_ORIGIN);
             sqlParameters.Add("app_name", this._as.AppName.ToUpper());
@@ -41,8 +41,8 @@ namespace bifeldy_lib_90.Repositories {
             return res > 0;
         }
 
-        public async Task<IEnumerable<API_KEY_T>> GetAll(bool isPg, IDatabase db, string key = null) {
-            string sqlQuery = "SELECT * FROM api_key_t WHERE app_name = '*' OR (UPPER(app_name) = :app_name)";
+        public async Task<IEnumerable<API_KEY_T>> GetAll(IDatabase db, string key = null) {
+            string sqlQuery = "SELECT * FROM api_key_t WHERE (app_name = '*' OR UPPER(app_name) = :app_name)";
 
             var sqlParameters = new DynamicParameters();
             sqlParameters.Add("app_name", this._as.AppName.ToUpper());
@@ -52,12 +52,10 @@ namespace bifeldy_lib_90.Repositories {
                 sqlParameters.Add("key", key.ToUpper());
             }
 
-            sqlQuery += ")";
-
             return await db.GetEnumerableAsync(API_KEY_T_JsonSerializerContext.Default.API_KEY_T, sqlQuery, sqlParameters);
         }
 
-        public async Task<API_KEY_T> GetByKey(bool isPg, IDatabase db, string key) {
+        public async Task<API_KEY_T> GetByKey(IDatabase db, string key) {
             var sqlParameters = new DynamicParameters();
             sqlParameters.Add("app_name", this._as.AppName.ToUpper());
             sqlParameters.Add("key", key.ToUpper());
@@ -66,13 +64,13 @@ namespace bifeldy_lib_90.Repositories {
                 API_KEY_T_JsonSerializerContext.Default.API_KEY_T,
                 @"
                     SELECT * FROM api_key_t
-                    WHERE UPPER(app_name) = :app_name AND UPPER(key) = :key
+                    WHERE (app_name = '*' OR UPPER(app_name) = :app_name) AND UPPER(key) = :key
                 ",
                 sqlParameters
             );
         }
 
-        public async Task<bool> Delete(bool isPg, IDatabase db, string key) {
+        public async Task<bool> Delete(IDatabase db, string key) {
             var sqlParameters = new DynamicParameters();
             sqlParameters.Add("app_name", this._as.AppName.ToUpper());
             sqlParameters.Add("key", key.ToUpper());
@@ -90,7 +88,7 @@ namespace bifeldy_lib_90.Repositories {
 
         /* ** */
 
-        public async Task<API_KEY_T> SecretLogin(bool isPg, IDatabase db, string key) {
+        public async Task<API_KEY_T> SecretLogin(IDatabase db, string key) {
             var sqlParameters = new DynamicParameters();
             sqlParameters.Add("key", key.ToUpper());
 
@@ -104,8 +102,8 @@ namespace bifeldy_lib_90.Repositories {
             );
         }
 
-        public async Task<bool> CheckKeyOrigin(bool isPg, IDatabase db, string ipOrigin, string key) {
-            API_KEY_T ak = await this.GetByKey(isPg, db, key);
+        public async Task<bool> CheckKeyOrigin(IDatabase db, string ipOrigin, string key) {
+            API_KEY_T ak = await this.GetByKey(db, key);
             return ak != null
                 ? ak.IP_ORIGIN.ToUpper().Split(";").Select(io => io.Trim()).Contains(ipOrigin.ToUpper()) || ak.IP_ORIGIN == "*"
                 : this._gs.AllowedIpOrigin.Contains(ipOrigin);

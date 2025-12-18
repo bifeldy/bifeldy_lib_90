@@ -91,9 +91,9 @@ namespace bifeldy_lib_90.Middlewares {
             apiKey = context.Items["api_key"]?.ToString();
             token = context.Items["token"]?.ToString();
 
-            UserApiSession user = null;
+            JwtSession user = null;
             if (context.Items["user"] != null) {
-                user = (UserApiSession)context.Items["user"];
+                user = (JwtSession)context.Items["user"];
             }
 
             string errDtl = null;

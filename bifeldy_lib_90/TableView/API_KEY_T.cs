@@ -10,10 +10,12 @@ namespace bifeldy_lib_90.TableView {
     [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public sealed class API_KEY_T : JsonSerDe {
-        [Key][JsonIgnore] public string KEY { set; get; }
+        [Key] public string KEY { set; get; }
         public string IP_ORIGIN { set; get; }
         [Key] public string APP_NAME { set; get; }
         public string KETER { set; get; }
+
+        public override string[] HiddenProperties() => ["KEY"];
     }
 
     [JsonSerializable(typeof(API_KEY_T))]

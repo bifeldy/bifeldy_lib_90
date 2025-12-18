@@ -60,7 +60,7 @@ namespace bifeldy_lib_90.Middlewares {
 
                 // Khusus Bypass ~ Case Sensitive
                 string hashText = this._chiper.HashText(this._app.AppName);
-                if (secret == hashText || await _akRepo.SecretLogin(this._env.IS_USING_POSTGRES, _pg, secret) != null) {
+                if (secret == hashText || await _akRepo.SecretLogin(_pg, secret) != null) {
                     allowed = true;
                 }
 
@@ -93,9 +93,9 @@ namespace bifeldy_lib_90.Middlewares {
                     string ipOrigin = addrOrigin == addrIp ? addrOrigin : $"{addrOrigin}@{addrIp}";
                     context.Items["ip_origin"] = ipOrigin;
 
-                    var userSession = new UserApiSession() {
+                    var userSession = new JwtSession() {
                         name = addrIp,
-                        role = UserSessionRole.PROGRAM_SERVICE
+                        role = ESessionRole.PROGRAM_SERVICE
                     };
 
                     IEnumerable<Claim> claims = new List<Claim>() {

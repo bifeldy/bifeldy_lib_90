@@ -78,7 +78,7 @@ namespace bifeldy_lib_90.Middlewares {
 
             // Khusus Bypass ~ Case Sensitive
             string hashText = this._chiper.HashText(this._app.AppName);
-            if (apiKey == hashText || await _akRepo.CheckKeyOrigin(this._env.IS_USING_POSTGRES, _pg, ipOrigin, apiKey)) {
+            if (apiKey == hashText || await _akRepo.CheckKeyOrigin(_pg, ipOrigin, apiKey)) {
                 await this._next(context);
             }
             else {
