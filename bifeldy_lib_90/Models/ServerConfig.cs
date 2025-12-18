@@ -25,6 +25,7 @@ namespace bifeldy_lib_90.Models {
 
     [JsonSerializable(typeof(ServerConfigKunci))]
     [JsonSerializable(typeof(ServerConfigKunci[]))]
+    [JsonSerializable(typeof(List<ServerConfigKunci>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<ServerConfigKunci>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<ServerConfigKunci>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<ServerConfigKunci>))]
@@ -35,6 +36,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(ResponseJsonMulti<ServerConfigKunci>))]
     [JsonSerializable(typeof(ServerConfigAddEditDelete))]
     [JsonSerializable(typeof(ServerConfigAddEditDelete[]))]
+    [JsonSerializable(typeof(List<ServerConfigAddEditDelete>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<ServerConfigAddEditDelete>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<ServerConfigAddEditDelete>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<ServerConfigAddEditDelete>))]

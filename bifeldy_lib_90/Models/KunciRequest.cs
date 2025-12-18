@@ -13,6 +13,7 @@ namespace bifeldy_lib_90.Models {
 
     [JsonSerializable(typeof(KunciRequest))]
     [JsonSerializable(typeof(KunciRequest[]))]
+    [JsonSerializable(typeof(List<KunciRequest>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<KunciRequest>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<KunciRequest>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<KunciRequest>))]

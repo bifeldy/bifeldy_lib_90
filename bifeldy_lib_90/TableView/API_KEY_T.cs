@@ -18,6 +18,7 @@ namespace bifeldy_lib_90.TableView {
 
     [JsonSerializable(typeof(API_KEY_T))]
     [JsonSerializable(typeof(API_KEY_T[]))]
+    [JsonSerializable(typeof(List<API_KEY_T>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<API_KEY_T>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<API_KEY_T>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<API_KEY_T>))]

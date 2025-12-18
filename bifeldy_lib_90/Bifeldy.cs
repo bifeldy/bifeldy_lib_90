@@ -156,10 +156,10 @@ namespace bifeldy_lib_90 {
 
             API_PREFIX ??= apiPrefix;
 
-            _ = Services.AddSingleton(new OpenApiDocumentOptions(title, description, enableApiKey, enableJwt));
+            _ = Services.AddSingleton(new DocumentOptions(title, description, enableApiKey, enableJwt));
 
             _ = Services.AddOpenApi(options => {
-                _ = options.AddDocumentTransformer<OpenApiDocumentTransformer>();
+                _ = options.AddDocumentTransformer<DocumentTransformer>();
             });
         }
 

@@ -1,20 +1,22 @@
-﻿using Microsoft.AspNetCore.OpenApi;
+﻿using bifeldy_lib_90.Extensions;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Models;
 
 namespace bifeldy_lib_90.Transformers {
 
-    public sealed record OpenApiDocumentOptions(
+    public sealed record DocumentOptions(
         string Title,
         string Description,
         bool EnableApiKey,
         bool EnableJwt
     );
 
-    public sealed class OpenApiDocumentTransformer : IOpenApiDocumentTransformer {
+    public sealed class DocumentTransformer : IOpenApiDocumentTransformer {
 
-        private readonly OpenApiDocumentOptions _opt;
+        private readonly DocumentOptions _opt;
 
-        public OpenApiDocumentTransformer(OpenApiDocumentOptions opt) {
+        public DocumentTransformer(DocumentOptions opt) {
             this._opt = opt;
         }
 
@@ -25,6 +27,35 @@ namespace bifeldy_lib_90.Transformers {
         ) {
             document.Info.Title = this._opt.Title;
             document.Info.Description = this._opt.Description;
+            document.Tags ??= [];
+
+            var tagMap = new Dictionary<string, string>();
+            foreach (ApiDescriptionGroup group in context.DescriptionGroups) {
+                foreach (ApiDescription api in group.Items) {
+                    foreach (ApiTagDescription meta in api.ActionDescriptor.EndpointMetadata.OfType<ApiTagDescription>()) {
+                        if (!string.IsNullOrEmpty(meta.Description)) {
+                            tagMap[meta.Tag] = meta.Description;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            foreach ((string tag, string desc) in tagMap) {
+                OpenApiTag openApiTag = document.Tags.FirstOrDefault(t => t.Name == tag);
+
+                if (openApiTag != null) {
+                    openApiTag.Description = desc;
+                }
+                else {
+                    openApiTag = new OpenApiTag {
+                        Name = tag,
+                        Description = desc
+                    };
+
+                    document.Tags.Add(openApiTag);
+                }
+            }
 
             if (this._opt.EnableApiKey) {
                 var apiKey = new OpenApiSecurityScheme() {
