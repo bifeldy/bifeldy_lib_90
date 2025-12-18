@@ -206,19 +206,19 @@ namespace bifeldy_lib_90.Services {
                 }
             }
 
-            return IpMacAddress.ToArray();
+            return [.. IpMacAddress];
         }
 
         public string[] GetAllIpAddress() {
-            string[] iv4 = this.GetIpMacAddress().Where(d => !string.IsNullOrEmpty(d.IP_V4_ADDRESS)).Select(d => d.IP_V4_ADDRESS.ToUpper()).ToArray();
-            string[] iv6 = this.GetIpMacAddress().Where(d => !string.IsNullOrEmpty(d.IP_V6_ADDRESS)).Select(d => d.IP_V6_ADDRESS.ToUpper()).ToArray();
+            string[] iv4 = [.. this.GetIpMacAddress().Where(d => !string.IsNullOrEmpty(d.IP_V4_ADDRESS)).Select(d => d.IP_V4_ADDRESS.ToUpper())];
+            string[] iv6 = [.. this.GetIpMacAddress().Where(d => !string.IsNullOrEmpty(d.IP_V6_ADDRESS)).Select(d => d.IP_V6_ADDRESS.ToUpper())];
             string[] ip = new string[iv4.Length + iv6.Length];
             iv4.CopyTo(ip, 0);
             iv6.CopyTo(ip, iv4.Length);
             return ip;
         }
 
-        public string[] GetAllMacAddress() => this.GetIpMacAddress().Where(d => !string.IsNullOrEmpty(d.MAC_ADDRESS)).Select(d => d.MAC_ADDRESS.ToUpper()).ToArray();
+        public string[] GetAllMacAddress() => [.. this.GetIpMacAddress().Where(d => !string.IsNullOrEmpty(d.MAC_ADDRESS)).Select(d => d.MAC_ADDRESS.ToUpper())];
 
     }
 

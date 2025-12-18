@@ -159,7 +159,7 @@ namespace bifeldy_lib_90.Services {
         }
 
         public string GetMimeFile(string filePath) {
-            if (this._mimeProvider.TryGetContentType(filePath, out var mime)) {
+            if (this._mimeProvider.TryGetContentType(filePath, out string mime)) {
                 return mime;
             }
 

@@ -1,5 +1,5 @@
 ﻿using bifeldy_lib_90.Databases;
-using bifeldy_lib_90.Extensions;
+using bifeldy_lib_90.Endpoints;
 using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Middlewares;
 using bifeldy_lib_90.Models;
@@ -148,7 +148,8 @@ namespace bifeldy_lib_90 {
             string description = "Documentation ~",
             bool enableApiKey = true,
             bool enableJwt = false,
-            string apiPrefix = "api"
+            string apiPrefix = "api",
+            string[] documents = null
         ) {
             if (string.IsNullOrWhiteSpace(apiPrefix)) {
                 throw new Exception("API Prefix Wajib Di Isi");
@@ -156,28 +157,48 @@ namespace bifeldy_lib_90 {
 
             API_PREFIX ??= apiPrefix;
 
+            List<string> docs = ["latest-" + Assembly.GetEntryAssembly().GetName().Version ?.ToString().Replace(".", string.Empty)];
+            if (documents != null) {
+                foreach (string document in documents) {
+                    if (!docs.Contains(document)) {
+                        docs.Add(document);
+                    }
+                }
+            }
+
             _ = Services.AddSingleton(new DocumentOptions(title, description, enableApiKey, enableJwt));
 
-            _ = Services.AddOpenApi(options => {
-                _ = options.AddDocumentTransformer<DocumentTransformer>();
-                _ = options.AddSchemaTransformer<IgnorePropertySchemaTransformer>();
-            });
+            foreach (string documentName in docs) {
+                _ = Services.AddOpenApi(documentName, options => {
+                    _ = options.AddDocumentTransformer<DocumentTransformer>();
+                    _ = options.AddSchemaTransformer<IgnorePropertySchemaTransformer>();
+                });
+            }
         }
 
-        public static void MapOpenApi(string jsonFileName = "openapi.json", ScalarDocument[] documents = null) {
+        public static void MapOpenApi(string jsonFileName = "openapi", string[] documents = null) {
             if (string.IsNullOrWhiteSpace(jsonFileName)) {
                 throw new Exception("Json File Name Wajib Di Isi");
             }
 
-            _ = App.MapOpenApi($"/{jsonFileName}");
+            string jsonFilePath = $"/{jsonFileName}" + "-{documentName}.json";
+            _ = App.MapOpenApi(jsonFilePath);
+
+            List<string> docs = ["latest-" + Assembly.GetEntryAssembly().GetName().Version?.ToString().Replace(".", string.Empty)];
+            if (documents != null) {
+                foreach (string document in documents) {
+                    if (!docs.Contains(document)) {
+                        docs.Add(document);
+                    }
+                }
+            }
+
             _ = App.MapScalarApiReference(API_PREFIX, opt => {
-                _ = opt.WithOpenApiRoutePattern($"/{jsonFileName}");
+                _ = opt.WithOpenApiRoutePattern(jsonFilePath);
                 _ = opt.WithTheme(ScalarTheme.DeepSpace);
                 _ = opt.HideModels();
-
-                if (documents != null) {
-                    _ = opt.AddDocuments(documents);
-                }
+                _ = opt.ExpandAllTags();
+                _ = opt.AddDocuments(docs);
             });
         }
 
@@ -226,7 +247,9 @@ namespace bifeldy_lib_90 {
             // Transient Selalu Dapat Object Baru ~
             // --
             _ = Services.AddScoped<IApiKeyRepository, CApiKeyRepository>();
+            _ = Services.AddScoped<IApiTokenRepository, CApiTokenRepository>();
             _ = Services.AddScoped<IServerConfigRepository, CServerConfigRepository>();
+            _ = Services.AddScoped<IUserRepository, CUserRepository>();
         }
 
         public static void InitApp(WebApplication app, bool forceGcToCleanUpRamEveryRequest = false, int gcDelaySkipRunMinutes = 30) {
@@ -270,15 +293,22 @@ namespace bifeldy_lib_90 {
         }
 
         public static void UseNginxProxyPathSegment() {
-            _ = App.Use(async (context, next) => {
-                if (context.Request.Headers.TryGetValue(NGINX_PATH_NAME, out StringValues pathBase)) {
-                    string proxyPath = pathBase.Last();
-                    if (context.Request.Path.StartsWithSegments(proxyPath, StringComparison.InvariantCultureIgnoreCase, out PathString path)) {
-                        context.Request.Path = path;
+            _ = App.Use((context, next) => {
+                if (context.Request.Headers.TryGetValue(NGINX_PATH_NAME, out StringValues values)) {
+                    string prefix = values.Last()?.TrimEnd('/');
+
+                    if (!string.IsNullOrEmpty(prefix)) {
+                        if (string.IsNullOrEmpty(context.Request.PathBase)) {
+                            context.Request.PathBase = prefix;
+                        }
+
+                        if (context.Request.Path.StartsWithSegments(prefix, out PathString remaining)) {
+                            context.Request.Path = remaining;
+                        }
                     }
                 }
 
-                await next();
+                return next();
             });
         }
 
@@ -358,7 +388,7 @@ namespace bifeldy_lib_90 {
                     catch (Exception ex) {
                         ILogger<T> _logger = context.RequestServices.GetRequiredService<ILogger<T>>();
 
-                        var user = (UserApiSession)context.Items["user"];
+                        var user = (JwtSession)context.Items["user"];
 
                         HttpRequest request = context.Request;
                         HttpResponse response = context.Response;
@@ -416,7 +446,7 @@ namespace bifeldy_lib_90 {
 
                         context.Items["error_detail"] = errDtl;
 
-                        bool showErrorDetail = App.Environment.IsDevelopment() || user?.role <= UserSessionRole.USER_SD_SSD_3;
+                        bool showErrorDetail = App.Environment.IsDevelopment() || user?.role <= ESessionRole.USER_SD_SSD_3;
                         await response.WriteAsJsonAsync(
                             new ResponseJsonSingle<ResponseJsonMessage>() {
                                 info = $"{response.StatusCode} - Whoops :: Terjadi Kesalahan",
@@ -461,6 +491,7 @@ namespace bifeldy_lib_90 {
                 });
             }
 
+            // TODO: Add additional MapEndpoints created here
             RouteGroupBuilder routeGroupBuilder = App.MapGroup($"/{API_PREFIX}");
             routeGroupBuilder.MapDefaultEndpoints();
 

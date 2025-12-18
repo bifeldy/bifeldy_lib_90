@@ -29,7 +29,7 @@
             int b;
 
             while ((b = stream.ReadByte()) != -1) {
-                crc = (crc >> 8) ^ _table[(crc ^ (byte)b) & 0xFF];
+                crc = (crc >> 8) ^ this._table[(crc ^ (byte)b) & 0xFF];
             }
 
             return ~crc;

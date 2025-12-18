@@ -8,8 +8,8 @@ namespace bifeldy_lib_90.Models {
         public readonly int Index;
 
         public JsonKeyMap(JsonPropertyInfo property, int index) {
-            Property = property;
-            Index = index;
+            this.Property = property;
+            this.Index = index;
         }
 
     }

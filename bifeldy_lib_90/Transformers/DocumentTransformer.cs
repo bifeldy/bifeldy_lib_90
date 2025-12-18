@@ -12,6 +12,8 @@ namespace bifeldy_lib_90.Transformers {
         bool EnableJwt
     );
 
+    public sealed record OpenApiGroupNames(params string[] Names);
+
     public sealed class DocumentTransformer : IOpenApiDocumentTransformer {
 
         private readonly DocumentOptions _opt;
@@ -25,18 +27,59 @@ namespace bifeldy_lib_90.Transformers {
             OpenApiDocumentTransformerContext context,
             CancellationToken cancellationToken
         ) {
+            string currentDocumentName = context.DocumentName;
+
+            var filteredPaths = new OpenApiPaths();
+            List<ApiDescription> allApis = [.. context.DescriptionGroups.SelectMany(g => g.Items)];
+
+            foreach ((string path, OpenApiPathItem pathItem) in document.Paths) {
+                var newPathItem = new OpenApiPathItem();
+
+                foreach ((OperationType method, OpenApiOperation operation) in pathItem.Operations) {
+                    bool include = true;
+
+                    ApiDescription apiDesc = allApis.FirstOrDefault(d =>
+                        d.HttpMethod?.Equals(method.ToString(), StringComparison.OrdinalIgnoreCase) == true &&
+                        string.Equals(
+                            "/" + d.RelativePath?.TrimEnd('/'),
+                            path.TrimEnd('/'),
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    );
+
+                    if (apiDesc != null) {
+                        OpenApiGroupNames groupMeta = apiDesc.ActionDescriptor
+                            .EndpointMetadata
+                            .OfType<OpenApiGroupNames>()
+                            .FirstOrDefault();
+
+                        if (groupMeta != null) {
+                            include = groupMeta.Names
+                                .Contains(currentDocumentName, StringComparer.OrdinalIgnoreCase);
+                        }
+                    }
+
+                    if (include) {
+                        newPathItem.Operations[method] = operation;
+                    }
+                }
+
+                if (newPathItem.Operations.Count > 0) {
+                    filteredPaths[path] = newPathItem;
+                }
+            }
+
+            document.Paths = filteredPaths;
             document.Info.Title = this._opt.Title;
             document.Info.Description = this._opt.Description;
             document.Tags ??= [];
 
             var tagMap = new Dictionary<string, string>();
-            foreach (ApiDescriptionGroup group in context.DescriptionGroups) {
-                foreach (ApiDescription api in group.Items) {
-                    foreach (ApiTagDescription meta in api.ActionDescriptor.EndpointMetadata.OfType<ApiTagDescription>()) {
-                        if (!string.IsNullOrEmpty(meta.Description)) {
-                            tagMap[meta.Tag] = meta.Description;
-                            break;
-                        }
+            foreach (ApiDescription api in allApis) {
+                foreach (ApiTagDescription meta in api.ActionDescriptor.EndpointMetadata.OfType<ApiTagDescription>()) {
+                    if (!string.IsNullOrEmpty(meta.Description)) {
+                        tagMap[meta.Tag] = meta.Description;
+                        break;
                     }
                 }
             }
@@ -97,6 +140,23 @@ namespace bifeldy_lib_90.Transformers {
                     { jwt, Array.Empty<string>() }
                 });
             }
+
+            var usedTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (OpenApiPathItem pathItem in document.Paths.Values) {
+                foreach (OpenApiOperation operation in pathItem.Operations.Values) {
+                    if (operation.Tags is null) {
+                        continue;
+                    }
+
+                    foreach (OpenApiTag tag in operation.Tags) {
+                        if (!string.IsNullOrWhiteSpace(tag.Name)) {
+                            _ = usedTags.Add(tag.Name);
+                        }
+                    }
+                }
+            }
+
+            document.Tags = [.. document.Tags.Where(t => usedTags.Contains(t.Name))];
 
             return Task.CompletedTask;
         }

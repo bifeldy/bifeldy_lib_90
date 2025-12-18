@@ -63,19 +63,6 @@ namespace bifeldy_lib_90.Models {
             set => this.kunciGxxx = value;
         }
 
-        private bool isUsingPostgres = true;
-        public bool IS_USING_POSTGRES {
-            get {
-                string dbPgEnv = GetEnvVar("IS_USING_POSTGRES");
-                if (!string.IsNullOrEmpty(dbPgEnv)) {
-                    this.isUsingPostgres = bool.Parse(dbPgEnv);
-                }
-
-                return this.isUsingPostgres;
-            }
-            set => this.isUsingPostgres = value;
-        }
-
         private string jwtAudience = "jwt_audience";
         public string JWT_AUDIENCE {
             get {
