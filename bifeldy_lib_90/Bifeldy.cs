@@ -160,6 +160,7 @@ namespace bifeldy_lib_90 {
 
             _ = Services.AddOpenApi(options => {
                 _ = options.AddDocumentTransformer<DocumentTransformer>();
+                _ = options.AddSchemaTransformer<IgnorePropertySchemaTransformer>();
             });
         }
 

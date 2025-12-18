@@ -1,4 +1,5 @@
-﻿using bifeldy_lib_90.Libraries;
+﻿using bifeldy_lib_90.Filters;
+using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Models;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
@@ -10,8 +11,8 @@ namespace bifeldy_lib_90.Abstractions {
 
     [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
-    public abstract class JsonSerDe {
-        // Copy Paster Aja Semua Tinggal Ganti Nama Kelasnya
+    public abstract class JsonSerDe : IOpenApiPropertyFilter {
+        public virtual string[] HiddenProperties() => [];
     }
 
     [JsonSerializable(typeof(JsonSerDe))]

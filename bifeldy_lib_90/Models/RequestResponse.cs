@@ -49,6 +49,8 @@ namespace bifeldy_lib_90.Models {
         [JsonPropertyOrder(2)] public string key { get; set; }
         [JsonPropertyOrder(3)] public string token { get; set; }
         [JsonPropertyOrder(4)] public string server { get; set; }
+
+        public override string[] HiddenProperties() => ["secret", "key", "token", "server"];
     }
 
     // Kosongan Bisa Buat Kirim JWT Via Body (POST, PUT, PATCH, Etc.)
