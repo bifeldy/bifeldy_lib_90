@@ -491,11 +491,11 @@ namespace bifeldy_lib_90 {
                 });
             }
 
-            // TODO: Add additional MapEndpoints created here
-            RouteGroupBuilder routeGroupBuilder = App.MapGroup($"/{API_PREFIX}");
-            routeGroupBuilder.MapDefaultEndpoints();
+            // TODO: Add additional MapEndpoints here
+            RouteGroupBuilder routeGroup = App.MapGroup($"/{API_PREFIX}");
+            _ = routeGroup.MapDefaultEndpoints();
 
-            return routeGroupBuilder;
+            return routeGroup;
         }
 
     }

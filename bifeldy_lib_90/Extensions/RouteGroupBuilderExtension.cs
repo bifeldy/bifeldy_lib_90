@@ -1,10 +1,18 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using bifeldy_lib_90.Models;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Routing;
 
 namespace bifeldy_lib_90.Extensions {
 
     public sealed record ApiTagDescription(string Tag, string Description);
+
+    public sealed class DefaultBadRequestProducesMetadata : IProducesResponseTypeMetadata {
+        public Type Type => typeof(ResponseJsonSingle<ResponseJsonMessage>);
+        public int StatusCode => StatusCodes.Status400BadRequest;
+        public IEnumerable<string> ContentTypes => ["application/json"];
+    }
 
     public static class RouteGroupBuilderExtension {
 
@@ -16,7 +24,7 @@ namespace bifeldy_lib_90.Extensions {
                 _ = gp.WithMetadata(new ApiTagDescription(tag, description));
             }
 
-            return gp;
+            return gp.WithMetadata(new DefaultBadRequestProducesMetadata());
         }
 
     }

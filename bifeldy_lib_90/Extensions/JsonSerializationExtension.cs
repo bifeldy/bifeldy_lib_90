@@ -11,13 +11,14 @@ namespace bifeldy_lib_90.Extensions {
 
         // TODO: Add additional JsonSerializerContext generated resolvers here
         public static IJsonTypeInfoResolver[] JsonTypeInfoResolvers = [
-            JsonSerDeJsonSerializerContext.Default,
             EnvVarJsonSerializerContext.Default,
+            JsonSerDeJsonSerializerContext.Default,
             KunciRequestJsonSerializerContext.Default,
-            ResponseJsonSerializerContext.Default,
-            RequestJsonSerializerContext.Default,
-            ServerConfigJsonSerializerContext.Default,
             LoginInfoJsonSerializerContext.Default,
+            RequestJsonSerializerContext.Default,
+            ResponseJsonSerializerContext.Default,
+            ServerConfigJsonSerializerContext.Default,
+            UserSessionJsonSerializerContext.Default,
             API_KEY_T_JsonSerializerContext.Default,
             API_TOKEN_T_JsonSerializerContext.Default,
             DC_TABEL_DC_T_JsonSerializerContext.Default,
