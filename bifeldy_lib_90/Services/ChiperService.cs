@@ -194,7 +194,7 @@ namespace bifeldy_lib_90.Services {
         public IEnumerable<Claim> DecodeJWT(string token) {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this.HashText(this._envVar.JWT_SECRET)));
             var tokenHandler = new JwtSecurityTokenHandler();
-            _ = tokenHandler.ValidateToken(token, new TokenValidationParameters {
+            _ = tokenHandler.ValidateToken(token, new TokenValidationParameters() {
                 ValidateAudience = true,
                 ValidateIssuer = true,
                 ValidateIssuerSigningKey = true,

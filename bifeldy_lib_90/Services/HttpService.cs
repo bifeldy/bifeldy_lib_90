@@ -171,7 +171,7 @@ namespace bifeldy_lib_90.Services {
         ) where T : JsonSerDe {
             encoding ??= Encoding.UTF8;
 
-            var request = new HttpRequestMessage {
+            var request = new HttpRequestMessage() {
                 Method = httpMethod,
                 RequestUri = new Uri(httpUri)
             };
@@ -240,7 +240,7 @@ namespace bifeldy_lib_90.Services {
             string[] contentKeyName = null, string[] contentType = null,
             Encoding encoding = null
         ) {
-            var request = new HttpRequestMessage {
+            var request = new HttpRequestMessage() {
                 Method = httpMethod,
                 RequestUri = new Uri(httpUri)
             };

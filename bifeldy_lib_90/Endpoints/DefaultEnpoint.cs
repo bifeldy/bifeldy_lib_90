@@ -87,7 +87,7 @@ namespace bifeldy_lib_90.Endpoints {
                     userRole = ESessionRole.EXTERNAL_BOT;
                 }
 
-                userSession = new JwtSession {
+                userSession = new JwtSession() {
                     name = userName.ToUpper(),
                     role = userRole
                 };
@@ -103,7 +103,7 @@ namespace bifeldy_lib_90.Endpoints {
                     });
                 }
                 else {
-                    userSession = new JwtSession {
+                    userSession = new JwtSession() {
                         name = _httpContext.Items["address_ip"].ToString(),
                         role = ESessionRole.PROGRAM_SERVICE
                     };

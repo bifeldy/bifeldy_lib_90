@@ -91,7 +91,7 @@ namespace bifeldy_lib_90.Transformers {
                     openApiTag.Description = desc;
                 }
                 else {
-                    openApiTag = new OpenApiTag {
+                    openApiTag = new OpenApiTag() {
                         Name = tag,
                         Description = desc
                     };
