@@ -12,7 +12,10 @@ namespace bifeldy_lib_90.TableView {
         public DateTime? LAST_LOGIN { set; get; }
         public string TOKEN_SEKALI_PAKAI { set; get; }
 
-        public override string[] HiddenProperties() => ["PASSWORD", "TOKEN_SEKALI_PAKAI"];
+        public override string[] HiddenProperties() => [
+            nameof(this.PASSWORD),
+            nameof(this.TOKEN_SEKALI_PAKAI)
+        ];
     }
 
     [JsonSerializable(typeof(API_TOKEN_T))]

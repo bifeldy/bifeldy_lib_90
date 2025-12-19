@@ -12,7 +12,9 @@ namespace bifeldy_lib_90.Models {
         public string password { get; set; }
         public string secret { get; set; }
 
-        public override string[] HiddenProperties() => ["secret"];
+        public override string[] HiddenProperties() => [
+            nameof(this.secret)
+        ];
     }
 
     [JsonSerializable(typeof(LoginInfo))]

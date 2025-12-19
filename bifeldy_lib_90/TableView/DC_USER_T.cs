@@ -27,7 +27,9 @@ namespace bifeldy_lib_90.TableView {
         public DateTime? LAST_PASS_CHANGE { get; set; }
         public decimal? PASS_VALID_DAYS { get; set; }
 
-        public override string[] HiddenProperties() => ["USER_PASSWORD"];
+        public override string[] HiddenProperties() => [
+            nameof(this.USER_PASSWORD)
+        ];
     }
 
     [JsonSerializable(typeof(DC_USER_T))]

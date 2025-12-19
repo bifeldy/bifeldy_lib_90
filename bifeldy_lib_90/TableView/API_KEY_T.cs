@@ -15,7 +15,9 @@ namespace bifeldy_lib_90.TableView {
         [Key] public string APP_NAME { set; get; }
         public string KETER { set; get; }
 
-        public override string[] HiddenProperties() => ["KEY"];
+        public override string[] HiddenProperties() => [
+            nameof(this.KEY)
+        ];
     }
 
     [JsonSerializable(typeof(API_KEY_T))]

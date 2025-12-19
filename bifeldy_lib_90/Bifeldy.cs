@@ -144,11 +144,11 @@ namespace bifeldy_lib_90 {
         }
 
         public static void AddOpenApi(
-            string title = "Open API",
-            string description = "Documentation ~",
+            string apiPrefix,
+            string apiTitle,
+            string apiDescription,
             bool enableApiKey = true,
             bool enableJwt = false,
-            string apiPrefix = "api",
             string[] documents = null
         ) {
             if (string.IsNullOrWhiteSpace(apiPrefix)) {
@@ -166,7 +166,7 @@ namespace bifeldy_lib_90 {
                 }
             }
 
-            _ = Services.AddSingleton(new DocumentOptions(title, description, enableApiKey, enableJwt));
+            _ = Services.AddSingleton(new DocumentOptions(apiTitle, apiDescription, enableApiKey, enableJwt));
 
             foreach (string documentName in docs) {
                 _ = Services.AddOpenApi(documentName, options => {
@@ -193,7 +193,12 @@ namespace bifeldy_lib_90 {
                 }
             }
 
-            _ = App.MapScalarApiReference(API_PREFIX, opt => {
+            _ = App.MapGet($"/{API_PREFIX}", async (context) => {
+                context.Response.Redirect($"/docs", true, true);
+                await Task.CompletedTask;
+            });
+
+            _ = App.MapScalarApiReference("/docs", opt => {
                 _ = opt.WithOpenApiRoutePattern(jsonFilePath);
                 _ = opt.WithTheme(ScalarTheme.DeepSpace);
                 _ = opt.HideModels();
@@ -476,7 +481,7 @@ namespace bifeldy_lib_90 {
                         new ResponseJsonSingle<ResponseJsonMessage>() {
                             info = "404 - Whoops :: API Tidak Ditemukan",
                             result = new ResponseJsonMessage() {
-                                message = $"Silahkan Periksa Kembali Dokumentasi API"
+                                message = $"Dokumentasi Lengkap API Ada Di `/docs`"
                             }
                         },
                         ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage
