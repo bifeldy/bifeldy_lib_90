@@ -499,6 +499,7 @@ namespace bifeldy_lib_90 {
             // TODO: Add additional MapEndpoints here
             RouteGroupBuilder routeGroup = App.MapGroup($"/{API_PREFIX}");
             _ = routeGroup.MapDefaultEndpoints();
+            _ = routeGroup.MapEchoEndpoints();
 
             return routeGroup;
         }

@@ -1,4 +1,5 @@
 ﻿using bifeldy_lib_90.Libraries;
+using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
@@ -117,12 +118,24 @@ namespace bifeldy_lib_90.Services {
                     return l;
                 }
 
+                if (val.TryGetValue(out float f)) {
+                    return f;
+                }
+
                 if (val.TryGetValue(out double d)) {
                     return d;
                 }
 
                 if (val.TryGetValue(out decimal m)) {
                     return m;
+                }
+
+                if (val.TryGetValue(out DateTime dt)) {
+                    return dt;
+                }
+
+                if (val.TryGetValue(out DateOnly dto)) {
+                    return dto;
                 }
 
                 throw new NotSupportedException("Unsupported JSON primitive");
@@ -145,7 +158,7 @@ namespace bifeldy_lib_90.Services {
                 return obj;
             }
 
-            if (value is System.Collections.IEnumerable enumerable and not string) {
+            if (value is IEnumerable enumerable and not string) {
                 var arr = new JsonArray();
                 foreach (object item in enumerable) {
                     arr.Add(item == null ? null : this.ObjectToJsonNode(item));
@@ -164,8 +177,7 @@ namespace bifeldy_lib_90.Services {
                 decimal m => JsonValue.Create(m),
                 DateTime dt => JsonValue.Create(dt.ToString("O")),
                 DateOnly d => JsonValue.Create(d.ToString("O")),
-                _ => throw new NotSupportedException(
-                    $"Type '{value.GetType()}' is not supported in AOT-safe JSON serialization")
+                _ => throw new NotSupportedException($"Type '{value.GetType()}' is not supported in AOT-safe JSON serialization")
             };
         }
 
