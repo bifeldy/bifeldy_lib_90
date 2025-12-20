@@ -18,6 +18,7 @@ namespace bifeldy_lib_90.Abstractions {
     [JsonSerializable(typeof(JsonSerDe))]
     [JsonSerializable(typeof(JsonSerDe[]))]
     [JsonSerializable(typeof(List<JsonSerDe>))]
+    [JsonSerializable(typeof(Dictionary<string, JsonSerDe>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<JsonSerDe>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<JsonSerDe>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<JsonSerDe>))]

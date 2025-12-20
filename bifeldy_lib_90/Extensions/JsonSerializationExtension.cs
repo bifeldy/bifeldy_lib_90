@@ -14,6 +14,7 @@ namespace bifeldy_lib_90.Extensions {
             EnvVarJsonSerializerContext.Default,
             JsonSerDeJsonSerializerContext.Default,
             KunciRequestJsonSerializerContext.Default,
+            ListApiDcJsonSerializerContext.Default,
             LoginInfoJsonSerializerContext.Default,
             RequestJsonSerializerContext.Default,
             ResponseJsonSerializerContext.Default,
@@ -22,7 +23,10 @@ namespace bifeldy_lib_90.Extensions {
             API_KEY_T_JsonSerializerContext.Default,
             API_TOKEN_T_JsonSerializerContext.Default,
             DC_TABEL_DC_T_JsonSerializerContext.Default,
+            DC_TABEL_IP_T_JsonSerializerContext.Default,
+            DC_TABEL_V_JsonSerializerContext.Default,
             DC_USER_T_JsonSerializerContext.Default,
+            KAFKA_SERVER_T_JsonSerializerContext.Default,
         ];
 
         public static IServiceCollection ConfigureHttpJsonOptionsEx(this IServiceCollection services, IJsonTypeInfoResolver[] jsonTypeInfoResolversExtended) {

@@ -82,14 +82,13 @@ namespace bifeldy_lib_90.Middlewares {
                         if (context.Request.Method == "GET") {
                             IEnumerable<ServerConfigKunci> config = await scr.GetKodeServerKunciDc();
 
+                            shortCircuit = StatusCodes.Status200OK;
                             res = new ResponseJsonMulti<ServerConfigKunci>() {
-                                info = "200 - Kunci Kode DC",
+                                info = $"{shortCircuit} - Kunci Kode DC",
                                 results = config,
                                 count = config.Count(),
                                 pages = 1
                             };
-
-                            shortCircuit = StatusCodes.Status200OK;
                         }
                         else {
                             ServerConfigAddEditDelete reqBody = await this._gs.GetHttpRequestBody(
@@ -105,26 +104,26 @@ namespace bifeldy_lib_90.Middlewares {
                             string message = null;
 
                             if (!reqBody.password.Equals("5p1nd0m@r3T", StringComparison.InvariantCultureIgnoreCase)) {
-                                info = "401 - Kunci Kode DC";
+                                info = "Kunci Kode DC";
                                 message = "Password Salah";
                                 shortCircuit = StatusCodes.Status401Unauthorized;
                             }
                             else if (context.Request.Method == "POST" && reqBody != null) {
                                 if (reqBody.type.ToUpper() == "TAMBAH") {
                                     _ = await scr.AddKodeServerKunciDc(reqBody.kode_dc, reqBody.kunci_gxxx, reqBody.server_target);
-                                    info = "201 - Kunci Kode DC";
+                                    info = "Kunci Kode DC";
                                     message = "Berhasil Menambah Kunci";
                                     shortCircuit = StatusCodes.Status201Created;
                                 }
                                 else if (reqBody.type.ToUpper() == "UBAH") {
                                     _ = await scr.EditKodeServerKunciDc(reqBody.kode_dc, reqBody.kunci_gxxx, reqBody.server_target);
-                                    info = "202 - Kunci Kode DC";
+                                    info = "Kunci Kode DC";
                                     message = "Berhasil Mengubah Kunci";
                                     shortCircuit = StatusCodes.Status202Accepted;
                                 }
                                 else if (reqBody.type.ToUpper() == "HAPUS") {
                                     _ = await scr.RemoveKodeServerKunciDc(reqBody.kode_dc);
-                                    info = "202 - Kunci Kode DC";
+                                    info = "Kunci Kode DC";
                                     message = "Berhasil Menghapus Kunci";
                                     shortCircuit = StatusCodes.Status202Accepted;
                                 }
@@ -137,7 +136,7 @@ namespace bifeldy_lib_90.Middlewares {
                             }
 
                             res = new ResponseJsonSingle<ResponseJsonMessage>() {
-                                info = info,
+                                info = $"{shortCircuit} - {info}",
                                 result = new ResponseJsonMessage() {
                                     message = message
                                 }
@@ -147,7 +146,7 @@ namespace bifeldy_lib_90.Middlewares {
                     catch (TidakMemenuhiException e) {
                         shortCircuit = StatusCodes.Status400BadRequest;
                         res = new ResponseJsonSingle<ResponseJsonMessage>() {
-                            info = "400 - Kunci Kode DC",
+                            info = $"{shortCircuit} - Kunci Kode DC",
                             result = new ResponseJsonMessage() {
                                 message = e.Message
                             }
@@ -156,7 +155,7 @@ namespace bifeldy_lib_90.Middlewares {
                     catch (Exception e) {
                         shortCircuit = StatusCodes.Status500InternalServerError;
                         res = new ResponseJsonSingle<ResponseJsonMessage>() {
-                            info = "500 - Whoops :: Terjadi Kesalahan",
+                            info = $"{shortCircuit} - Whoops :: Terjadi Kesalahan",
                             result = new ResponseJsonMessage() {
                                 message = this._app.DebugMode ? e.Message : "Gagal Melanjutkan Permintaan"
                             }

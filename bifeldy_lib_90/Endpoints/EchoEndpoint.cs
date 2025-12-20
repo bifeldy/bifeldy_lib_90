@@ -24,7 +24,7 @@ namespace bifeldy_lib_90.Endpoints {
             string documentName = "latest-" + Assembly.GetEntryAssembly().GetName().Version?.ToString().Replace(".", string.Empty);
 
             RouteGroupBuilder apiGroup = routeGroupBuilder
-                .MapGroupTagDescription("/echo", "__", "Fitur standar bawaan untuk uji coba koneksi ~")
+                .MapGroupTagDescription("/echo", "___", "Fitur standar bawaan untuk uji coba koneksi ~")
                 .WithGroupNames(documentName)
                 .AllowAnonymous();
 

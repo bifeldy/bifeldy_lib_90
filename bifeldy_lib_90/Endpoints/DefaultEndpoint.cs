@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Options;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Reflection;
@@ -50,7 +49,6 @@ namespace bifeldy_lib_90.Endpoints {
 
         private static async Task<IResult> Login(
             HttpContext _httpContext,
-            IOptions<EnvVar> _envVar,
             IChiperService _chiper,
             IPostgres _pg,
             IApiKeyRepository _apiKeyRepo,
@@ -64,7 +62,7 @@ namespace bifeldy_lib_90.Endpoints {
 
             if (string.IsNullOrEmpty(secret) && (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))) {
                 return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = "400 - Login Gagal",
+                    info = $"{StatusCodes.Status400BadRequest} - Login Gagal",
                     result = new ResponseJsonMessage() {
                         message = "Data Tidak Lengkap!"
                     }
@@ -81,7 +79,7 @@ namespace bifeldy_lib_90.Endpoints {
                     DC_USER_T dcUserT = await _userRepo.GetByUserNameNikPassword(_pg, userName, password);
                     if (dcUserT == null) {
                         return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                            info = "400 - Login Gagal",
+                            info = $"{StatusCodes.Status400BadRequest} - Login Gagal",
                             result = new ResponseJsonMessage() {
                                 message = "User name / password salah!"
                             }
@@ -104,7 +102,7 @@ namespace bifeldy_lib_90.Endpoints {
                 API_KEY_T apiKeyT = await _apiKeyRepo.SecretLogin(_pg, secret);
                 if (apiKeyT == null) {
                     return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = "400 - Login Gagal",
+                        info = $"{StatusCodes.Status400BadRequest} - Login Gagal",
                         result = new ResponseJsonMessage() {
                             message = "Secret salah / tidak dikenali!"
                         }
@@ -155,7 +153,7 @@ namespace bifeldy_lib_90.Endpoints {
             }
 
             return Results.Ok(new ResponseJsonSingle<JwtSession>() {
-                info = $"202 - Logout Berhasil",
+                info = $"{StatusCodes.Status200OK} - Logout Berhasil",
                 result = session
             });
         }

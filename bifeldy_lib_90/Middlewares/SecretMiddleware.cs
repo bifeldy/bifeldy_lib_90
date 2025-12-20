@@ -70,7 +70,7 @@ namespace bifeldy_lib_90.Middlewares {
 
                     await response.WriteAsJsonAsync(
                         new ResponseJsonSingle<ResponseJsonMessage>() {
-                            info = "401 - Secret :: Tidak Dapat Digunakan",
+                            info = $"{response.StatusCode} - Secret :: Tidak Dapat Digunakan",
                             result = new ResponseJsonMessage() {
                                 message = "Secret salah / tidak dikenali!"
                             }

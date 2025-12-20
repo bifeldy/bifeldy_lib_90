@@ -89,7 +89,7 @@ namespace bifeldy_lib_90.Middlewares {
 
                 await response.WriteAsJsonAsync(
                     new ResponseJsonSingle<ResponseJsonErrorApiKeyIpOrigin>() {
-                        info = "401 - API Key :: Tidak Dapat Digunakan",
+                        info = $"{StatusCodes.Status401Unauthorized} - API Key :: Tidak Dapat Digunakan",
                         result = new ResponseJsonErrorApiKeyIpOrigin() {
                             message = errMsg,
                             api_key = apiKey,

@@ -35,6 +35,7 @@ namespace bifeldy_lib_90.TableView {
     [JsonSerializable(typeof(DC_USER_T))]
     [JsonSerializable(typeof(DC_USER_T[]))]
     [JsonSerializable(typeof(List<DC_USER_T>))]
+    [JsonSerializable(typeof(Dictionary<string, DC_USER_T>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<DC_USER_T>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<DC_USER_T>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<DC_USER_T>))]

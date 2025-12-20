@@ -4,10 +4,13 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
 using System.Xml.Linq;
+using WkHtmlToPdfDotNet;
+using WkHtmlToPdfDotNet.Contracts;
 
 namespace bifeldy_lib_90.Services {
 
     public interface IConverterService {
+        byte[] HtmlToPdf(HtmlToPdfDocument htmlToPdfDocument);
         T JsonToObject<T>(string json, JsonTypeInfo<T> typeInfo);
         string ObjectToJson<T>(T value, JsonTypeInfo<T> typeInfo);
         string XmlToJson(string xml);
@@ -20,8 +23,16 @@ namespace bifeldy_lib_90.Services {
 
     public sealed class CConverterService : IConverterService {
 
-        public CConverterService() {
-            //
+        private readonly IConverter _converter;
+
+        public CConverterService(IConverter converter) {
+            this._converter = converter;
+        }
+
+        // Unfortunately the main wkhtmltopdf project is not active any more.
+        // https://github.com/HakanL/WkHtmlToPdf-DotNet/issues/132
+        public byte[] HtmlToPdf(HtmlToPdfDocument htmlToPdfDocument) {
+            return this._converter.Convert(htmlToPdfDocument);
         }
 
         public T JsonToObject<T>(string json, JsonTypeInfo<T> typeInfo) {

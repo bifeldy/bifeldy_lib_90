@@ -77,7 +77,7 @@ namespace bifeldy_lib_90.Middlewares {
 
                     await response.WriteAsJsonAsync(
                         new ResponseJsonSingle<ResponseJsonMessage>() {
-                            info = "401 - JWT :: Tidak Dapat Digunakan",
+                            info = $"{response.StatusCode} - JWT :: Tidak Dapat Digunakan",
                             result = new ResponseJsonMessage() {
                                 message = "Format Token Salah / Expired!"
                             }

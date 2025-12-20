@@ -479,7 +479,7 @@ namespace bifeldy_lib_90 {
                 if (context.Response.StatusCode == StatusCodes.Status404NotFound && !context.Response.HasStarted) {
                     await context.Response.WriteAsJsonAsync(
                         new ResponseJsonSingle<ResponseJsonMessage>() {
-                            info = "404 - Whoops :: API Tidak Ditemukan",
+                            info = $"{StatusCodes.Status404NotFound} - Whoops :: API Tidak Ditemukan",
                             result = new ResponseJsonMessage() {
                                 message = $"Dokumentasi Lengkap API Ada Di `/docs`"
                             }
@@ -499,6 +499,7 @@ namespace bifeldy_lib_90 {
             // TODO: Add additional MapEndpoints here
             RouteGroupBuilder routeGroup = App.MapGroup($"/{API_PREFIX}");
             _ = routeGroup.MapDefaultEndpoints();
+            _ = routeGroup.MapDownloaderEndpoints();
             _ = routeGroup.MapEchoEndpoints();
 
             return routeGroup;

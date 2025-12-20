@@ -269,6 +269,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(EnvVar))]
     [JsonSerializable(typeof(EnvVar[]))]
     [JsonSerializable(typeof(List<EnvVar>))]
+    [JsonSerializable(typeof(Dictionary<string, EnvVar>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<EnvVar>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<EnvVar>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<EnvVar>))]

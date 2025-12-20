@@ -21,6 +21,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(JwtSession))]
     [JsonSerializable(typeof(JwtSession[]))]
     [JsonSerializable(typeof(List<JwtSession>))]
+    [JsonSerializable(typeof(Dictionary<string, JwtSession>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<JwtSession>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<JwtSession>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<JwtSession>))]

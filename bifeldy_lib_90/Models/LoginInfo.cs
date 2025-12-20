@@ -20,6 +20,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(LoginInfo))]
     [JsonSerializable(typeof(LoginInfo[]))]
     [JsonSerializable(typeof(List<LoginInfo>))]
+    [JsonSerializable(typeof(Dictionary<string, LoginInfo>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<LoginInfo>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<LoginInfo>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<LoginInfo>))]

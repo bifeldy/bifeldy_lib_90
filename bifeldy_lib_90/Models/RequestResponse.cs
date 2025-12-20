@@ -45,6 +45,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(ResponseJsonSingle<DateTimeOffset>))]
     [JsonSerializable(typeof(ResponseJsonSingle<Guid>))]
     [JsonSerializable(typeof(ResponseJsonSingle<byte[]>))]
+    [JsonSerializable(typeof(ResponseJsonSingle<Dictionary<string, object>>))]
     [JsonSerializable(typeof(ResponseJsonSingle<ResponseRedirect>))]
     [JsonSerializable(typeof(ResponseJsonSingle<ResponseJsonMessage>))]
     [JsonSerializable(typeof(ResponseJsonSingle<ResponseJsonErrorApiKeyIpOrigin>))]
@@ -59,6 +60,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(ResponseJsonMulti<DateTimeOffset>))]
     [JsonSerializable(typeof(ResponseJsonMulti<Guid>))]
     [JsonSerializable(typeof(ResponseJsonMulti<byte[]>))]
+    [JsonSerializable(typeof(ResponseJsonMulti<Dictionary<string, object>>))]
     public partial class ResponseJsonSerializerContext : JsonSerializerContext {
         // This class is used for source generation of JSON serialization metadata
     }
@@ -127,6 +129,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(InputJsonDcDataSingle<DateTimeOffset>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<Guid>))]
     [JsonSerializable(typeof(InputJsonDcDataSingle<byte[]>))]
+    [JsonSerializable(typeof(InputJsonDcDataSingle<Dictionary<string, object>>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<string>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<int>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<long>))]
@@ -138,6 +141,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(InputJsonHoDataSingle<DateTimeOffset>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<Guid>))]
     [JsonSerializable(typeof(InputJsonHoDataSingle<byte[]>))]
+    [JsonSerializable(typeof(InputJsonHoDataSingle<Dictionary<string, object>>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<string>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<int>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<long>))]
@@ -149,6 +153,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<DateTimeOffset>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<Guid>))]
     [JsonSerializable(typeof(InputJsonNonDcDataSingle<byte[]>))]
+    [JsonSerializable(typeof(InputJsonNonDcDataSingle<Dictionary<string, object>>))]
     [JsonSerializable(typeof(InputJsonDcDataMulti<string>))]
     [JsonSerializable(typeof(InputJsonDcDataMulti<int>))]
     [JsonSerializable(typeof(InputJsonDcDataMulti<long>))]
@@ -160,6 +165,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(InputJsonDcDataMulti<DateTimeOffset>))]
     [JsonSerializable(typeof(InputJsonDcDataMulti<Guid>))]
     [JsonSerializable(typeof(InputJsonDcDataMulti<byte[]>))]
+    [JsonSerializable(typeof(InputJsonDcDataMulti<Dictionary<string, object>>))]
     [JsonSerializable(typeof(InputJsonHoDataMulti<string>))]
     [JsonSerializable(typeof(InputJsonHoDataMulti<int>))]
     [JsonSerializable(typeof(InputJsonHoDataMulti<long>))]
@@ -171,6 +177,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(InputJsonHoDataMulti<DateTimeOffset>))]
     [JsonSerializable(typeof(InputJsonHoDataMulti<Guid>))]
     [JsonSerializable(typeof(InputJsonHoDataMulti<byte[]>))]
+    [JsonSerializable(typeof(InputJsonHoDataMulti<Dictionary<string, object>>))]
     [JsonSerializable(typeof(InputJsonNonDcDataMulti<string>))]
     [JsonSerializable(typeof(InputJsonNonDcDataMulti<int>))]
     [JsonSerializable(typeof(InputJsonNonDcDataMulti<long>))]
@@ -182,6 +189,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSerializable(typeof(InputJsonNonDcDataMulti<DateTimeOffset>))]
     [JsonSerializable(typeof(InputJsonNonDcDataMulti<Guid>))]
     [JsonSerializable(typeof(InputJsonNonDcDataMulti<byte[]>))]
+    [JsonSerializable(typeof(InputJsonNonDcDataMulti<Dictionary<string, object>>))]
     public partial class RequestJsonSerializerContext : JsonSerializerContext {
         // This class is used for source generation of JSON serialization metadata
     }

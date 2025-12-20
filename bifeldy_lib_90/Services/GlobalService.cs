@@ -49,11 +49,11 @@ namespace bifeldy_lib_90.Services {
         public string CsvFolderPath { get; set; }
         public string ZipFolderPath { get; set; }
 
-        public SortedDictionary<string, string> SignalrClients { get; } = new();
+        public SortedDictionary<string, string> SignalrClients { get; } = [];
 
-        public List<string> AllowedIpOrigin { get; set; } = new List<string>() {
+        public List<string> AllowedIpOrigin { get; set; } = [
             "localhost", "127.0.0.1"
-        };
+        ];
 
         public CGlobalService(
             IOptions<EnvVar> envVar,
