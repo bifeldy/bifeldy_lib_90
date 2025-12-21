@@ -49,6 +49,11 @@ namespace bifeldy_lib_90.Endpoints {
                 .WithDescription("Tidak wajib, hanya clean-up session saja")
                 .Produces<ResponseJsonSingle<JwtSession>>(StatusCodes.Status202Accepted);
 
+            _ = apiGroup.MapPatch("/verify", Verify)
+                .WithSummary("Verify")
+                .WithDescription("Mengecek / validasi token untuk mendapatkan informasi sesi login")
+                .Produces<ResponseJsonSingle<JwtSession>>(StatusCodes.Status200OK);
+
             return apiGroup;
         }
 
@@ -159,6 +164,14 @@ namespace bifeldy_lib_90.Endpoints {
 
             return Results.Accepted("/verify", new ResponseJsonSingle<JwtSession>() {
                 info = $"{StatusCodes.Status202Accepted} - Logout Berhasil",
+                result = session
+            });
+        }
+
+        private static IResult Verify(HttpContext _httpContext) {
+            var session = (JwtSession)_httpContext.Items["user"];
+            return Results.Ok(new ResponseJsonSingle<JwtSession>() {
+                info = $"200 - Verifikasi Berhasil",
                 result = session
             });
         }
