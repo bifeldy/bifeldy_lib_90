@@ -1,5 +1,7 @@
-﻿using bifeldy_lib_90.Databases;
+﻿using bifeldy_lib_90.Backgrounds;
+using bifeldy_lib_90.Databases;
 using bifeldy_lib_90.Endpoints;
+using bifeldy_lib_90.JobSchedulers;
 using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Middlewares;
 using bifeldy_lib_90.Models;
@@ -24,10 +26,13 @@ using Microsoft.Extensions.Primitives;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Events;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Reflection;
+using WkHtmlToPdfDotNet;
+using WkHtmlToPdfDotNet.Contracts;
 
 namespace bifeldy_lib_90 {
 
@@ -51,6 +56,8 @@ namespace bifeldy_lib_90 {
         public static IConfiguration Config = null;
 
         public static WebApplication App = null;
+
+        private static readonly ConcurrentDictionary<string, ScheduleBuilder> Schedules = new();
 
         public static void AppContextOverride() {
             AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -119,16 +126,20 @@ namespace bifeldy_lib_90 {
         }
 
         public static void SetupSerilog() {
+            _ = Services.AddHttpContextAccessor();
             _ = Services.AddSingleton<SerilogKunciGxxxPropertyEnricher>();
             _ = Builder.Host.UseSerilog((hostContext, services, configuration) => {
-                string appPathDir = AppDomain.CurrentDomain.BaseDirectory;
-                SerilogKunciGxxxPropertyEnricher spe = services.GetRequiredService<SerilogKunciGxxxPropertyEnricher>();
-                _ = configuration.Enrich.With(spe).WriteTo.File(
-                    appPathDir + $"/{DEFAULT_DATA_FOLDER}/logs/error_.txt",
-                    LogEventLevel.Error,
-                    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {KunciGxxx} | {Message:lj}{NewLine}{Exception}",
-                    rollingInterval: RollingInterval.Day
-                );
+                SerilogKunciGxxxPropertyEnricher enricher = services.GetRequiredService<SerilogKunciGxxxPropertyEnricher>();
+
+                _ = configuration
+                    .Enrich.FromLogContext()
+                    .Enrich.With(enricher)
+                    .WriteTo.File(
+                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DEFAULT_DATA_FOLDER, "logs", "error_.txt"),
+                        restrictedToMinimumLevel: LogEventLevel.Error,
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {KunciGxxx} | {Message:lj}{NewLine}{Exception}",
+                        rollingInterval: RollingInterval.Day
+                    );
             });
         }
 
@@ -228,8 +239,6 @@ namespace bifeldy_lib_90 {
         }
 
         public static void AddDependencyInjection() {
-            _ = Services.AddHttpContextAccessor();
-
             // --
             // Transient Selalu Dapat Object Baru ~
             // --
@@ -240,12 +249,19 @@ namespace bifeldy_lib_90 {
             // --
             // Hanya Singleton Yang Leluasa Dengan Mudahnya Bisa Di Inject Di Constructor() { } Dimana Saja
             // --
+            _ = Services.AddSingleton<IConverter>(sp => {
+                return new SynchronizedConverter(new PdfTools());
+            });
+            // --
             _ = Services.AddSingleton<IApplicationService, CApplicationService>();
             _ = Services.AddSingleton<IChiperService, CChiperService>();
             _ = Services.AddSingleton<IConverterService, CConverterService>();
             _ = Services.AddSingleton<IGlobalService, CGlobalService>();
             _ = Services.AddSingleton<IHttpService, CHttpService>();
+            _ = Services.AddSingleton<IKafkaService, CKafkaService>();
             _ = Services.AddSingleton<ILockerService, CLockerService>();
+            _ = Services.AddSingleton<IPubSubService, CPubSubService>();
+            _ = Services.AddSingleton<IRdlcService, CRdlcService>();
             _ = Services.AddSingleton<IStreamService, CStreamService>();
 
             // --
@@ -253,6 +269,7 @@ namespace bifeldy_lib_90 {
             // --
             _ = Services.AddScoped<IApiKeyRepository, CApiKeyRepository>();
             _ = Services.AddScoped<IApiTokenRepository, CApiTokenRepository>();
+            _ = Services.AddScoped<IGeneralRepository, CGeneralRepository>();
             _ = Services.AddScoped<IServerConfigRepository, CServerConfigRepository>();
             _ = Services.AddScoped<IUserRepository, CUserRepository>();
         }
@@ -503,6 +520,66 @@ namespace bifeldy_lib_90 {
             _ = routeGroup.MapEchoEndpoints();
 
             return routeGroup;
+        }
+
+        private static List<EJenisDc> CheckKafkaExcludeJenisDc(string excludeJenisDc) {
+            List<EJenisDc> ls = null;
+
+            if (!string.IsNullOrEmpty(excludeJenisDc)) {
+                ls = [.. excludeJenisDc.Split(",").Where(d => !string.IsNullOrEmpty(d)).Select(d => {
+                    string jenisDc = d.Trim().ToUpper();
+                    EJenisDc _eJenisDc = EJenisDc.UNKNOWN;
+
+                    if (Enum.TryParse(jenisDc, true, out EJenisDc eJenisDc)) {
+                        _eJenisDc = eJenisDc;
+                    }
+
+                    return _eJenisDc;
+                })];
+            }
+
+            return ls;
+        }
+
+        public static void AddKafkaProducerBackground(string hostPort, string topicName, short replication = 1, int partition = 1, bool suffixKodeDc = false, string excludeJenisDc = null, string pubSubName = null) {
+            _ = Services.AddHostedService(sp => {
+                List<EJenisDc> ls = CheckKafkaExcludeJenisDc(excludeJenisDc);
+                return new KafkaProducer(sp, hostPort, topicName, replication, partition, suffixKodeDc, ls, pubSubName);
+            });
+        }
+
+        public static void AddKafkaConsumerBackground(string hostPort, string topicName, string logTableName = null, string groupId = null, bool suffixKodeDc = false, string excludeJenisDc = null, string pubSubName = null) {
+            _ = Services.AddHostedService(sp => {
+                List<EJenisDc> ls = CheckKafkaExcludeJenisDc(excludeJenisDc);
+                return new KafkaConsumer(sp, hostPort, topicName, logTableName, groupId, suffixKodeDc, ls, pubSubName);
+            });
+        }
+
+        public static void AddKafkaAutoProducerConsumerBackground(IDictionary<string, KafkaInstance> kafkaSettings) {
+            if (kafkaSettings != null) {
+                foreach (KeyValuePair<string, KafkaInstance> ks in kafkaSettings) {
+                    if (ks.Key.StartsWith("PRODUCER_")) {
+                        AddKafkaProducerBackground(ks.Value.HOST_PORT, ks.Value.TOPIC, ks.Value.REPLICATION, ks.Value.PARTITION, ks.Value.SUFFIX_KODE_DC, ks.Value.EXCLUDE_JENIS_DC, ks.Key);
+                    }
+                }
+
+                foreach (KeyValuePair<string, KafkaInstance> ks in kafkaSettings) {
+                    if (ks.Key.StartsWith("CONSUMER_")) {
+                        AddKafkaConsumerBackground(ks.Value.HOST_PORT, ks.Value.TOPIC, ks.Value.LOG_TABLE_NAME, ks.Value.GROUP_ID, ks.Value.SUFFIX_KODE_DC, ks.Value.EXCLUDE_JENIS_DC, ks.Key);
+                    }
+                }
+            }
+        }
+
+        public static ScheduleBuilder ScheduleJob(string cronExpression) {
+            return Schedules.GetOrAdd(cronExpression, _ => new ScheduleBuilder(cronExpression, Services));
+        }
+
+        public static void StartJobScheduler() {
+            IEnumerable<CronJob> jobs = [.. Schedules.Values.SelectMany(s => s._jobs)];
+
+            _ = Services.AddSingleton(jobs);
+            _ = Services.AddHostedService<CronScheduler>();
         }
 
     }
