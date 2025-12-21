@@ -15,6 +15,7 @@
         <!-- Build Info -->
         <Version>1.0.0.0</Version>
         <SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ss:fffZ"))</SourceRevisionId>
+        <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">true</IsAotCompatible>
     </PropertyGroup>
 
     <ItemGroup>

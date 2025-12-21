@@ -33,8 +33,15 @@ namespace bifeldy_lib_90.Extensions {
             return services.ConfigureHttpJsonOptions(options => {
                 options.SerializerOptions.PropertyNamingPolicy = null;
 
-                IJsonTypeInfoResolver[] resolvers = [.. JsonTypeInfoResolvers, .. jsonTypeInfoResolversExtended];
-                options.SerializerOptions.TypeInfoResolver = new JsonSerDeTypeInfoResolver(resolvers);
+                IJsonTypeInfoResolver[] resolvers = [
+                    options.SerializerOptions.TypeInfoResolver!,
+                    .. JsonTypeInfoResolvers,
+                    .. jsonTypeInfoResolversExtended
+                ];
+
+                IJsonTypeInfoResolver combined = JsonTypeInfoResolver.Combine(resolvers);
+
+                options.SerializerOptions.TypeInfoResolverChain.Insert(0, new JsonSerDeTypeInfoResolver(combined));
             });
         }
 

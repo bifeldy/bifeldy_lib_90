@@ -1,6 +1,5 @@
 ﻿using bifeldy_lib_90.Backgrounds;
 using bifeldy_lib_90.Databases;
-using bifeldy_lib_90.Endpoints;
 using bifeldy_lib_90.JobSchedulers;
 using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Middlewares;
@@ -155,9 +154,9 @@ namespace bifeldy_lib_90 {
         }
 
         public static void AddOpenApi(
-            string apiPrefix,
             string apiTitle,
             string apiDescription,
+            string apiPrefix = "api",
             bool enableApiKey = true,
             bool enableJwt = false,
             string[] documents = null
@@ -239,6 +238,8 @@ namespace bifeldy_lib_90 {
         }
 
         public static void AddDependencyInjection() {
+            _ = Services.AddProblemDetails();
+
             // --
             // Transient Selalu Dapat Object Baru ~
             // --
@@ -513,13 +514,7 @@ namespace bifeldy_lib_90 {
                 });
             }
 
-            // TODO: Add additional MapEndpoints here
-            RouteGroupBuilder routeGroup = App.MapGroup($"/{API_PREFIX}");
-            _ = routeGroup.MapDefaultEndpoints();
-            _ = routeGroup.MapDownloaderEndpoints();
-            _ = routeGroup.MapEchoEndpoints();
-
-            return routeGroup;
+            return App.MapGroup($"/{API_PREFIX}");
         }
 
         private static List<EJenisDc> CheckKafkaExcludeJenisDc(string excludeJenisDc) {
