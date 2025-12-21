@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Reporting.NETCore;
 using System.Data;
+using System.Net.Mime;
 using System.Runtime.InteropServices;
 using System.Text;
 using WkHtmlToPdfDotNet;
@@ -28,7 +29,7 @@ namespace bifeldy_lib_90.Services {
         public IDictionary<string, RdlcInfo> FileType { get; } = new Dictionary<string, RdlcInfo>(StringComparer.InvariantCultureIgnoreCase) {
             {
                 "PDF", new() {
-                    contentType = "application/pdf",
+                    contentType = MediaTypeNames.Application.Pdf,
                     saveType = "PDF"
                 }
             },

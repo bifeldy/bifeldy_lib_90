@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Routing;
+using System.Net.Mime;
 
 namespace bifeldy_lib_90.Extensions {
 
@@ -11,7 +12,7 @@ namespace bifeldy_lib_90.Extensions {
     public sealed class DefaultBadRequestProducesMetadata : IProducesResponseTypeMetadata {
         public Type Type => typeof(ResponseJsonSingle<ResponseJsonMessage>);
         public int StatusCode => StatusCodes.Status400BadRequest;
-        public IEnumerable<string> ContentTypes => ["application/json"];
+        public IEnumerable<string> ContentTypes => [MediaTypeNames.Application.Json];
     }
 
     public static class RouteGroupBuilderExtension {

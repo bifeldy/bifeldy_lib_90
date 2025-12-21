@@ -34,12 +34,12 @@ namespace bifeldy_lib_90.Endpoints {
                 .WithGroupNames(documentName)
                 .AllowAnonymous();
 
-            _ = apiGroup.MapGet("/", EchoNoData).WithSummary("Echo").WithDescription("Balikin request jadi response ");
-            _ = apiGroup.MapDelete("/", EchoNoData).WithSummary("Echo").WithDescription("Balikin request jadi response ");
+            _ = apiGroup.MapGet("/", EchoNoData).WithSummary("Echo").WithDescription("Balikin request jadi response");
+            _ = apiGroup.MapDelete("/", EchoNoData).WithSummary("Echo").WithDescription("Balikin request jadi response");
 
-            _ = apiGroup.MapPost("/", EchoWithData).WithSummary("Echo").WithDescription("Balikin request jadi response ");
-            _ = apiGroup.MapPut("/", EchoWithData).WithSummary("Echo").WithDescription("Balikin request jadi response ");
-            _ = apiGroup.MapPatch("/", EchoWithData).WithSummary("Echo").WithDescription("Balikin request jadi response ");
+            _ = apiGroup.MapPost("/", EchoWithData).WithSummary("Echo").WithDescription("Balikin request jadi response");
+            _ = apiGroup.MapPut("/", EchoWithData).WithSummary("Echo").WithDescription("Balikin request jadi response");
+            _ = apiGroup.MapPatch("/", EchoWithData).WithSummary("Echo").WithDescription("Balikin request jadi response");
 
             return apiGroup;
         }

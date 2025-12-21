@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Mime;
 using System.Net.Security;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -105,7 +106,7 @@ namespace bifeldy_lib_90.Services {
         }
 
         private HttpContent CreateStreamingJsonContent<T>(IAsyncEnumerable<T> stream, JsonTypeInfo<T> typeInfo) where T : JsonSerDe {
-            return new AsyncEnumerableJsonContent<T>(stream, "application/json", typeInfo, false);
+            return new AsyncEnumerableJsonContent<T>(stream, MediaTypeNames.Application.Json, typeInfo, false);
         }
 
         private HttpContent CreateStreamingNdjsonContent<T>(IAsyncEnumerable<T> stream, JsonTypeInfo<T> typeInfo) where T : JsonSerDe {
@@ -118,7 +119,7 @@ namespace bifeldy_lib_90.Services {
             if (payload is IAsyncEnumerable<T> asyncEnumerable) {
                 string ct = contentType?.ToLowerInvariant();
 
-                if (ct == "application/json") {
+                if (ct == MediaTypeNames.Application.Json) {
                     return this.CreateStreamingJsonContent(asyncEnumerable, jsonTypeInfo);
                 }
 
@@ -187,7 +188,7 @@ namespace bifeldy_lib_90.Services {
                             HttpContent part = this.GetHttpContentJson(
                                 (T)arr.GetValue(i),
                                 jsonTypeInfo,
-                                contentType?.ElementAtOrDefault(i) ?? "application/octet-stream",
+                                contentType?.ElementAtOrDefault(i) ?? MediaTypeNames.Application.Octet,
                                 encoding
                             );
 
@@ -202,7 +203,7 @@ namespace bifeldy_lib_90.Services {
                             this.GetHttpContentJson(
                                 payload,
                                 jsonTypeInfo,
-                                contentType?.FirstOrDefault() ?? "application/octet-stream",
+                                contentType?.FirstOrDefault() ?? MediaTypeNames.Application.Octet,
                                 encoding
                             ),
                             contentKeyName?.FirstOrDefault() ?? "file"
@@ -215,7 +216,7 @@ namespace bifeldy_lib_90.Services {
                     finalContent = this.GetHttpContentJson(
                         payload,
                         jsonTypeInfo,
-                        contentType?.FirstOrDefault() ?? "application/json",
+                        contentType?.FirstOrDefault() ?? MediaTypeNames.Application.Json,
                         encoding
                     );
                 }
@@ -255,7 +256,7 @@ namespace bifeldy_lib_90.Services {
                         for (int i = 0; i < arr.Length; i++) {
                             HttpContent part = this.GetHttpContent(
                                 arr.GetValue(i),
-                                contentType?.ElementAtOrDefault(i) ?? "application/octet-stream",
+                                contentType?.ElementAtOrDefault(i) ?? MediaTypeNames.Application.Octet,
                                 encoding
                             );
 
@@ -269,7 +270,7 @@ namespace bifeldy_lib_90.Services {
                         form.Add(
                             this.GetHttpContent(
                                 payload,
-                                contentType?.FirstOrDefault() ?? "application/octet-stream",
+                                contentType?.FirstOrDefault() ?? MediaTypeNames.Application.Octet,
                                 encoding
                             ),
                             contentKeyName?.FirstOrDefault() ?? "file"
@@ -281,7 +282,7 @@ namespace bifeldy_lib_90.Services {
                 else {
                     finalContent = this.GetHttpContent(
                         payload,
-                        contentType?.FirstOrDefault() ?? "application/json",
+                        contentType?.FirstOrDefault() ?? MediaTypeNames.Application.Json,
                         encoding
                     );
                 }
@@ -516,7 +517,7 @@ namespace bifeldy_lib_90.Services {
 
             Stream stream = await response.Content.ReadAsStreamAsync();
 
-            if (response.Content.Headers.ContentType?.MediaType == "application/json") {
+            if (response.Content.Headers.ContentType?.MediaType == MediaTypeNames.Application.Json) {
                 await foreach (T item in JsonSerializer.DeserializeAsyncEnumerable(stream, jsonTypeInfo, cancellationToken)) {
                     if (item != null) {
                         yield return item;

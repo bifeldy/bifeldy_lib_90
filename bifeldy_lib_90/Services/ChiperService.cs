@@ -163,7 +163,7 @@ namespace bifeldy_lib_90.Services {
                 return mime;
             }
 
-            return "application/octet-stream";
+            return MediaTypeNames.Application.Octet;
         }
 
         public string HashByte(byte[] data) {
