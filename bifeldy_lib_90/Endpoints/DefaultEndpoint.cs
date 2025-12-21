@@ -18,6 +18,8 @@ namespace bifeldy_lib_90.Endpoints {
 
     public static class DefaultEndpoint {
 
+        private static readonly string ROUTE_GROUP = "/";
+
         [UnconditionalSuppressMessage(
             "Trimming", "IL2026",
             Justification = "Minimal API handler is static and AOT-safe"
@@ -29,7 +31,10 @@ namespace bifeldy_lib_90.Endpoints {
         public static RouteGroupBuilder MapDefaultEndpoints(this RouteGroupBuilder routeGroupBuilder) {
             string documentName = "latest-" + Assembly.GetEntryAssembly().GetName().Version?.ToString().Replace(".", string.Empty);
 
-            RouteGroupBuilder apiGroup = routeGroupBuilder.MapGroupTagDescription("/", "_", "Fitur standar bawaan untuk `Authentikasi` ~")
+            RouteGroupBuilder apiGroup = routeGroupBuilder.MapGroupTagDescription(
+                    ROUTE_GROUP, "_",
+                    "Fitur standar bawaan untuk `Authentikasi` ~"
+                )
                 .WithGroupNames(documentName);
 
             _ = apiGroup.MapPost("/login", Login)
@@ -42,18 +47,18 @@ namespace bifeldy_lib_90.Endpoints {
             _ = apiGroup.MapDelete("/logout", Logout)
                 .WithSummary("Logout")
                 .WithDescription("Tidak wajib, hanya clean-up session saja")
-                .Produces<ResponseJsonSingle<JwtSession>>(StatusCodes.Status200OK);
+                .Produces<ResponseJsonSingle<JwtSession>>(StatusCodes.Status202Accepted);
 
             return apiGroup;
         }
 
         private static async Task<IResult> Login(
             HttpContext _httpContext,
-            IChiperService _chiper,
-            IPostgres _pg,
-            IApiKeyRepository _apiKeyRepo,
-            IApiTokenRepository _apiTokenRepo,
-            IUserRepository _userRepo,
+            [FromServices] IChiperService _chiper,
+            [FromServices] IPostgres _pg,
+            [FromServices] IApiKeyRepository _apiKeyRepo,
+            [FromServices] IApiTokenRepository _apiTokenRepo,
+            [FromServices] IUserRepository _userRepo,
             [FromBody] LoginInfo reqBody
         ) {
             string userName = reqBody?.user_name;
@@ -123,7 +128,7 @@ namespace bifeldy_lib_90.Endpoints {
 
             string token = _chiper.EncodeJWT(claims);
 
-            return Results.Ok(new ResponseJsonSingle<string>() {
+            return Results.Created("/verify", new ResponseJsonSingle<string>() {
                 info = $"{StatusCodes.Status201Created} - Login",
                 result = token
             });
@@ -131,8 +136,8 @@ namespace bifeldy_lib_90.Endpoints {
 
         private static async Task<IResult> Logout(
             HttpContext _httpContext,
-            IApiTokenRepository _apiTokenRepo,
-            IPostgres _pg
+            [FromServices] IApiTokenRepository _apiTokenRepo,
+            [FromServices] IPostgres _pg
         ) {
             var session = (JwtSession)_httpContext.Items["user"];
             if (session.role == ESessionRole.EXTERNAL_BOT) {
@@ -152,8 +157,8 @@ namespace bifeldy_lib_90.Endpoints {
                 );
             }
 
-            return Results.Ok(new ResponseJsonSingle<JwtSession>() {
-                info = $"{StatusCodes.Status200OK} - Logout Berhasil",
+            return Results.Accepted("/verify", new ResponseJsonSingle<JwtSession>() {
+                info = $"{StatusCodes.Status202Accepted} - Logout Berhasil",
                 result = session
             });
         }

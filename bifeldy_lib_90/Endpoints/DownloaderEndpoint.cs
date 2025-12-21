@@ -1,5 +1,5 @@
-﻿using bifeldy_lib_90.Databases;
-using bifeldy_lib_90.Extensions;
+﻿using bifeldy_lib_90.Extensions;
+using bifeldy_lib_90.JobSchedulers;
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Services;
 using Microsoft.AspNetCore.Builder;
@@ -16,6 +16,8 @@ namespace bifeldy_lib_90.Endpoints {
 
     public static class DownloaderEndpoint {
 
+        private static readonly string ROUTE_GROUP = "/downloader";
+
         [UnconditionalSuppressMessage(
             "Trimming", "IL2026",
             Justification = "Minimal API handler is static and AOT-safe"
@@ -28,34 +30,44 @@ namespace bifeldy_lib_90.Endpoints {
             string documentName = "latest-" + Assembly.GetEntryAssembly().GetName().Version?.ToString().Replace(".", string.Empty);
 
             RouteGroupBuilder apiGroup = routeGroupBuilder
-                .MapGroupTagDescription("/downloader", "__", "Fitur standar bawaan untuk unduh berkas ~")
-                .WithGroupNames(documentName)
-                .AllowAnonymous();
+                .MapGroupTagDescription(
+                    ROUTE_GROUP, "__",
+                    "Fitur standar bawaan untuk unduh berkas ~"
+                )
+                .WithGroupNames(documentName);
 
             _ = apiGroup.MapGet("/", Downloader)
                 .WithSummary("Downloader")
-                .WithDescription("Untuk check `hash md5` file kemudian unduh");
+                .WithDescription("Untuk check `hash md5` file kemudian unduh")
+                .Produces<ResponseJsonSingle<Dictionary<string, object>>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status206PartialContent)
+                .Produces<ResponseJsonSingle<ResponseJsonMessage>>(StatusCodes.Status403Forbidden)
+                .Produces<ResponseJsonSingle<ResponseJsonMessage>>(StatusCodes.Status404NotFound)
+                .Produces<ResponseJsonSingle<ResponseJsonMessage>>(StatusCodes.Status410Gone)
+                .Produces(StatusCodes.Status416RangeNotSatisfiable);
 
             return apiGroup;
         }
 
         private static async Task<IResult> Downloader(
-            IDistributedCache cache,
-            ISchedulerService scheduler,
-            IApplicationService @as,
-            IGlobalService gs,
-            IChiperService chiper,
-            IConverterService converter,
-            ILockerService locker,
-            IPostgres orapg,
-            IRdlcService rdlc,
             HttpContext http,
-            [FromQuery] string fileName = null,
-            [FromQuery] string fileType = null,
-            [FromQuery] bool completedOnly = false,
-            [FromQuery] string compareMd5 = null
+            [FromServices] IDistributedCache cache,
+            [FromServices] IApplicationService @as,
+            [FromServices] IGlobalService gs,
+            [FromServices] IChiperService chiper,
+            [FromServices] IConverterService converter,
+            [FromServices] ILockerService locker,
+            [FromServices] IRdlcService rdlc,
+            [FromServices] CronScheduler scheduler,
+            [FromQuery] string fileName = "[FANSUB] Blue AV (BD 720p AAC).mkv",
+            [FromQuery] string fileType = "video/x-matroska",
+            [FromQuery] string completedOnly = "true",
+            [FromQuery] string compareMd5 = "08e6e1d1"
         ) {
             string cacheKey = http.Request.Path;
+
+            bool isCompletedOnly = bool.TryParse(completedOnly.ToString(), out bool _completedOnly) && _completedOnly;
 
             try {
                 var user = (JwtSession)http.Items["user"];
@@ -82,7 +94,7 @@ namespace bifeldy_lib_90.Endpoints {
 
                         string result = await cache.GetStringAsync(cacheKey);
                         if (string.IsNullOrEmpty(result?.Trim())) {
-                            fileHash = new Dictionary<string, object>();
+                            fileHash = [];
 
                             IEnumerable<FileInfo> fileInfos = Directory.GetFiles(@as.AppLocation, "*", SearchOption.AllDirectories)
                                 .Where(p => {
@@ -198,21 +210,16 @@ namespace bifeldy_lib_90.Endpoints {
                     var fi = new FileInfo(filePath);
                     bool isFileReady = false;
 
-                    if (completedOnly) {
+                    if (isCompletedOnly) {
                         string jobName = $"ExportFile___{fi.Name}";
 
-                        bool isJobCompleted = await scheduler.CheckJobIsCompleted(
-                            jobName,
-                            orapg,
-                            () => {
-                                string ___filePath = fi.FullName;
-                                bool ___additionalAndCheck = File.Exists(___filePath);
-                                return Task.FromResult(___additionalAndCheck);
-                            }
-                        );
+                        CompletedJob jobCompleted = scheduler.CheckJobIsCompleted(jobName);
+                        if (jobCompleted != null) {
+                            isFileReady = jobCompleted.Success;
+                        }
 
-                        if (isJobCompleted) {
-                            isFileReady = true;
+                        if (!isFileReady) {
+                            isFileReady = File.Exists(fi.FullName);
                         }
                     }
                     else {

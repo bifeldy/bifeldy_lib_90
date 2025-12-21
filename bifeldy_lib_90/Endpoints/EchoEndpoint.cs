@@ -2,6 +2,7 @@
 using bifeldy_lib_90.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Primitives;
 using System.Diagnostics.CodeAnalysis;
@@ -11,6 +12,8 @@ using System.Reflection;
 namespace bifeldy_lib_90.Endpoints {
 
     public static class EchoEndpoint {
+
+        private static readonly string ROUTE_GROUP = "/echo";
 
         [UnconditionalSuppressMessage(
             "Trimming", "IL2026",
@@ -24,7 +27,10 @@ namespace bifeldy_lib_90.Endpoints {
             string documentName = "latest-" + Assembly.GetEntryAssembly().GetName().Version?.ToString().Replace(".", string.Empty);
 
             RouteGroupBuilder apiGroup = routeGroupBuilder
-                .MapGroupTagDescription("/echo", "___", "Fitur standar bawaan untuk uji coba koneksi ~")
+                .MapGroupTagDescription(
+                    ROUTE_GROUP, "___",
+                    "Fitur standar bawaan untuk uji coba koneksi ~"
+                )
                 .WithGroupNames(documentName)
                 .AllowAnonymous();
 
@@ -74,14 +80,14 @@ namespace bifeldy_lib_90.Endpoints {
             };
 
             string jsonResponse = converter.ObjectToJson(response);
-            return Results.Text(jsonResponse, MediaTypeNames.Application.Json);
+            return Results.Text(jsonResponse, MediaTypeNames.Application.Json, statusCode: StatusCodes.Status200OK);
         }
 
-        private static Task<IResult> EchoNoData(HttpContext http, IConverterService converter) {
+        private static Task<IResult> EchoNoData(HttpContext http, [FromServices] IConverterService converter) {
             return Inspect(http, converter);
         }
 
-        private static Task<IResult> EchoWithData(HttpContext http, IConverterService converter) {
+        private static Task<IResult> EchoWithData(HttpContext http, [FromServices] IConverterService converter) {
             return Inspect(http, converter);
         }
 

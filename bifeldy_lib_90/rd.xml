@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+    <Application>
+        <Assembly Name="Microsoft.Extensions.Primitives">
+            <Type Name="Microsoft.Extensions.Primitives.StringValues" Dynamic="Required All" />
+        </Assembly>
+    </Application>
+</Directives>
+
+<!-- https://github.com/dotnet/aspnetcore/issues/60609 -->
