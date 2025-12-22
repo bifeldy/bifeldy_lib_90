@@ -125,7 +125,7 @@ namespace bifeldy_lib_90.Backgrounds {
                     if (msgs.Count > 0) {
                         await this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).WaitAsync(stoppingToken);
 
-                        Message<string, string>[] cpMsgs = msgs.ToArray();
+                        Message<string, string>[] cpMsgs = [.. msgs];
                         msgs.Clear();
 
                         foreach (Message<string, string> msg in cpMsgs) {

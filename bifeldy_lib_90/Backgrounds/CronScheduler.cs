@@ -16,27 +16,39 @@ namespace bifeldy_lib_90.Backgrounds {
         private readonly ConcurrentQueue<CompletedJob> _completedJobs = new();
         private readonly ConcurrentQueue<DynamicJob> _dynamicJobs = new();
 
-        public CronScheduler(IServiceProvider root, ILogger<CronScheduler> logger, IEnumerable<CronJob> jobs) {
+        public CronScheduler(
+            IServiceProvider root,
+            ILogger<CronScheduler> logger,
+            IEnumerable<CronJob> jobs
+        ) {
             this._root = root;
             this._logger = logger;
 
-            this._cronJobs = [.. jobs.Select(j => new RuntimeJob {
+            this._cronJobs = [.. jobs.Select(j => new RuntimeJob() {
                 Job = j,
                 NextRunUtc = GetNext(j, DateTime.UtcNow)
             })];
         }
 
         public void EnqueueDynamicJob(string name, Func<IServiceProvider, CancellationToken, Task> execute, int maxRetries = 3, TimeSpan? retryDelay = null) {
-            this._dynamicJobs.Enqueue(new DynamicJob {
+            if (string.IsNullOrEmpty(name)) {
+                name = Guid.NewGuid().ToString();
+            }
+            
+            var dj = new DynamicJob() {
                 Name = name,
                 ExecuteAsync = execute,
                 StartedAt = DateTime.UtcNow,
                 MaxRetries = maxRetries,
                 RetryDelay = retryDelay ?? TimeSpan.FromSeconds(5)
-            });
+            };
+
+
+            this._dynamicJobs.Enqueue(dj);
         }
 
-        public DynamicJob[] GetAllRunningDynamicJobs() => this._dynamicJobs.ToArray();
+        public RuntimeJob[] GetAllRunningRecurringJobs() => [.. this._cronJobs];
+        public DynamicJob[] GetAllRunningDynamicJobs() => [.. this._dynamicJobs];
 
         public IReadOnlyCollection<CompletedJob> GetAllCompletedJobs() => this._completedJobs.ToArray();
 
@@ -113,12 +125,14 @@ namespace bifeldy_lib_90.Backgrounds {
 
                 DateTime ended = DateTime.UtcNow;
 
-                this._completedJobs.Enqueue(new CompletedJob {
+                var cj = new CompletedJob() {
                     Name = name,
                     StartedAt = started,
                     EndedAt = ended,
                     Success = success
-                });
+                };
+
+                this._completedJobs.Enqueue(cj);
 
                 _ = this._runningJobs.TryRemove(name, out _);
 

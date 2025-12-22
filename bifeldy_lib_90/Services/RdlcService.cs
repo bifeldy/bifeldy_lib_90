@@ -115,7 +115,7 @@ namespace bifeldy_lib_90.Services {
                 ls.Add(new ReportParameter(kvp.Key, kvp.Value));
             }
 
-            return ls.ToArray();
+            return [.. ls];
         }
 
         private MarginSettings SetupPage() {
