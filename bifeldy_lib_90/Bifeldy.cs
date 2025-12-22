@@ -255,6 +255,7 @@ namespace bifeldy_lib_90 {
             });
             // --
             _ = Services.AddSingleton<IApplicationService, CApplicationService>();
+            _ = Services.AddSingleton<IBerkasService, CBerkasService>();
             _ = Services.AddSingleton<IChiperService, CChiperService>();
             _ = Services.AddSingleton<IConverterService, CConverterService>();
             _ = Services.AddSingleton<IGlobalService, CGlobalService>();
@@ -574,7 +575,9 @@ namespace bifeldy_lib_90 {
             IEnumerable<CronJob> jobs = [.. Schedules.Values.SelectMany(s => s._jobs)];
 
             _ = Services.AddSingleton(jobs);
-            _ = Services.AddHostedService<CronScheduler>();
+            _ = Services.AddSingleton<CronScheduler>();
+            _ = Services.AddHostedService(sp => sp.GetRequiredService<CronScheduler>());
+
         }
 
     }

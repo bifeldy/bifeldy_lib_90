@@ -1,6 +1,6 @@
 ﻿using Cronos;
 
-namespace bifeldy_lib_90.JobSchedulers {
+namespace bifeldy_lib_90.Models {
 
     public sealed class CronJob {
         public required string Name { get; init; }

@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using bifeldy_lib_90.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
-namespace bifeldy_lib_90.JobSchedulers {
+namespace bifeldy_lib_90.Backgrounds {
 
     public sealed class CronScheduler : BackgroundService {
 
@@ -35,7 +36,7 @@ namespace bifeldy_lib_90.JobSchedulers {
             });
         }
 
-        public IReadOnlyCollection<string> GetAllRunningJobs() => this._runningJobs.Keys.ToArray();
+        public DynamicJob[] GetAllRunningDynamicJobs() => this._dynamicJobs.ToArray();
 
         public IReadOnlyCollection<CompletedJob> GetAllCompletedJobs() => this._completedJobs.ToArray();
 

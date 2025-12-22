@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using bifeldy_lib_90.Models;
+using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics.CodeAnalysis;
 
 namespace bifeldy_lib_90.JobSchedulers {
@@ -16,15 +17,15 @@ namespace bifeldy_lib_90.JobSchedulers {
         }
 
         public ScheduleBuilder AddJob<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] TJob>() where TJob : class, IBackgroundJob {
-            if (_jobs.Any(j => j.Name == typeof(TJob).Name)) {
+            if (this._jobs.Any(j => j.Name == typeof(TJob).Name)) {
                 return this;
             }
 
-            _ = this._services.AddSingleton<TJob>();
+            _ = this._services.AddScoped<TJob>();
 
-            _jobs.Add(new CronJob() {
+            this._jobs.Add(new CronJob() {
                 Name = typeof(TJob).Name,
-                Cron = _cron,
+                Cron = this._cron,
                 ExecuteAsync = async (sp, ct) => {
                     TJob jobInstance = sp.GetRequiredService<TJob>();
                     if (jobInstance is IBackgroundJob bg) {
