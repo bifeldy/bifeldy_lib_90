@@ -22,8 +22,10 @@ namespace bifeldy_lib_90.Abstractions {
         void TransactionCommitAndClose(DbTransaction useTrx = null, bool forceCloseConnection = false);
         void TransactionRollbackAndClose(DbTransaction useTrx = null, bool forceCloseConnection = false);
         IAsyncEnumerable<T> GetAsyncEnumerable<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
+        IAsyncEnumerable<T> GetAsyncEnumerable<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default);
         Task<IEnumerable<T>> GetEnumerableAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
-        Task<T> GetSingleAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
+        Task<IEnumerable<T>> GetEnumerableAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default);
+        Task<T> ExecScalarAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
         Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600);
         Task<int> ExecQueryWithResultAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600);
         Task<bool> ExecQueryAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, int minRowsAffected = 1, bool shouldEqualMinRowsAffected = false);
@@ -106,7 +108,20 @@ namespace bifeldy_lib_90.Abstractions {
         public virtual async IAsyncEnumerable<T> GetAsyncEnumerable<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) where T : JsonSerDe, new() {
             try {
                 using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
-                    foreach (T item in dr.ToEnumerable(typeInfo, token: token)) {
+                    foreach (T item in dr.ToEnumerable(typeInfo, token)) {
+                        yield return item;
+                    }
+                }
+            }
+            finally {
+                this.TryCloseConnection();
+            }
+        }
+
+        public virtual async IAsyncEnumerable<T> GetAsyncEnumerable<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) {
+            try {
+                using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
+                    foreach (T item in dr.ToEnumerable<T>(token)) {
                         yield return item;
                     }
                 }
@@ -119,7 +134,7 @@ namespace bifeldy_lib_90.Abstractions {
         public virtual async Task<IEnumerable<T>> GetEnumerableAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
             try {
                 using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
-                    return dr.ToEnumerable(typeInfo, token: token);
+                    return dr.ToEnumerable(typeInfo, token);
                 }
             }
             finally {
@@ -127,7 +142,18 @@ namespace bifeldy_lib_90.Abstractions {
             }
         }
 
-        public virtual async Task<T> GetSingleAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
+        public virtual async Task<IEnumerable<T>> GetEnumerableAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
+            try {
+                using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
+                    return dr.ToEnumerable<T>(token);
+                }
+            }
+            finally {
+                this.TryCloseConnection();
+            }
+        }
+
+        public virtual async Task<T> ExecScalarAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
             try {
                 using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
                     foreach (T item in dr.ToEnumerable(typeInfo, token)) {

@@ -76,7 +76,7 @@ namespace bifeldy_lib_90.Repositories {
             var sqlParameters = new DynamicParameters();
             sqlParameters.Add("user_nik", userNik.ToUpper());
 
-            return await db.GetSingleAsync(
+            return await db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
                 @"
                     SELECT * FROM dc_user_t
@@ -90,7 +90,7 @@ namespace bifeldy_lib_90.Repositories {
             var sqlParameters = new DynamicParameters();
             sqlParameters.Add("user_name", userName.ToUpper());
 
-            return await db.GetSingleAsync(
+            return await db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
                 @"
                     SELECT * FROM dc_user_t
@@ -104,7 +104,7 @@ namespace bifeldy_lib_90.Repositories {
             var sqlParameters = new DynamicParameters();
             sqlParameters.Add("userNameNik", userNameNik.ToUpper());
 
-            return await db.GetSingleAsync(
+            return await db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
                 @"
                     SELECT * FROM dc_user_t
@@ -120,7 +120,7 @@ namespace bifeldy_lib_90.Repositories {
             sqlParameters.Add("userNameNik", userNameNik.ToUpper());
             sqlParameters.Add("password", password.ToUpper());
 
-            return await db.GetSingleAsync(
+            return await db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
                 @"
                     SELECT * FROM dc_user_t

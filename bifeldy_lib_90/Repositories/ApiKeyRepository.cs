@@ -60,7 +60,7 @@ namespace bifeldy_lib_90.Repositories {
             sqlParameters.Add("app_name", this._as.AppName.ToUpper());
             sqlParameters.Add("key", key.ToUpper());
 
-            return await db.GetSingleAsync(
+            return await db.ExecScalarAsync(
                 API_KEY_T_JsonSerializerContext.Default.API_KEY_T,
                 @"
                     SELECT * FROM api_key_t
@@ -92,7 +92,7 @@ namespace bifeldy_lib_90.Repositories {
             var sqlParameters = new DynamicParameters();
             sqlParameters.Add("key", key.ToUpper());
 
-            return await db.GetSingleAsync(
+            return await db.ExecScalarAsync(
                 API_KEY_T_JsonSerializerContext.Default.API_KEY_T,
                 @"
                     SELECT * FROM api_key_t

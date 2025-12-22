@@ -9,10 +9,7 @@ namespace bifeldy_lib_90.Extensions {
     public static class DbDataReaderExtension {
 
         private static object ReadValue(DbDataReader dr, int index, Type targetType) {
-            Type underlying = Nullable.GetUnderlyingType(targetType);
-            if (underlying != null) {
-                targetType = underlying;
-            }
+            targetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
 
             if (targetType == typeof(string)) {
                 return dr.GetString(index);
@@ -67,7 +64,16 @@ namespace bifeldy_lib_90.Extensions {
             return dr.GetValue(index);
         }
 
-        private static IEnumerable<T> ReadRows<T>(Dictionary<string, int> colIndexLookup, DbDataReader dr, JsonTypeInfo<T> jsonTypeInfo, CancellationToken token = default, Action<T> callback = null) where T : JsonSerDe, new() {
+        public static IEnumerable<T> ToEnumerable<T>(this DbDataReader dr, JsonTypeInfo<T> jsonTypeInfo, CancellationToken token = default, Action<T> callback = null) where T : JsonSerDe, new() {
+            if (dr == null || !dr.HasRows) {
+                yield break;
+            }
+
+            var colIndexLookup = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
+            for (int i = 0; i < dr.FieldCount; i++) {
+                colIndexLookup[dr.GetName(i)] = i;
+            }
+
             var maps = new List<JsonKeyMap>(jsonTypeInfo.Properties.Count);
 
             foreach (JsonPropertyInfo p in jsonTypeInfo.Properties) {
@@ -93,18 +99,26 @@ namespace bifeldy_lib_90.Extensions {
             }
         }
 
-        public static IEnumerable<T> ToEnumerable<T>(this DbDataReader dr, JsonTypeInfo<T> jsonTypeInfo, CancellationToken token = default, Action<T> callback = null) where T : JsonSerDe, new() {
+        public static IEnumerable<T> ToEnumerable<T>(this DbDataReader dr, CancellationToken token = default, Action<T> callback = null) {
             if (dr == null || !dr.HasRows) {
                 yield break;
             }
 
-            var colIndexLookup = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
-            for (int i = 0; i < dr.FieldCount; i++) {
-                colIndexLookup[dr.GetName(i)] = i;
-            }
+            while (dr.Read() && !token.IsCancellationRequested) {
+                T objT = default;
 
-            foreach (T item in ReadRows(colIndexLookup, dr, jsonTypeInfo, token, callback)) {
-                yield return item;
+                Type t = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+                if (!ObjectExtension.IsSimpleType(t)) {
+                    throw new Exception("Only `string` or ValueType allowed!");
+                }
+
+                if (!dr.IsDBNull(0)) {
+                    object val = dr.GetValue(0);
+                    objT = (T)Convert.ChangeType(val, typeof(T));
+                }
+
+                callback?.Invoke(objT);
+                yield return objT;
             }
         }
 

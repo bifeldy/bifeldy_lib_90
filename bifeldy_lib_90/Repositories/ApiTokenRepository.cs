@@ -61,7 +61,7 @@ namespace bifeldy_lib_90.Repositories {
             sqlParameters.Add("app_name", this._as.AppName.ToUpper());
             sqlParameters.Add("user_name", userName.ToUpper());
 
-            return await db.GetSingleAsync(
+            return await db.ExecScalarAsync(
                 API_TOKEN_T_JsonSerializerContext.Default.API_TOKEN_T,
                 @"
                     SELECT * FROM api_token_t
@@ -77,7 +77,7 @@ namespace bifeldy_lib_90.Repositories {
             sqlParameters.Add("user_name", userName.ToUpper());
             sqlParameters.Add("password", password.ToUpper());
 
-            return await db.GetSingleAsync(
+            return await db.ExecScalarAsync(
                 API_TOKEN_T_JsonSerializerContext.Default.API_TOKEN_T,
                 @"
                     SELECT * FROM api_token_t

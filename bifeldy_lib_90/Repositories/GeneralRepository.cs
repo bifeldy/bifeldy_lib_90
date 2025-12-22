@@ -89,7 +89,7 @@ namespace bifeldy_lib_90.Repositories {
             var sqlParameter = new DynamicParameters();
             sqlParameter.Add("topic_name", topicName.ToUpper());
 
-            return await db.GetSingleAsync(
+            return await db.ExecScalarAsync(
                 KAFKA_SERVER_T_JsonSerializerContext.Default.KAFKA_SERVER_T,
                 sqlQuery, sqlParameter
             );
@@ -177,7 +177,7 @@ namespace bifeldy_lib_90.Repositories {
                 var sqlParameter = new DynamicParameters();
                 sqlParameter.Add("dc_kode", kodeDcTarget.ToUpper());
 
-                DC_TABEL_IP_T dbi = await dbConHo.GetSingleAsync(
+                DC_TABEL_IP_T dbi = await dbConHo.ExecScalarAsync(
                     DC_TABEL_IP_T_JsonSerializerContext.Default.DC_TABEL_IP_T,
                     sqlQuery, sqlParameter
                 );
