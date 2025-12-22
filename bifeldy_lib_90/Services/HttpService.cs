@@ -2,7 +2,6 @@
 using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Models;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using System.Net;
@@ -21,7 +20,7 @@ namespace bifeldy_lib_90.Services {
     public interface IHttpService {
         List<Tuple<string, string>> CleanHeader(IHeaderDictionary httpHeader);
         HttpClient CreateHttpClient(uint timeoutSeconds = 60, string publicKeysBase64HashJsonFilePath = null);
-        Task<IActionResult> ForwardRequest(string urlTarget, HttpRequest request, HttpResponse response, bool isApiEndpoint = false, uint timeoutSeconds = 300, string publicKeysBase64HashJsonFilePath = null);
+        Task<IResult> ForwardRequest(string urlTarget, HttpRequest request, HttpResponse response, bool isApiEndpoint = false, uint timeoutSeconds = 300, string publicKeysBase64HashJsonFilePath = null);
         IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> jsonTypeInfo, CancellationToken cancellationToken = default) where T : JsonSerDe;
         Task<HttpResponseMessage> HeadData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
         Task<HttpResponseMessage> GetData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
@@ -446,7 +445,7 @@ namespace bifeldy_lib_90.Services {
             return header == pattern;
         }
 
-        public async Task<IActionResult> ForwardRequest(string urlTarget, HttpRequest request, HttpResponse response, bool isApiEndpoint = false, uint timeoutSeconds = 300, string publicKeysBase64HashJsonFilePath = null) {
+        public async Task<IResult> ForwardRequest(string urlTarget, HttpRequest request, HttpResponse response, bool isApiEndpoint = false, uint timeoutSeconds = 300, string publicKeysBase64HashJsonFilePath = null) {
             List<Tuple<string, string>> lsHeader = this.CleanHeader(request.Headers);
 
             HttpRequestMessage forwardMsg = this.ParseApiData(
@@ -466,20 +465,30 @@ namespace bifeldy_lib_90.Services {
             response.StatusCode = statusCode;
 
             if (statusCode == 404 && (isApiEndpoint || urlTarget.Contains($"/{Bifeldy.API_PREFIX}/"))) {
-                return new NotFoundObjectResult(new ResponseJsonSingle<ResponseJsonMessage>() {
+                var r1 = new ResponseJsonSingle<ResponseJsonMessage>() {
                     info = $"{statusCode} - Whoops :: Alamat Server Tujuan Tidak Ditemukan",
                     result = new ResponseJsonMessage() {
                         message = "Silahkan Periksa Kembali Dokumentasi API"
                     }
-                });
+                };
+
+                return Results.NotFound(r1);
             }
-            else if (statusCode == 502 && (isApiEndpoint || urlTarget.Contains($"/{Bifeldy.API_PREFIX}/"))) {
-                return new BadRequestObjectResult(new ResponseJsonSingle<ResponseJsonMessage>() {
+
+            if (statusCode == 502 && (isApiEndpoint || urlTarget.Contains($"/{Bifeldy.API_PREFIX}/"))) {
+                var r2 = new ResponseJsonSingle<ResponseJsonMessage>() {
                     info = $"{statusCode} - Whoops :: Alamat Server Tujuan Tidak Tersedia",
                     result = new ResponseJsonMessage() {
                         message = "Silahkan Hubungi S/SD 3 Untuk informasi Lebih Lanjut"
                     }
-                });
+                };
+
+                return Results.Json(
+                    r2,
+                    ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                    MediaTypeNames.Application.Json,
+                    StatusCodes.Status502BadGateway
+                );
             }
 
             KeyValuePair<string, IEnumerable<string>>[] allHeaders = [.. res.Headers, .. res.Content.Headers];
@@ -503,7 +512,7 @@ namespace bifeldy_lib_90.Services {
                 }
             }
 
-            return new EmptyResult();
+            return Results.Empty;
         }
 
         public async IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> jsonTypeInfo, [EnumeratorCancellation] CancellationToken cancellationToken = default) where T : JsonSerDe {
