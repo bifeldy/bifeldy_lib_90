@@ -572,10 +572,14 @@ namespace bifeldy_lib_90 {
         }
 
         public static void StartJobScheduler() {
+            // Default Job Bawaan ~
+            _ = ScheduleJob("* * * * *").AddJob<CleanUpJobScheduler>();
+
             IEnumerable<CronJob> jobs = [.. Schedules.Values.SelectMany(s => s._jobs)];
 
             _ = Services.AddSingleton(jobs);
             _ = Services.AddSingleton<CronScheduler>();
+
             _ = Services.AddHostedService(sp => sp.GetRequiredService<CronScheduler>());
 
         }
