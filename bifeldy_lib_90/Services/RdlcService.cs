@@ -1,10 +1,13 @@
 ﻿using bifeldy_lib_90.Models;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Reporting.NETCore;
 using System.Data;
+using System.Diagnostics;
+using System.IO.MemoryMappedFiles;
 using System.Net.Mime;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using WkHtmlToPdfDotNet;
 
 namespace bifeldy_lib_90.Services {
@@ -18,11 +21,11 @@ namespace bifeldy_lib_90.Services {
         ReportParameter[] CreateReportParameter(IDictionary<string, string> dict);
         RdlcReport GeneratePdfWordExcelHtmlReport(string rdlcName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5", MarginSettings margin = null, Orientation pageOrientation = Orientation.Portrait, PaperKind paperType = PaperKind.Custom);
         RdlcReport GeneratePdfWordExcelHtmlReport<T>(string rdlcName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5", MarginSettings margin = null, Orientation pageOrientation = Orientation.Portrait, PaperKind paperType = PaperKind.Custom);
+        Task<byte[]> GeneratePdfWordExcelHtmlReportExternalRdlcProcessStreamed<T>(string externalRdlcProcessPath, JsonTypeInfo<RdlcRequestWrapper<T>> typeInfo, RdlcRequestWrapper<T> rdlcDataWithParam, string rdlcName, string dsName, string fileType = "HTML", long reservedMemoryCapacity = 500 * 1024 * 1024);
     }
 
     public sealed class CRdlcService : IRdlcService {
 
-        private readonly IWebHostEnvironment _he;
         private readonly IApplicationService _app;
         private readonly IConverterService _converter;
 
@@ -53,8 +56,7 @@ namespace bifeldy_lib_90.Services {
             }
         };
 
-        public CRdlcService(IWebHostEnvironment he, IApplicationService app, IConverterService converter) {
-            this._he = he;
+        public CRdlcService(IApplicationService app, IConverterService converter) {
             this._app = app;
             this._converter = converter;
         }
@@ -67,11 +69,7 @@ namespace bifeldy_lib_90.Services {
             string rdlcPath = Path.Combine(this._app.AppLocation, "Rdlcs", rdlcName);
 
             if (!File.Exists(rdlcPath)) {
-                rdlcPath = Path.Combine(this._he.ContentRootPath, "rdlcs", rdlcName);
-
-                if (!File.Exists(rdlcPath)) {
-                    throw new FileNotFoundException($"File RDLC {rdlcName} Tidak Ditemukan!", rdlcPath);
-                }
+                throw new FileNotFoundException($"File RDLC {rdlcName} Tidak Ditemukan!", rdlcPath);
             }
 
             var report = new LocalReport() {
@@ -227,6 +225,57 @@ namespace bifeldy_lib_90.Services {
             margin ??= this.SetupPage();
             ReportDataSource rds = this.CreateReportDataSource(dsName, ls);
             return this.GenerateReport(rdlcName, rds, param, fileType, margin, pageOrientation, paperType);
+        }
+
+        public async Task<byte[]> GeneratePdfWordExcelHtmlReportExternalRdlcProcessStreamed<T>(
+            string externalRdlcProcessPath,
+            JsonTypeInfo<RdlcRequestWrapper<T>> typeInfo,
+            RdlcRequestWrapper<T> rdlcDataWithParam,
+            string rdlcPath,
+            string datasetName,
+            string fileType = "HTML",
+            long reservedMemoryCapacity = 500 * 1024 * 1024
+        ) {
+            if (RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan AOT dengan program external berdampingan");
+            }
+
+            if (!File.Exists(externalRdlcProcessPath)) {
+                throw new Exception("Program external sampingan tidak tersedia");
+            }
+
+            string mmfName = $"Local_Report_{Guid.NewGuid()}";
+
+            using (var mmf = MemoryMappedFile.CreateNew(mmfName, reservedMemoryCapacity)) {
+                using (MemoryMappedViewStream stream = mmf.CreateViewStream()) {
+                    await JsonSerializer.SerializeAsync(stream, rdlcDataWithParam, typeInfo);
+                    long actualSize = stream.Position;
+
+                    using (var process = new Process() {
+                        StartInfo = new ProcessStartInfo() {
+                            FileName = externalRdlcProcessPath,
+                            Arguments = $"\"{rdlcPath}\" \"{datasetName}\" \"{fileType}\" \"{mmfName}\" {actualSize}",
+                            RedirectStandardOutput = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        }
+                    }) {
+                        _ = process.Start();
+
+                        using (var ms = new MemoryStream()) {
+                            await process.StandardOutput.BaseStream.CopyToAsync(ms);
+
+                            await process.WaitForExitAsync();
+
+                            if (process.ExitCode != 0) {
+                                throw new Exception($"ExternalRdlcProcess Error: Proses berhenti dengan kode {process.ExitCode}");
+                            }
+
+                            return ms.ToArray();
+                        }
+                    }
+                }
+            }
         }
 
     }

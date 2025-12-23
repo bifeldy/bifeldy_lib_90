@@ -330,7 +330,7 @@ namespace bifeldy_lib_90.Abstractions {
                 batchNumber++;
                 totalInserted += dt.Rows.Count;
 
-                // Return Completed Each Batch Total Data
+                // Return Completed Each Batch Total DataRowList
                 yield return dt.Rows.Count;
             }
         }

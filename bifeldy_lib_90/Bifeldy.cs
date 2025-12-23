@@ -398,7 +398,7 @@ namespace bifeldy_lib_90 {
 
             _ = App.Use(async (context, next) => {
 
-                // Khusus API Path :: Akan Di Handle Error Dengan Balikan Data JSON
+                // Khusus API Path :: Akan Di Handle Error Dengan Balikan DataRowList JSON
                 // Selain Itu Atau Jika Masih Ada Error Lain
                 // Misal Di Catch Akan Terlempar Ke Halaman Error Bawaan UI
 
