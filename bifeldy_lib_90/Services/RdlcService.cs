@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Reporting.NETCore;
 using System.Data;
 using System.Net.Mime;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text;
 using WkHtmlToPdfDotNet;
 
@@ -13,11 +13,11 @@ namespace bifeldy_lib_90.Services {
         IDictionary<string, RdlcInfo> FileType { get; }
         LocalReport CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null);
         ReportDataSource CreateReportDataSource(string name, DataTable dt);
-        ReportDataSource CreateReportDataSource<T>(string name, List<T> dt);
+        ReportDataSource CreateReportDataSource<T>(string name, IEnumerable<T> dt);
         HtmlToPdfDocument GenerateHtmlReport(RdlcReport reportModel);
         ReportParameter[] CreateReportParameter(IDictionary<string, string> dict);
         RdlcReport GeneratePdfWordExcelHtmlReport(string rdlcName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5", MarginSettings margin = null, Orientation pageOrientation = Orientation.Portrait, PaperKind paperType = PaperKind.Custom);
-        RdlcReport GeneratePdfWordExcelHtmlReport<T>(string rdlcName, List<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5", MarginSettings margin = null, Orientation pageOrientation = Orientation.Portrait, PaperKind paperType = PaperKind.Custom);
+        RdlcReport GeneratePdfWordExcelHtmlReport<T>(string rdlcName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5", MarginSettings margin = null, Orientation pageOrientation = Orientation.Portrait, PaperKind paperType = PaperKind.Custom);
     }
 
     public sealed class CRdlcService : IRdlcService {
@@ -60,6 +60,10 @@ namespace bifeldy_lib_90.Services {
         }
 
         public LocalReport CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+            }
+
             string rdlcPath = Path.Combine(this._app.AppLocation, "Rdlcs", rdlcName);
 
             if (!File.Exists(rdlcPath)) {
@@ -86,11 +90,27 @@ namespace bifeldy_lib_90.Services {
             return report;
         }
 
-        public ReportDataSource CreateReportDataSource(string name, DataTable dt) => new(name, dt);
+        public ReportDataSource CreateReportDataSource(string name, DataTable dt) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+            }
 
-        public ReportDataSource CreateReportDataSource<T>(string name, List<T> ls) => new(name, ls);
+            return new(name, dt);
+        }
+
+        public ReportDataSource CreateReportDataSource<T>(string name, IEnumerable<T> ls) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+            }
+
+            return new(name, ls);
+        }
 
         public HtmlToPdfDocument GenerateHtmlReport(RdlcReport reportModel) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+            }
+
             return new HtmlToPdfDocument() {
                 GlobalSettings = {
                     ColorMode = ColorMode.Color,
@@ -110,6 +130,10 @@ namespace bifeldy_lib_90.Services {
         }
 
         public ReportParameter[] CreateReportParameter(IDictionary<string, string> dict) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+            }
+
             var ls = new List<ReportParameter>();
             foreach (KeyValuePair<string, string> kvp in dict) {
                 ls.Add(new ReportParameter(kvp.Key, kvp.Value));
@@ -119,6 +143,10 @@ namespace bifeldy_lib_90.Services {
         }
 
         private MarginSettings SetupPage() {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+            }
+
             return new MarginSettings() {
                 Top = 1,
                 Bottom = 1,
@@ -137,6 +165,10 @@ namespace bifeldy_lib_90.Services {
             Orientation pageOrientation = Orientation.Portrait,
             PaperKind paperType = PaperKind.Custom
         ) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+            }
+
             LocalReport report = this.CreateLocalReport(rdlcName, rds, param);
 
             var model = new RdlcReport() {
@@ -147,7 +179,7 @@ namespace bifeldy_lib_90.Services {
                 RenderType = this.FileType[fileType].saveType
             };
 
-            if (fileType == "PDF" && !RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            if (fileType == "PDF") {
                 model.RenderType = "HTML5";
                 model.HtmlContent = Encoding.UTF8.GetString(report.Render(model.RenderType));
                 model.Report = this._converter.HtmlToPdf(this.GenerateHtmlReport(model));
@@ -169,6 +201,10 @@ namespace bifeldy_lib_90.Services {
             Orientation pageOrientation = Orientation.Portrait,
             PaperKind paperType = PaperKind.Custom
         ) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+            }
+
             margin ??= this.SetupPage();
             ReportDataSource rds = this.CreateReportDataSource(dsName, dt);
             return this.GenerateReport(rdlcName, rds, param, fileType, margin, pageOrientation, paperType);
@@ -176,7 +212,7 @@ namespace bifeldy_lib_90.Services {
 
         public RdlcReport GeneratePdfWordExcelHtmlReport<T>(
             string rdlcName,
-            List<T> ls,
+            IEnumerable<T> ls,
             string dsName,
             IEnumerable<ReportParameter> param = null,
             string fileType = "HTML",
@@ -184,6 +220,10 @@ namespace bifeldy_lib_90.Services {
             Orientation pageOrientation = Orientation.Portrait,
             PaperKind paperType = PaperKind.Custom
         ) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+            }
+
             margin ??= this.SetupPage();
             ReportDataSource rds = this.CreateReportDataSource(dsName, ls);
             return this.GenerateReport(rdlcName, rds, param, fileType, margin, pageOrientation, paperType);

@@ -1,5 +1,6 @@
 ﻿using bifeldy_lib_90.Libraries;
 using System.Collections;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
@@ -32,6 +33,10 @@ namespace bifeldy_lib_90.Services {
         // Unfortunately the main wkhtmltopdf project is not active any more.
         // https://github.com/HakanL/WkHtmlToPdf-DotNet/issues/132
         public byte[] HtmlToPdf(HtmlToPdfDocument htmlToPdfDocument) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+            }
+
             return this._converter.Convert(htmlToPdfDocument);
         }
 
