@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <RootNamespace>rdlcs_generator</RootNamespace>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <PublishSingleFile>false</PublishSingleFile>
+        <PublishTrimmed>false</PublishTrimmed>
+        <PublishReadyToRun>false</PublishReadyToRun>
+        <SelfContained>true</SelfContained>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <ServerGarbageCollection>false</ServerGarbageCollection>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+        <!-- Build Info -->
+        <AssemblyName>rdlcs_generator</AssemblyName>
+        <Version>1.0.0.0</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\bifeldy_lib_90\bifeldy_lib_90.csproj" />
+    </ItemGroup>
+
+</Project>

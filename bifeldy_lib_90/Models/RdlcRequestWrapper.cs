@@ -8,7 +8,7 @@ namespace bifeldy_lib_90.Models {
     [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public sealed class RdlcRequestWrapper<T> : JsonSerDe {
-        public IAsyncEnumerable<T> DataRowList { get; set; }
+        public IEnumerable<T> DataRowList { get; set; }
         public IDictionary<string, string> Parameters { get; set; }
     }
 
