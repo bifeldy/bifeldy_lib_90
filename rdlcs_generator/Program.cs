@@ -1,10 +1,13 @@
 ﻿using bifeldy_lib_90.Models;
 using Microsoft.Reporting.NETCore;
 using System.Data;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using WkHtmlToPdfDotNet;
 
 // JANGAN gunakan kode asinkron (await) SEBELUM setting AssemblyResolve dipasang
@@ -28,6 +31,32 @@ public static class Program {
 
         // Panggil logic utama di fungsi terpisah agar JIT tidak memuat System.Runtime terlalu dini
         RunAsync(args).GetAwaiter().GetResult();
+    }
+
+    private static double? ParseDimensionToInch(string? dim) {
+        if (string.IsNullOrEmpty(dim)) {
+            return null;
+        }
+
+        // Bersihkan koma jadi titik, lowercase, trim
+        dim = dim.Trim().ToLower().Replace(",", ".");
+
+        Match match = Regex.Match(dim, @"([\d\.]+)\s*(cm|in|mm|pt|pc)");
+        if (match.Success) {
+            if (double.TryParse(match.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double val)) {
+                string unit = match.Groups[2].Value;
+                return unit switch {
+                    "cm" => val / 2.54,
+                    "mm" => val / 25.4,
+                    "in" => val,
+                    "pt" => val / 72.0,
+                    "pc" => val / 6.0,
+                    _ => val / 2.54 // Default cm kalau unit aneh
+                };
+            }
+        }
+
+        return null;
     }
 
     private static async Task RunAsync(string[] args) {
@@ -116,7 +145,39 @@ public static class Program {
                 }
 
                 using (var report = new LocalReport()) {
+                    string? width = null;
+                    string? height = null;
+                    string? topMargin = null;
+                    string? bottomMargin = null;
+                    string? leftMargin = null;
+                    string? rightMargin = null;
+
                     byte[] rdlcBytes = await File.ReadAllBytesAsync(rdlcPath);
+                    using (var ms = new MemoryStream(rdlcBytes)) {
+                        var xdoc = XDocument.Load(ms);
+                        XNamespace ns = xdoc.Root?.GetDefaultNamespace() ?? XNamespace.None;
+
+                        XElement? pageElement = xdoc.Descendants(ns + "Page").FirstOrDefault();
+                        if (pageElement != null) {
+                            // Ambil Dimensi
+                            width = pageElement.Element(ns + "PageWidth")?.Value;
+                            height = pageElement.Element(ns + "PageHeight")?.Value;
+
+                            // Ambil Margin (Mereka bertetangga dengan PageWidth)
+                            topMargin = pageElement.Element(ns + "TopMargin")?.Value;
+                            bottomMargin = pageElement.Element(ns + "BottomMargin")?.Value;
+                            leftMargin = pageElement.Element(ns + "LeftMargin")?.Value;
+                            rightMargin = pageElement.Element(ns + "RightMargin")?.Value;
+                        }
+                    }
+
+                    if (width == null || height == null) {
+                        throw new Exception($"Ukuran width ({width}) / height ({height}) Masih NULL!");
+                    }
+
+                    width = width.Trim().ToLower().Replace(",", ".");
+                    height = height.Trim().ToLower().Replace(",", ".");
+
                     using (var rdlcStream = new MemoryStream(rdlcBytes)) {
                         report.LoadReportDefinition(rdlcStream);
 
@@ -155,38 +216,79 @@ public static class Program {
 
                         var model = new RdlcReport() {
                             DisplayName = report.DisplayName,
-                            Margins = new MarginSettings() {
-                                Top = 1,
-                                Bottom = 1,
-                                Left = 1,
-                                Right = 1,
-                                Unit = Unit.Centimeters
-                            },
-                            PageOrientation = Orientation.Portrait,
-                            PaperType = PaperKind.Custom,
                             RenderType = format
                         };
 
                         if (fileType == "PDF" && !RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                             model.RenderType = "HTML5";
-                            model.HtmlContent = Encoding.UTF8.GetString(report.Render(model.RenderType));
+                            string rawHtml = Encoding.UTF8.GetString(report.Render(model.RenderType));
+
+                            double? wIn = ParseDimensionToInch(width);
+                            double? hIn = ParseDimensionToInch(height);
+
+                            if (wIn == null || hIn == null) {
+                                throw new Exception($"Ukuran wIn ({wIn}) / hIn ({hIn}) Masih NULL!");
+                            }
+
+                            double mTop = ParseDimensionToInch(topMargin) ?? 1.0;
+                            double mBottom = ParseDimensionToInch(bottomMargin) ?? 1.0;
+                            double mLeft = ParseDimensionToInch(leftMargin) ?? 1.0;
+                            double mRight = ParseDimensionToInch(rightMargin) ?? 1.0;
+
+                            string wStr = wIn?.ToString("0.###", CultureInfo.InvariantCulture) + "in";
+                            string hStr = hIn?.ToString("0.###", CultureInfo.InvariantCulture) + "in";
+
+                            string dynamicCss = $@"
+                                <style>
+                                    @page {{
+                                        size: {wStr} {hStr};
+                                        margin: 0;
+                                    }}
+                                    body {{ 
+                                        margin: 0 !important; 
+                                        padding: 0 !important; 
+                                        width: auto !important;
+                                        overflow: hidden !important;
+                                    }}
+                                    table {{ 
+                                        width: 100% !important; 
+                                        table-layout: fixed !important; 
+                                        border-collapse: collapse !important; 
+                                    }}
+                                </style>
+                            ";
+
+                            int headCloseIndex = rawHtml.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+                            if (headCloseIndex >= 0) {
+                                model.HtmlContent = rawHtml.Insert(headCloseIndex, dynamicCss);
+                            }
+                            else {
+                                model.HtmlContent = dynamicCss + rawHtml;
+                            }
 
                             var htmlToPdfDocument = new HtmlToPdfDocument() {
-                                GlobalSettings = {
-                            ColorMode = ColorMode.Color,
-                            Orientation = model.PageOrientation,
-                            Margins = model.Margins,
-                            DocumentTitle = model.DisplayName,
-                        },
-                                Objects = {
-                            new ObjectSettings() {
-                                HtmlContent = model.HtmlContent,
-                                WebSettings = {
-                                    DefaultEncoding = "utf-8"
+                                GlobalSettings = new GlobalSettings() {
+                                    DocumentTitle = model.DisplayName,
+                                    ColorMode = ColorMode.Color,
+                                    Margins = new MarginSettings() {
+                                        Top = mTop,
+                                        Bottom = mBottom,
+                                        Left = mLeft,
+                                        Right = mRight,
+                                        Unit = Unit.Inches
+                                    },
+                                    PaperSize = new PechkinPaperSize(wStr, hStr),
+                                    ImageDPI = 300
                                 }
-                            }
-                        }
                             };
+
+                            htmlToPdfDocument.Objects.Add(new ObjectSettings() {
+                                HtmlContent = model.HtmlContent,
+                                WebSettings = new WebSettings() {
+                                    DefaultEncoding = "utf-8",
+                                    EnableIntelligentShrinking = false
+                                }
+                            });
 
                             using (var converter = new SynchronizedConverter(new PdfTools())) {
                                 model.Report = converter.Convert(htmlToPdfDocument);

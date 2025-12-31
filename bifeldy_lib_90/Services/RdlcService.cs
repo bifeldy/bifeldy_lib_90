@@ -3,25 +3,28 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Reporting.NETCore;
 using System.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Mime;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using WkHtmlToPdfDotNet;
 
 namespace bifeldy_lib_90.Services {
 
     public interface IRdlcService {
         IDictionary<string, RdlcInfo> FileType { get; }
-        LocalReport CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null);
+        (LocalReport, string, string, string, string, string, string) CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null);
         ReportDataSource CreateReportDataSource(string name, DataTable dt);
         ReportDataSource CreateReportDataSource<T>(string name, IEnumerable<T> dt);
-        HtmlToPdfDocument GenerateHtmlReport(RdlcReport reportModel);
+        HtmlToPdfDocument GenerateHtmlReport(RdlcReport reportModel, string width, string height, double top, double bottom, double left, double right);
         ReportParameter[] CreateReportParameter(IDictionary<string, string> dict);
-        RdlcReport GeneratePdfWordExcelHtmlReport(string rdlcName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5", MarginSettings margin = null, Orientation pageOrientation = Orientation.Portrait, PaperKind paperType = PaperKind.Custom);
-        RdlcReport GeneratePdfWordExcelHtmlReport<T>(string rdlcName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5", MarginSettings margin = null, Orientation pageOrientation = Orientation.Portrait, PaperKind paperType = PaperKind.Custom);
+        RdlcReport GeneratePdfWordExcelHtmlReport(string rdlcName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
+        RdlcReport GeneratePdfWordExcelHtmlReport<T>(string rdlcName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
         Task<Stream> GeneratePdfWordExcelHtmlReportExternalRdlcProcessStreamed<T>(CancellationToken ct, JsonTypeInfo<RdlcRequestWrapper<T>> typeInfo, RdlcRequestWrapper<T> rdlcDataWithParam, string rdlcPath, string datasetName, string fileType = "PDF", string externalRdlcProcessPath = null);
     }
 
@@ -69,7 +72,7 @@ namespace bifeldy_lib_90.Services {
             this._converter = converter;
         }
 
-        public LocalReport CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null) {
+        public (LocalReport, string, string, string, string, string, string) CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
             }
@@ -79,6 +82,39 @@ namespace bifeldy_lib_90.Services {
             if (!File.Exists(rdlcPath)) {
                 throw new FileNotFoundException($"File RDLC {rdlcName} Tidak Ditemukan!", rdlcPath);
             }
+
+            string width = null;
+            string height = null;
+            string topMargin = null;
+            string bottomMargin = null;
+            string leftMargin = null;
+            string rightMargin = null;
+
+            byte[] rdlcBytes = File.ReadAllBytes(rdlcPath);
+            using (var ms = new MemoryStream(rdlcBytes)) {
+                var xdoc = XDocument.Load(ms);
+                XNamespace ns = xdoc.Root?.GetDefaultNamespace() ?? XNamespace.None;
+
+                XElement pageElement = xdoc.Descendants(ns + "Page").FirstOrDefault();
+                if (pageElement != null) {
+                    // Ambil Dimensi
+                    width = pageElement.Element(ns + "PageWidth")?.Value;
+                    height = pageElement.Element(ns + "PageHeight")?.Value;
+
+                    // Ambil Margin (Mereka bertetangga dengan PageWidth)
+                    topMargin = pageElement.Element(ns + "TopMargin")?.Value;
+                    bottomMargin = pageElement.Element(ns + "BottomMargin")?.Value;
+                    leftMargin = pageElement.Element(ns + "LeftMargin")?.Value;
+                    rightMargin = pageElement.Element(ns + "RightMargin")?.Value;
+                }
+            }
+
+            if (width == null || height == null) {
+                throw new Exception($"Ukuran width ({width}) / height ({height}) Masih NULL!");
+            }
+
+            width = width.Trim().ToLower().Replace(",", ".");
+            height = height.Trim().ToLower().Replace(",", ".");
 
             var report = new LocalReport() {
                 ReportPath = rdlcPath
@@ -93,7 +129,7 @@ namespace bifeldy_lib_90.Services {
                 report.SetParameters(param);
             }
 
-            return report;
+            return (report, width, height, topMargin, bottomMargin, leftMargin, rightMargin);
         }
 
         public ReportDataSource CreateReportDataSource(string name, DataTable dt) {
@@ -112,27 +148,36 @@ namespace bifeldy_lib_90.Services {
             return new(name, ls);
         }
 
-        public HtmlToPdfDocument GenerateHtmlReport(RdlcReport reportModel) {
+        public HtmlToPdfDocument GenerateHtmlReport(RdlcReport model, string width, string height, double top, double bottom, double left, double right) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
             }
 
-            return new HtmlToPdfDocument() {
-                GlobalSettings = {
+            var htmlToPdfDocument = new HtmlToPdfDocument() {
+                GlobalSettings = new GlobalSettings() {
+                    DocumentTitle = model.DisplayName,
                     ColorMode = ColorMode.Color,
-                    Orientation = reportModel.PageOrientation,
-                    Margins = reportModel.Margins,
-                    DocumentTitle = reportModel.DisplayName,
-                },
-                Objects = {
-                    new ObjectSettings() {
-                        HtmlContent = reportModel.HtmlContent,
-                        WebSettings = {
-                            DefaultEncoding = "utf-8"
-                        }
-                    }
+                    Margins = new MarginSettings() {
+                        Top = top,
+                        Bottom = bottom,
+                        Left = left,
+                        Right = right,
+                        Unit = Unit.Inches
+                    },
+                    PaperSize = new PechkinPaperSize(width, height),
+                    ImageDPI = 300
                 }
             };
+
+            htmlToPdfDocument.Objects.Add(new ObjectSettings() {
+                HtmlContent = model.HtmlContent,
+                WebSettings = new WebSettings() {
+                    DefaultEncoding = "utf-8",
+                    EnableIntelligentShrinking = false
+                }
+            });
+
+            return htmlToPdfDocument;
         }
 
         public ReportParameter[] CreateReportParameter(IDictionary<string, string> dict) {
@@ -148,47 +193,107 @@ namespace bifeldy_lib_90.Services {
             return [.. ls];
         }
 
-        private MarginSettings SetupPage() {
-            if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+        private double? ParseDimensionToInch(string dim) {
+            if (string.IsNullOrEmpty(dim)) {
+                return null;
             }
 
-            return new MarginSettings() {
-                Top = 1,
-                Bottom = 1,
-                Left = 1,
-                Right = 1,
-                Unit = Unit.Centimeters
-            };
+            // Bersihkan koma jadi titik, lowercase, trim
+            dim = dim.Trim().ToLower().Replace(",", ".");
+
+            Match match = Regex.Match(dim, @"([\d\.]+)\s*(cm|in|mm|pt|pc)");
+            if (match.Success) {
+                if (double.TryParse(match.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double val)) {
+                    string unit = match.Groups[2].Value;
+                    return unit switch {
+                        "cm" => val / 2.54,
+                        "mm" => val / 25.4,
+                        "in" => val,
+                        "pt" => val / 72.0,
+                        "pc" => val / 6.0,
+                        _ => val / 2.54 // Default cm kalau unit aneh
+                    };
+                }
+            }
+
+            return null;
         }
 
         private RdlcReport GenerateReport(
             string rdlcName,
             ReportDataSource rds,
             IEnumerable<ReportParameter> param = null,
-            string fileType = "HTML",
-            MarginSettings margin = null,
-            Orientation pageOrientation = Orientation.Portrait,
-            PaperKind paperType = PaperKind.Custom
+            string fileType = "HTML"
         ) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
             }
 
-            LocalReport report = this.CreateLocalReport(rdlcName, rds, param);
+            (
+                LocalReport report,
+                string width,
+                string height,
+                string topMargin,
+                string bottomMargin,
+                string leftMargin,
+                string rightMargin
+            ) = this.CreateLocalReport(rdlcName, rds, param);
 
             var model = new RdlcReport() {
                 DisplayName = report.DisplayName,
-                Margins = margin,
-                PageOrientation = pageOrientation,
-                PaperType = paperType,
                 RenderType = this.FileType[fileType].saveType
             };
 
             if (fileType == "PDF" && !RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 model.RenderType = "HTML5";
-                model.HtmlContent = Encoding.UTF8.GetString(report.Render(model.RenderType));
-                model.Report = this._converter.HtmlToPdf(this.GenerateHtmlReport(model));
+                string rawHtml = Encoding.UTF8.GetString(report.Render(model.RenderType));
+
+                double? wIn = this.ParseDimensionToInch(width);
+                double? hIn = this.ParseDimensionToInch(height);
+
+                if (wIn == null || hIn == null) {
+                    throw new Exception($"Ukuran wIn ({wIn}) / hIn ({hIn}) Masih NULL!");
+                }
+
+                double mTop = this.ParseDimensionToInch(topMargin) ?? 1.0;
+                double mBottom = this.ParseDimensionToInch(bottomMargin) ?? 1.0;
+                double mLeft = this.ParseDimensionToInch(leftMargin) ?? 1.0;
+                double mRight = this.ParseDimensionToInch(rightMargin) ?? 1.0;
+
+                string wStr = wIn?.ToString("0.##", CultureInfo.InvariantCulture) + "in";
+                string hStr = hIn?.ToString("0.##", CultureInfo.InvariantCulture) + "in";
+
+                string dynamicCss = $@"
+                    <style>
+                        @page {{
+                            size: {wStr} {hStr};
+                            margin: 0;
+                        }}
+                        body {{ 
+                            margin: 0 !important; 
+                            padding: 0 !important; 
+                            width: auto !important;
+                            overflow: hidden !important;
+                        }}
+                        table {{ 
+                            width: 100% !important; 
+                            table-layout: fixed !important; 
+                            border-collapse: collapse !important; 
+                        }}
+                    </style>
+                ";
+
+                int headCloseIndex = rawHtml.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+                if (headCloseIndex >= 0) {
+                    model.HtmlContent = rawHtml.Insert(headCloseIndex, dynamicCss);
+                }
+                else {
+                    model.HtmlContent = dynamicCss + rawHtml;
+                }
+
+                HtmlToPdfDocument htmlToPdfDocument = this.GenerateHtmlReport(model, wStr, hStr, mTop, mBottom, mLeft, mRight);
+
+                model.Report = this._converter.HtmlToPdf(htmlToPdfDocument);
             }
             else {
                 model.Report = report.Render(model.RenderType);
@@ -202,18 +307,14 @@ namespace bifeldy_lib_90.Services {
             DataTable dt,
             string dsName,
             IEnumerable<ReportParameter> param = null,
-            string fileType = "HTML",
-            MarginSettings margin = null,
-            Orientation pageOrientation = Orientation.Portrait,
-            PaperKind paperType = PaperKind.Custom
+            string fileType = "HTML"
         ) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
             }
 
-            margin ??= this.SetupPage();
             ReportDataSource rds = this.CreateReportDataSource(dsName, dt);
-            return this.GenerateReport(rdlcName, rds, param, fileType, margin, pageOrientation, paperType);
+            return this.GenerateReport(rdlcName, rds, param, fileType);
         }
 
         public RdlcReport GeneratePdfWordExcelHtmlReport<T>(
@@ -221,18 +322,14 @@ namespace bifeldy_lib_90.Services {
             IEnumerable<T> ls,
             string dsName,
             IEnumerable<ReportParameter> param = null,
-            string fileType = "HTML",
-            MarginSettings margin = null,
-            Orientation pageOrientation = Orientation.Portrait,
-            PaperKind paperType = PaperKind.Custom
+            string fileType = "HTML"
         ) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
             }
 
-            margin ??= this.SetupPage();
             ReportDataSource rds = this.CreateReportDataSource(dsName, ls);
-            return this.GenerateReport(rdlcName, rds, param, fileType, margin, pageOrientation, paperType);
+            return this.GenerateReport(rdlcName, rds, param, fileType);
         }
 
         public async Task<Stream> GeneratePdfWordExcelHtmlReportExternalRdlcProcessStreamed<T>(
