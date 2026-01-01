@@ -7,9 +7,25 @@ namespace bifeldy_lib_90.Models {
 
     [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
-    public sealed class RdlcRequestWrapper<T> : JsonSerDe {
-        public IEnumerable<T> DataRowList { get; set; }
-        public IDictionary<string, string> Parameters { get; set; }
+    public sealed class RdlcInfoWrapper(IDictionary<string, string> parameters) : JsonSerDe {
+        public string DataFilePath { get; set; }
+        public IDictionary<string, string> Parameters { get; set; } = parameters;
+    }
+
+    [JsonSerializable(typeof(RdlcInfoWrapper))]
+    [JsonSerializable(typeof(RdlcInfoWrapper[]))]
+    [JsonSerializable(typeof(List<RdlcInfoWrapper>))]
+    [JsonSerializable(typeof(Dictionary<string, RdlcInfoWrapper>))]
+    [JsonSerializable(typeof(InputJsonDcDataSingle<RdlcInfoWrapper>))]
+    [JsonSerializable(typeof(InputJsonHoDataSingle<RdlcInfoWrapper>))]
+    [JsonSerializable(typeof(InputJsonNonDcDataSingle<RdlcInfoWrapper>))]
+    [JsonSerializable(typeof(InputJsonDcDataMulti<RdlcInfoWrapper>))]
+    [JsonSerializable(typeof(InputJsonHoDataMulti<RdlcInfoWrapper>))]
+    [JsonSerializable(typeof(InputJsonNonDcDataMulti<RdlcInfoWrapper>))]
+    [JsonSerializable(typeof(ResponseJsonSingle<RdlcInfoWrapper>))]
+    [JsonSerializable(typeof(ResponseJsonMulti<RdlcInfoWrapper>))]
+    public partial class RdlcInfoWrapperJsonSerializerContext : JsonSerializerContext {
+        // This class is used for source generation of JSON serialization metadata
     }
 
 }

@@ -25,7 +25,7 @@ namespace bifeldy_lib_90.Services {
         ReportParameter[] CreateReportParameter(IDictionary<string, string> dict);
         RdlcReport GeneratePdfWordExcelHtmlReport(string rdlcName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
         RdlcReport GeneratePdfWordExcelHtmlReport<T>(string rdlcName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
-        Task<Stream> GeneratePdfWordExcelHtmlReportExternalRdlcProcessStreamed<T>(CancellationToken ct, JsonTypeInfo<RdlcRequestWrapper<T>> typeInfo, RdlcRequestWrapper<T> rdlcDataWithParam, string rdlcPath, string datasetName, string fileType = "PDF", string externalRdlcProcessPath = null);
+        Task GeneratePdfWordExcelHtmlReportExternal<T>(CancellationToken ct, Stream streamDestination, IAsyncEnumerable<T> dataStream, JsonTypeInfo<T> typeInfo, RdlcInfoWrapper rdlcDataWithParam, string rdlcPath, string datasetName, string fileType = "PDF");
     }
 
     public sealed class CRdlcService : IRdlcService {
@@ -332,97 +332,118 @@ namespace bifeldy_lib_90.Services {
             return this.GenerateReport(rdlcName, rds, param, fileType);
         }
 
-        public async Task<Stream> GeneratePdfWordExcelHtmlReportExternalRdlcProcessStreamed<T>(
+        public async Task GeneratePdfWordExcelHtmlReportExternal<T>(
             CancellationToken ct,
-            JsonTypeInfo<RdlcRequestWrapper<T>> typeInfo,
-            RdlcRequestWrapper<T> rdlcDataWithParam,
+            Stream streamDestination,
+            IAsyncEnumerable<T> dataStream,
+            JsonTypeInfo<T> typeInfo,
+            RdlcInfoWrapper rdlcDataWithParam,
             string rdlcPath,
             string datasetName,
-            string fileType = "PDF",
-            string externalRdlcProcessPath = null
+            string fileType = "PDF"
         ) {
-            if (string.IsNullOrEmpty(externalRdlcProcessPath)) {
-                externalRdlcProcessPath = Path.Combine(this._app.AppLocation, "sidecar", "rdlcs_generator");
-            }
+            try {
+                if (string.IsNullOrEmpty(rdlcDataWithParam.DataFilePath)) {
+                    string dataFilePath = $"rdlc_data_{Guid.NewGuid()}.tmp";
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Directory.Exists("/dev/shm")) {
+                        dataFilePath = Path.Combine("/dev/shm", dataFilePath);
+                    }
+                    else {
+                        dataFilePath = Path.Combine(Path.GetTempPath(), dataFilePath);
+                    }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !externalRdlcProcessPath.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase)) {
-                externalRdlcProcessPath += ".exe";
-            }
+                    rdlcDataWithParam.DataFilePath = dataFilePath;
+                }
 
-            var psi = new ProcessStartInfo() {
-                FileName = externalRdlcProcessPath,
-                Arguments = $"\"{rdlcPath}\" \"{datasetName}\" \"{fileType}\"",
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WorkingDirectory = Path.GetDirectoryName(externalRdlcProcessPath)
-            };
+                using (var fs = new FileStream(rdlcDataWithParam.DataFilePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096)) {
+                    using (var writer = new Utf8JsonWriter(fs)) {
+                        writer.WriteStartArray();
 
-            var process = new Process() {
-                StartInfo = psi
-            };
+                        await foreach (T row in dataStream) {
+                            JsonSerializer.Serialize(writer, row, typeInfo);
+                        }
 
-            _ = process.Start();
-
-            // Jika dibatalkan, bunuh proses segera
-            _ = ct.Register(() => {
-                try {
-                    if (!process.HasExited) {
-                        process.Kill(true);
+                        writer.WriteEndArray();
+                        await writer.FlushAsync();
                     }
                 }
-                catch (Exception ex) {
-                    this._logger.LogError("[RDLC_TOKEN_ERR] {ex}", ex.Message);
+
+                string externalRdlcProcessPath = Path.Combine(this._app.AppLocation, "sidecar", "rdlcs_generator");
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !externalRdlcProcessPath.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase)) {
+                    externalRdlcProcessPath += ".exe";
                 }
-            });
 
-            var sendSerializedData = Task.Run(async () => {
-                try {
-                    Stream stdin = process.StandardInput.BaseStream;
+                var psi = new ProcessStartInfo() {
+                    FileName = externalRdlcProcessPath,
+                    Arguments = $"\"{rdlcPath}\" \"{datasetName}\" \"{fileType}\"",
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WorkingDirectory = Path.GetDirectoryName(externalRdlcProcessPath)
+                };
 
-                    await JsonSerializer.SerializeAsync(stdin, rdlcDataWithParam, typeInfo, ct);
-                    await stdin.FlushAsync(ct);
+                using (var process = Process.Start(psi)) {
+                    _ = ct.Register(() => {
+                        try {
+                            if (!process.HasExited) {
+                                process.Kill(true);
+                            }
+                        }
+                        catch (Exception ex) {
+                            this._logger.LogError("[RDLC_TOKEN_ERR] {ex}", ex.Message);
+                        }
+                    });
 
-                    process.StandardInput.Close();
-                }
-                catch (Exception ex) {
-                    this._logger.LogError("[RDLC_SEND_ERR] {ex}", ex.Message);
-                }
-            }, ct);
+                    var sendSerializedData = Task.Run(async () => {
+                        try {
+                            using (StreamWriter writter = process.StandardInput) {
+                                await JsonSerializer.SerializeAsync(
+                                    writter.BaseStream,
+                                    rdlcDataWithParam,
+                                    RdlcInfoWrapperJsonSerializerContext.Default.RdlcInfoWrapper,
+                                    ct
+                                );
+                                await writter.FlushAsync(ct);
+                            }
+                        }
+                        catch (Exception ex) {
+                            this._logger.LogError("[RDLC_SEND_ERR] {ex}", ex.Message);
+                        }
+                    }, ct);
 
-            if (process.HasExited) {
-                throw new Exception("Rdlcs generator gagal dijalankan sebelum memproses data.");
-            }
+                    if (process.HasExited) {
+                        throw new Exception("Rdlcs generator gagal dijalankan sebelum memproses data.");
+                    }
 
-            var ms = new MemoryStream();
+                    try {
+                        Task receiveBinaryData = process.StandardOutput.BaseStream.CopyToAsync(streamDestination, ct);
 
-            try {
-                await process.StandardOutput.BaseStream.CopyToAsync(ms, ct);
+                        await Task.WhenAll(sendSerializedData, receiveBinaryData);
+                        await process.WaitForExitAsync(ct);
 
-                await sendSerializedData;
-                await process.WaitForExitAsync(ct);
-
-                if (process.ExitCode != 0) {
-                    string error = await process.StandardError.ReadToEndAsync();
-                    throw new Exception($"Sidecar Exit Code {process.ExitCode}: {error}");
+                        if (process.ExitCode != 0) {
+                            string error = await process.StandardError.ReadToEndAsync();
+                            throw new Exception($"Sidecar Exit Code {process.ExitCode}: {error}");
+                        }
+                    }
+                    finally {
+                        if (!process.HasExited) {
+                            process.Kill(true);
+                        }
+                    }
                 }
             }
             catch (Exception ex) {
                 this._logger.LogError("[RDLC_PROCESS_ERR] {ex}", ex.Message);
-                ms.Dispose();
                 throw;
             }
             finally {
-                if (!process.HasExited) {
-                    process.Kill(true);
+                if (File.Exists(rdlcDataWithParam.DataFilePath)) {
+                    File.Delete(rdlcDataWithParam.DataFilePath);
                 }
             }
-
-            ms.Position = 0;
-
-            return ms;
         }
 
     }

@@ -27,7 +27,6 @@ namespace bifeldy_lib_90.Abstractions {
     [JsonSerializable(typeof(InputJsonNonDcDataMulti<JsonSerDe>))]
     [JsonSerializable(typeof(ResponseJsonSingle<JsonSerDe>))]
     [JsonSerializable(typeof(ResponseJsonMulti<JsonSerDe>))]
-    [JsonSerializable(typeof(RdlcRequestWrapper<JsonSerDe>))] // Optional only for RDLCs
     public partial class JsonSerDeJsonSerializerContext : JsonSerializerContext {
         // This class is used for source generation of JSON serialization metadata
     }
