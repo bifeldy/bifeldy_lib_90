@@ -32,6 +32,7 @@ namespace bifeldy_lib_90.Extensions {
         public static IServiceCollection ConfigureHttpJsonOptionsEx(this IServiceCollection services, IJsonTypeInfoResolver[] jsonTypeInfoResolversExtended) {
             return services.ConfigureHttpJsonOptions(options => {
                 options.SerializerOptions.PropertyNamingPolicy = null;
+                options.SerializerOptions.PropertyNameCaseInsensitive = true;
 
                 IJsonTypeInfoResolver[] resolvers = [
                     options.SerializerOptions.TypeInfoResolver!,
