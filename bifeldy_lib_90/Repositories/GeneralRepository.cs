@@ -208,7 +208,7 @@ namespace bifeldy_lib_90.Repositories {
         public async Task GetDcApiPathAppFromHo(IDatabase db, HttpRequest request, string dcKode, Action<string, Uri> callback) {
             bool isHo = await this.IsHo(db);
             if (!isHo) {
-                throw new TidakMemenuhiException("Khusus HO!");
+                throw new TidakMemenuhiException("Khusus HO");
             }
 
             string sqlQuery = @"

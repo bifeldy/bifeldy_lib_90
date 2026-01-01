@@ -97,7 +97,7 @@ namespace bifeldy_lib_90.Middlewares {
                             );
 
                             if (reqBody == null || string.IsNullOrEmpty(reqBody?.password)) {
-                                throw new TidakMemenuhiException("Data Tidak Lengkap!");
+                                throw new TidakMemenuhiException("Data Tidak Lengkap");
                             }
 
                             string info = null;
@@ -132,7 +132,7 @@ namespace bifeldy_lib_90.Middlewares {
                             }
 
                             if (string.IsNullOrEmpty(info) || string.IsNullOrEmpty(message)) {
-                                throw new TidakMemenuhiException("Data Tidak Lengkap!");
+                                throw new TidakMemenuhiException("Data Tidak Lengkap");
                             }
 
                             res = new ResponseJsonSingle<ResponseJsonMessage>() {

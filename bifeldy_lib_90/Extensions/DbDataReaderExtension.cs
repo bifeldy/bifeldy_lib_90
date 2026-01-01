@@ -109,7 +109,7 @@ namespace bifeldy_lib_90.Extensions {
 
                 Type t = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
                 if (!ObjectExtension.IsSimpleType(t)) {
-                    throw new Exception("Only `string` or ValueType allowed!");
+                    throw new Exception("Only `string` or ValueType allowed");
                 }
 
                 if (!dr.IsDBNull(0)) {

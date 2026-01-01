@@ -74,7 +74,7 @@ namespace bifeldy_lib_90.Services {
 
         public (LocalReport, string, string, string, string, string, string) CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             string rdlcPath = Path.Combine(this._app.AppLocation, "Rdlcs", rdlcName);
@@ -110,7 +110,7 @@ namespace bifeldy_lib_90.Services {
             }
 
             if (width == null || height == null) {
-                throw new Exception($"Ukuran width ({width}) / height ({height}) Masih NULL!");
+                throw new Exception($"Ukuran width ({width}) / height ({height}) Masih NULL");
             }
 
             width = width.Trim().ToLower().Replace(",", ".");
@@ -134,7 +134,7 @@ namespace bifeldy_lib_90.Services {
 
         public ReportDataSource CreateReportDataSource(string name, DataTable dt) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             return new(name, dt);
@@ -142,7 +142,7 @@ namespace bifeldy_lib_90.Services {
 
         public ReportDataSource CreateReportDataSource<T>(string name, IEnumerable<T> ls) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             return new(name, ls);
@@ -150,7 +150,7 @@ namespace bifeldy_lib_90.Services {
 
         public HtmlToPdfDocument GenerateHtmlReport(RdlcReport model, string width, string height, double top, double bottom, double left, double right) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             var htmlToPdfDocument = new HtmlToPdfDocument() {
@@ -182,7 +182,7 @@ namespace bifeldy_lib_90.Services {
 
         public ReportParameter[] CreateReportParameter(IDictionary<string, string> dict) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             var ls = new List<ReportParameter>();
@@ -226,7 +226,7 @@ namespace bifeldy_lib_90.Services {
             string fileType = "HTML"
         ) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             (
@@ -252,7 +252,7 @@ namespace bifeldy_lib_90.Services {
                 double? hIn = this.ParseDimensionToInch(height);
 
                 if (wIn == null || hIn == null) {
-                    throw new Exception($"Ukuran wIn ({wIn}) / hIn ({hIn}) Masih NULL!");
+                    throw new Exception($"Ukuran wIn ({wIn}) / hIn ({hIn}) Masih NULL");
                 }
 
                 double mTop = this.ParseDimensionToInch(topMargin) ?? 1.0;
@@ -310,7 +310,7 @@ namespace bifeldy_lib_90.Services {
             string fileType = "HTML"
         ) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             ReportDataSource rds = this.CreateReportDataSource(dsName, dt);
@@ -325,7 +325,7 @@ namespace bifeldy_lib_90.Services {
             string fileType = "HTML"
         ) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             ReportDataSource rds = this.CreateReportDataSource(dsName, ls);
@@ -414,7 +414,7 @@ namespace bifeldy_lib_90.Services {
                     }, ct);
 
                     if (process.HasExited) {
-                        throw new Exception("Rdlcs generator gagal dijalankan sebelum memproses data.");
+                        throw new Exception("Rdlcs Generator Gagal Dijalankan Sebelum Memproses Data.");
                     }
 
                     try {

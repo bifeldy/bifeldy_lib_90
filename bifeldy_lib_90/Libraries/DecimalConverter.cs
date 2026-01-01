@@ -26,7 +26,7 @@ namespace bifeldy_lib_90.Libraries {
                     break;
             }
 
-            throw new JsonException($"Unexpected token {reader.TokenType} when parsing decimal.");
+            throw new JsonException($"Unexpected token {reader.TokenType} when parsing decimal");
         }
 
         public override void Write(

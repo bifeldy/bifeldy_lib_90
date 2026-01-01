@@ -97,7 +97,7 @@ namespace bifeldy_lib_90.Databases {
 
                         int run = await cmd.ExecuteNonQueryAsync(token);
                         if (run <= 0) {
-                            throw new Exception("Gagal insert data");
+                            throw new Exception("Gagal Insert Data");
                         }
 
                         result++;

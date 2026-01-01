@@ -192,7 +192,7 @@ public static class Program {
                 }
 
                 if (width == null || height == null) {
-                    throw new Exception($"Ukuran width ({width}) / height ({height}) Masih NULL!");
+                    throw new Exception($"Ukuran width ({width}) / height ({height}) Masih NULL");
                 }
 
                 width = width.Trim().ToLower().Replace(",", ".");
@@ -247,7 +247,7 @@ public static class Program {
                         double? hIn = ParseDimensionToInch(height);
 
                         if (wIn == null || hIn == null) {
-                            throw new Exception($"Ukuran wIn ({wIn}) / hIn ({hIn}) Masih NULL!");
+                            throw new Exception($"Ukuran wIn ({wIn}) / hIn ({hIn}) Masih NULL");
                         }
 
                         double mTop = ParseDimensionToInch(topMargin) ?? 1.0;

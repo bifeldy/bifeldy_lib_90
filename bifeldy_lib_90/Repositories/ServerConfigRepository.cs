@@ -124,7 +124,7 @@ namespace bifeldy_lib_90.Repositories {
             }
 
             if (string.IsNullOrEmpty(this.KunciGxxx)) {
-                throw new Exception("Kunci Server Belum Di Set!");
+                throw new Exception("Kunci Server Belum Di Set");
             }
 
             return this.KunciGxxx;
@@ -132,7 +132,7 @@ namespace bifeldy_lib_90.Repositories {
 
         public async Task<bool> AddKodeServerKunciDc(string kodeDc, string kunciGxxx, string serverTarget) {
             if (string.IsNullOrEmpty(kodeDc) || string.IsNullOrEmpty(kunciGxxx) || string.IsNullOrEmpty(serverTarget)) {
-                throw new TidakMemenuhiException("Kode DC / Kunci GXXX / Server Target Tidak Boleh Kosong!");
+                throw new TidakMemenuhiException("Kode DC / Kunci GXXX / Server Target Tidak Boleh Kosong");
             }
 
             var sqlParameters = new DynamicParameters();
@@ -151,7 +151,7 @@ namespace bifeldy_lib_90.Repositories {
 
         public async Task<bool> EditKodeServerKunciDc(string kodeDc, string kunciGxxx, string serverTarget) {
             if (string.IsNullOrEmpty(kodeDc) || string.IsNullOrEmpty(kunciGxxx) || string.IsNullOrEmpty(serverTarget)) {
-                throw new TidakMemenuhiException("Kode DC / Kunci GXXX / Server Target Tidak Boleh Kosong!");
+                throw new TidakMemenuhiException("Kode DC / Kunci GXXX / Server Target Tidak Boleh Kosong");
             }
 
             var sqlParameters = new DynamicParameters();
@@ -171,7 +171,7 @@ namespace bifeldy_lib_90.Repositories {
 
         public async Task<bool> RemoveKodeServerKunciDc(string kodeDc) {
             if (string.IsNullOrEmpty(kodeDc)) {
-                throw new TidakMemenuhiException("Kode DC Tidak Boleh Kosong!");
+                throw new TidakMemenuhiException("Kode DC Tidak Boleh Kosong");
             }
 
             var sqlParameters = new DynamicParameters();
@@ -222,7 +222,7 @@ namespace bifeldy_lib_90.Repositories {
 
             if (string.IsNullOrEmpty(sc.kunci_gxxx)) {
                 if (string.IsNullOrEmpty(sc.kode_dc)) {
-                    throw new Exception("Kode DC Tidak Boleh Kosong!");
+                    throw new Exception("Kode DC Tidak Boleh Kosong");
                 }
 
                 IEnumerable<ServerConfigKunci> __sc = await this.GetKodeServerKunciDc(sc.kode_dc);

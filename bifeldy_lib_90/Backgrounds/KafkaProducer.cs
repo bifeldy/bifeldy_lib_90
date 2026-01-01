@@ -83,7 +83,7 @@ namespace bifeldy_lib_90.Backgrounds {
                 if (string.IsNullOrEmpty(this._hostPort)) {
                     KAFKA_SERVER_T kafka = await generalRepo.GetKafkaServerInfo(pg, this._topicName);
                     if (kafka == null) {
-                        throw new Exception("KAFKA Tidak Tersedia!");
+                        throw new Exception("KAFKA Tidak Tersedia");
                     }
 
                     this._hostPort = $"{kafka.HOST}:{kafka.PORT}";

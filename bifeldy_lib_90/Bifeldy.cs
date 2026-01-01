@@ -30,6 +30,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using WkHtmlToPdfDotNet;
 using WkHtmlToPdfDotNet.Contracts;
 
@@ -48,6 +49,8 @@ namespace bifeldy_lib_90 {
 
         public static string API_PREFIX = null;
         public static string NGINX_PATH_NAME = "x-forwarded-prefix";
+
+        public static List<string> OPEN_API_DOCUMENTS = ["latest-" + Assembly.GetEntryAssembly().GetName().Version?.ToString().Replace(".", string.Empty)];
 
         public static WebApplicationBuilder Builder = null;
         public static IServiceCollection Services = null;
@@ -159,7 +162,7 @@ namespace bifeldy_lib_90 {
             string apiPrefix = "api",
             bool enableApiKey = true,
             bool enableJwt = false,
-            string[] documents = null
+            params string[] documents
         ) {
             if (string.IsNullOrWhiteSpace(apiPrefix)) {
                 throw new Exception("API Prefix Wajib Di Isi");
@@ -167,18 +170,19 @@ namespace bifeldy_lib_90 {
 
             API_PREFIX ??= apiPrefix;
 
-            List<string> docs = ["latest-" + Assembly.GetEntryAssembly().GetName().Version ?.ToString().Replace(".", string.Empty)];
             if (documents != null) {
                 foreach (string document in documents) {
-                    if (!docs.Contains(document)) {
-                        docs.Add(document);
+                    string doc = Regex.Replace(document, "[^a-zA-Z0-9_-]+", string.Empty);
+
+                    if (!OPEN_API_DOCUMENTS.Contains(doc)) {
+                        OPEN_API_DOCUMENTS.Add(doc);
                     }
                 }
             }
 
             _ = Services.AddSingleton(new DocumentOptions(apiTitle, apiDescription, enableApiKey, enableJwt));
 
-            foreach (string documentName in docs) {
+            foreach (string documentName in OPEN_API_DOCUMENTS) {
                 _ = Services.AddOpenApi(documentName, options => {
                     _ = options.AddDocumentTransformer<DocumentTransformer>();
                     _ = options.AddSchemaTransformer<IgnorePropertySchemaTransformer>();
@@ -186,22 +190,13 @@ namespace bifeldy_lib_90 {
             }
         }
 
-        public static void MapOpenApi(string jsonFileName = "openapi", string[] documents = null) {
+        public static void MapOpenApi(string jsonFileName = "openapi") {
             if (string.IsNullOrWhiteSpace(jsonFileName)) {
                 throw new Exception("Json File Name Wajib Di Isi");
             }
 
             string jsonFilePath = $"/{jsonFileName}" + "-{documentName}.json";
             _ = App.MapOpenApi(jsonFilePath);
-
-            List<string> docs = ["latest-" + Assembly.GetEntryAssembly().GetName().Version?.ToString().Replace(".", string.Empty)];
-            if (documents != null) {
-                foreach (string document in documents) {
-                    if (!docs.Contains(document)) {
-                        docs.Add(document);
-                    }
-                }
-            }
 
             _ = App.MapGet($"/{API_PREFIX}", async (context) => {
                 context.Response.Redirect($"/docs", true, true);
@@ -213,7 +208,7 @@ namespace bifeldy_lib_90 {
                 _ = opt.WithTheme(ScalarTheme.DeepSpace);
                 _ = opt.HideModels();
                 _ = opt.ExpandAllTags();
-                _ = opt.AddDocuments(docs);
+                _ = opt.AddDocuments(OPEN_API_DOCUMENTS);
             });
         }
 
