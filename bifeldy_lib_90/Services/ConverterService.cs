@@ -34,7 +34,7 @@ namespace bifeldy_lib_90.Services {
         // https://github.com/HakanL/WkHtmlToPdf-DotNet/issues/132
         public byte[] HtmlToPdf(HtmlToPdfDocument htmlToPdfDocument) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya bisa dijalankan menggunakan JIT, bukan AOT");
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             return this._converter.Convert(htmlToPdfDocument);
@@ -154,7 +154,7 @@ namespace bifeldy_lib_90.Services {
                     return dto;
                 }
 
-                throw new NotSupportedException("Unsupported JSON primitive");
+                throw new NotSupportedException("Unsupported JSON Primitive");
             }
 
             return null;

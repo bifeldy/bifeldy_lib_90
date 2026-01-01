@@ -279,7 +279,7 @@ namespace bifeldy_lib_90.Services {
 
                     HttpResponseMessage fileResponse = await this._http.GetData(uriBuilder.ToString(), timeoutSeconds: 10, maxRetry: 3);
                     if (!fileResponse.IsSuccessStatusCode) {
-                        throw new Exception($"Gagal download {remoteFileName}");
+                        throw new Exception($"Gagal Download {remoteFileName}");
                     }
 
                     string downloadedFilePath = Path.Combine(updaterFolder, remoteFileName);
@@ -407,7 +407,7 @@ exit /b 0
                 };
             }
             else {
-                throw new Exception("Platform not supported for auto update");
+                throw new Exception("Platform Not Supported For Auto Update");
             }
 
             this._host.StopApplication();

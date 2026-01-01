@@ -127,7 +127,7 @@ public static class Program {
             using (Stream stdin = Console.OpenStandardInput()) {
                 JsonNode? root = await JsonNode.ParseAsync(stdin);
                 if (root == null) {
-                    throw new Exception("Data JSON Wrapper kosong");
+                    throw new Exception("Data JSON Wrapper Kosong");
                 }
 
                 dataFilePath = root["DataFilePath"]?.ToString();
@@ -135,7 +135,7 @@ public static class Program {
             }
 
             if (string.IsNullOrEmpty(dataFilePath) || !File.Exists(dataFilePath)) {
-                throw new FileNotFoundException($"File Data tidak ditemukan: {dataFilePath}");
+                throw new FileNotFoundException($"File Data Tidak Ditemukan: {dataFilePath}");
             }
 
             var dt = new DataTable(datasetName);
@@ -231,7 +231,7 @@ public static class Program {
                             format = "HTML5";
                             break;
                         default:
-                            throw new Exception("Format tidak tersedia");
+                            throw new Exception("Format Tidak Tersedia");
                     }
 
                     var model = new RdlcReport() {
