@@ -40,9 +40,11 @@ namespace bifeldy_lib_90.Extensions {
                     .. jsonTypeInfoResolversExtended
                 ];
 
-                IJsonTypeInfoResolver combined = JsonTypeInfoResolver.Combine(resolvers);
+                options.SerializerOptions.TypeInfoResolverChain.Clear();
+                options.SerializerOptions.TypeInfoResolverChain.Add(new AutoRegisterTypeInfoResolver());
 
-                options.SerializerOptions.TypeInfoResolverChain.Insert(0, new JsonSerDeTypeInfoResolver(combined));
+                IJsonTypeInfoResolver combined = JsonTypeInfoResolver.Combine(resolvers);
+                options.SerializerOptions.TypeInfoResolverChain.Add(new JsonSerDeTypeInfoResolver(combined));
             });
         }
 

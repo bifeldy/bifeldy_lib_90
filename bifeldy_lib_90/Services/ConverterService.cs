@@ -1,5 +1,6 @@
 ﻿using bifeldy_lib_90.Libraries;
 using System.Collections;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -20,6 +21,8 @@ namespace bifeldy_lib_90.Services {
         object JsonToObject(string json);
         string ObjectToJson(object value);
         string FormatByteSizeHumanReadable(long bytes, string forceUnit = null);
+        List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo);
+        List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo);
     }
 
     public sealed class CConverterService : IConverterService {
@@ -244,6 +247,84 @@ namespace bifeldy_lib_90.Services {
             }
 
             return $"{(decimal) bytes / digit:0.00} {ext}";
+        }
+
+        public List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) {
+            var ls = new List<CDynamicClassProperty>();
+
+            foreach (JsonPropertyInfo prop in jsonTypeInfo.Properties) {
+                Type type = prop.PropertyType;
+
+                TypeRegistry.Register(type);
+
+                Type underlyingType = Nullable.GetUnderlyingType(type);
+                Type dataType = underlyingType ?? type;
+
+                bool isNullable = underlyingType != null;
+
+                if (underlyingType == null && dataType == typeof(string)) {
+                    bool hasKeyAttribute = false;
+                    if (prop.AttributeProvider != null) {
+                        hasKeyAttribute = prop.AttributeProvider.IsDefined(typeof(KeyAttribute), false);
+                    }
+
+                    isNullable = !hasKeyAttribute;
+                }
+
+                var item = new CDynamicClassProperty() {
+                    ColumnName = prop.Name,
+                    DataType = dataType.FullName,
+                    IsNullable = isNullable
+                };
+
+                ls.Add(item);
+            }
+
+            return ls;
+        }
+
+        public List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) {
+            var list = new List<CDynamicClassPropertyV2>();
+
+            foreach (JsonPropertyInfo prop in jsonTypeInfo.Properties) {
+                Type type = prop.PropertyType;
+
+                TypeRegistry.Register(type);
+
+                Type underlyingType = Nullable.GetUnderlyingType(type);
+                bool isNullable = underlyingType != null;
+                Type coreType = underlyingType ?? type;
+
+                bool isList = coreType.IsGenericType &&
+                              coreType.GetGenericTypeDefinition() == typeof(List<>);
+
+                bool isDictionary = coreType.IsGenericType &&
+                                    coreType.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+
+                bool isArray = coreType.IsArray;
+                bool isEnum = coreType.IsEnum;
+
+                bool isClass = coreType.IsClass &&
+                               coreType != typeof(string) &&
+                               !isDictionary &&
+                               !isList &&
+                               !isArray &&
+                               !isEnum;
+
+                var item = new CDynamicClassPropertyV2() {
+                    ColumnName = prop.Name,
+                    TypeName = coreType.FullName,
+                    IsNullable = isNullable,
+                    IsArray = isArray,
+                    IsList = isList,
+                    IsDictionary = isDictionary,
+                    IsClass = isClass
+                };
+
+                list.Add(item);
+            }
+
+            return list;
         }
 
     }
