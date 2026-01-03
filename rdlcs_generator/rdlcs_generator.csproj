@@ -15,9 +15,15 @@
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <ServerGarbageCollection>false</ServerGarbageCollection>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+        <IlcMaxDegreeOfParallelism>1</IlcMaxDegreeOfParallelism>
         <!-- Build Info -->
         <AssemblyName>rdlcs_generator</AssemblyName>
         <Version>1.0.0.0</Version>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <DebugType>none</DebugType>
+        <StripSymbols>true</StripSymbols>
     </PropertyGroup>
 
     <ItemGroup>

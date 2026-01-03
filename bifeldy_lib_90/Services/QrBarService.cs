@@ -167,7 +167,7 @@ namespace bifeldy_lib_90.Services {
                     if (bgImage.Frames.Count > 1) {
                         return this.ProcessAnimatedFrames(bgImage, (frameImage, frame) => {
                             frameImage.Mutate(x => {
-                                _ = x.Resize(new ResizeOptions {
+                                _ = x.Resize(new ResizeOptions() {
                                     Size = new Size(qrImageClone.Width, qrImageClone.Height),
                                     Mode = ResizeMode.Crop
                                 });
@@ -182,7 +182,7 @@ namespace bifeldy_lib_90.Services {
                         Image<Rgba32> bgClone = bgImage.CloneAs<Rgba32>();
 
                         bgClone.Mutate(x => {
-                            _ = x.Resize(new ResizeOptions {
+                            _ = x.Resize(new ResizeOptions() {
                                 Size = new Size(qrImageClone.Width, qrImageClone.Height),
                                 Mode = ResizeMode.Crop
                             });
@@ -258,7 +258,7 @@ namespace bifeldy_lib_90.Services {
 
             using (Image<Rgba32> logo = logoImg.CloneAs<Rgba32>()) {
                 logo.Mutate(x => {
-                    _ = x.Resize(new ResizeOptions {
+                    _ = x.Resize(new ResizeOptions() {
                         Size = new Size(targetLogoWidth, targetLogoHeight),
                         Mode = ResizeMode.Max
                     });
