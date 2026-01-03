@@ -27,6 +27,16 @@
         </None>
     </ItemGroup>
 
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS1998</WarningsAsErrors>
+        <NoWarn>1701;1702;PBN0013;PBN0014;IDE0078;IDE0059;IDE0060</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS1998</WarningsAsErrors>
+        <NoWarn>1701;1702;PBN0013;PBN0014;IDE0078;IDE0059;IDE0060</NoWarn>
+    </PropertyGroup>
+
     <ItemGroup>
         <RdXmlFile Include="rd.xml" />
     </ItemGroup>
@@ -36,10 +46,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="ChoETL.JSON" Version="1.2.1.71" />
         <PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" Version="2.12.0" />
         <PackageReference Include="Cronos" Version="0.11.1" />
         <PackageReference Include="Dapper" Version="2.1.66" />
         <PackageReference Include="Dapper.AOT" Version="1.0.48" />
+        <PackageReference Include="FluentFTP" Version="39.4.0" />
         <PackageReference Include="Haukcode.WkHtmlToPdfDotNet" Version="1.5.95" />
         <PackageReference Include="Helmet" Version="1.0.4" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.11" />
@@ -49,10 +61,15 @@
         <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.11" />
         <PackageReference Include="NCrontab" Version="3.4.0" />
         <PackageReference Include="Npgsql" Version="10.0.0" />
+        <PackageReference Include="ProDotNetZip" Version="1.20.0" />
+        <PackageReference Include="QRCoder" Version="1.7.0" />
         <PackageReference Include="ReportViewerCore.NETCore" Version="15.1.28" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.11.6" />
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+        <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
+        <PackageReference Include="SSH.NET" Version="2025.1.0" />
         <PackageReference Include="System.Reactive" Version="6.1.0" />
+        <PackageReference Include="ZXing.Net.Bindings.ImageSharp.V2" Version="0.16.18" />
     </ItemGroup>
 
 </Project>

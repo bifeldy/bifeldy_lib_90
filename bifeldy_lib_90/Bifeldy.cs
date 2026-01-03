@@ -253,13 +253,18 @@ namespace bifeldy_lib_90 {
             _ = Services.AddSingleton<IBerkasService, CBerkasService>();
             _ = Services.AddSingleton<IChiperService, CChiperService>();
             _ = Services.AddSingleton<IConverterService, CConverterService>();
+            _ = Services.AddSingleton<ICsvService, CCsvService>();
+            _ = Services.AddSingleton<IFtpService, CFtpService>();
             _ = Services.AddSingleton<IGlobalService, CGlobalService>();
             _ = Services.AddSingleton<IHttpService, CHttpService>();
             _ = Services.AddSingleton<IKafkaService, CKafkaService>();
             _ = Services.AddSingleton<ILockerService, CLockerService>();
             _ = Services.AddSingleton<IPubSubService, CPubSubService>();
+            _ = Services.AddSingleton<IQrBarService, CQrBarService>();
             _ = Services.AddSingleton<IRdlcService, CRdlcService>();
+            _ = Services.AddSingleton<ISftpService, CSftpService>();
             _ = Services.AddSingleton<IStreamService, CStreamService>();
+            _ = Services.AddSingleton<IZipService, CZipService>();
 
             // --
             // Transient Selalu Dapat Object Baru ~
