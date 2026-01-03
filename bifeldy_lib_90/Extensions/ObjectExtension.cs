@@ -1,11 +1,10 @@
 ﻿using System.Collections;
-using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace bifeldy_lib_90.Extensions {
 
     public static class ObjectExtension {
-
-        private static readonly BindingFlags bf = BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance;
 
         private static readonly HashSet<Type> ExtraSimpleTypes = new() {
             typeof(string),
@@ -21,7 +20,16 @@ namespace bifeldy_lib_90.Extensions {
             return type.IsPrimitive || type.IsEnum || ExtraSimpleTypes.Contains(type);
         }
 
-        private static object ConvertObject(object obj) {
+        public static Dictionary<string, object> ToDictionary<T>(this T instanceToConvert, JsonTypeInfo<T> jsonTypeInfo) {
+            if (instanceToConvert == null) {
+                return new Dictionary<string, object>();
+            }
+
+            return ConvertObject(instanceToConvert, jsonTypeInfo.Options) as Dictionary<string, object>
+                   ?? new Dictionary<string, object>();
+        }
+
+        private static object ConvertObject(object obj, JsonSerializerOptions options) {
             if (obj == null) {
                 return null;
             }
@@ -30,76 +38,76 @@ namespace bifeldy_lib_90.Extensions {
                 return obj;
             }
 
-            // Simple values (includes string)
             Type type = obj.GetType();
+
+            // 1. Check Simple Types
             if (IsSimpleType(type)) {
                 return obj;
             }
 
+            // 2. Check Dictionary
             if (obj is IDictionary dict) {
-                return ConvertDictionary(dict);
+                return ConvertDictionary(dict, options);
             }
 
-            // ICollection / IEnumerable but NOT string
+            // 3. Check List / Enumerable (but not string)
             if (obj is IEnumerable enumerable) {
-                return ConvertEnumerable(enumerable);
+                return ConvertEnumerable(enumerable, options);
             }
 
-            return ConvertComplexObject(obj);
+            // 4. Complex Object -> This is where we need the Lookup
+            return ConvertComplexObject(obj, options);
         }
 
-        private static Dictionary<string, object> ConvertDictionary(IDictionary dict) {
+        private static Dictionary<string, object> ConvertDictionary(IDictionary dict, JsonSerializerOptions options) {
             var result = new Dictionary<string, object>();
 
             foreach (DictionaryEntry entry in dict) {
                 string key = entry.Key.ToString();
-                result[key] = ConvertObject(entry.Value);
+                result[key] = ConvertObject(entry.Value, options);
             }
 
             result["IsCollection"] = true;
-
             return result;
         }
 
-        private static Dictionary<string, object> ConvertEnumerable(IEnumerable enumerable) {
+        private static Dictionary<string, object> ConvertEnumerable(IEnumerable enumerable, JsonSerializerOptions options) {
             var result = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
 
             int index = 0;
             foreach (object item in enumerable) {
-                result[index.ToString()] = ConvertObject(item);
+                result[index.ToString()] = ConvertObject(item, options);
                 index++;
             }
 
             result["IsCollection"] = true;
             result["Count"] = index;
-
             return result;
         }
 
-        private static Dictionary<string, object> ConvertComplexObject(object obj) {
+        private static Dictionary<string, object> ConvertComplexObject(object obj, JsonSerializerOptions options) {
             Type type = obj.GetType();
+
+            JsonTypeInfo typeInfo = options.GetTypeInfo(type);
+
+            if (typeInfo == null) {
+                return new Dictionary<string, object>();
+            }
+
             var result = new Dictionary<string, object>();
 
-            foreach (PropertyInfo prop in type.GetProperties(bf)) {
-                if (!prop.CanRead) {
-                    continue;
+            foreach (JsonPropertyInfo prop in typeInfo.Properties) {
+                if (prop.Get == null) {
+                    continue; // Skip write-only
                 }
 
-                if (prop.GetIndexParameters().Any()) {
-                    continue; // skip indexers
-                }
+                object value = prop.Get(obj);
 
-                object value = prop.GetValue(obj);
-                result[prop.Name] = ConvertObject(value);
+                result[prop.Name] = ConvertObject(value, options);
             }
 
             result["IsCollection"] = false;
-
             return result;
-        }
-
-        public static Dictionary<string, object> ToDictionary(this object instanceToConvert) {
-            return ConvertObject(instanceToConvert) as Dictionary<string, object> ?? new Dictionary<string, object>();
         }
 
     }
