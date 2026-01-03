@@ -1,0 +1,185 @@
+﻿using bifeldy_lib_90.Models;
+using ChoETL;
+using System.Data;
+using System.Text;
+using System.Text.Json.Serialization.Metadata;
+
+namespace bifeldy_lib_90.Services {
+
+    public interface ICsvService {
+        List<CCsvColumn> GetColumnFromClassType<T>(JsonTypeInfo<T> jsonTypeInfo);
+        DataTable Csv2DataTable(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string tableName = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
+        string Csv2Json(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
+        IDataReader Csv2DataReader(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
+        IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo,string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
+    }
+
+    public sealed class CCsvService : ICsvService {
+
+        public CCsvService() {
+            //
+        }
+
+        public List<CCsvColumn> GetColumnFromClassType<T>(JsonTypeInfo<T> jsonTypeInfo) {
+            var csvColumn = new List<CCsvColumn>();
+
+            foreach (JsonPropertyInfo prop in jsonTypeInfo.Properties) {
+                var csvColumnProp = new CCsvColumn() {
+                    ColumnName = prop.Name,
+                    Position = 0,
+                    FieldType = prop.PropertyType,
+                    FieldName = prop.Name
+                };
+
+                csvColumn.Add(csvColumnProp);
+            }
+
+            return csvColumn;
+        }
+
+        // Posisi Kolom CSV Start Dari 1 Bukan 0
+        private ChoCSVReader<object> ChoEtlSetupCsv(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) {
+            if (string.IsNullOrEmpty(eolDelimiter)) {
+                using (var sr = new StreamReader(filePath, encoding ?? Encoding.UTF8, encoding == null)) {
+                    string line = sr.ReadLine();
+
+                    if (line.Contains("\r\n")) {
+                        eolDelimiter = "\r\n";
+                    }
+                    else if (line.Contains("\n")) {
+                        eolDelimiter = "\n";
+                    }
+                    else {
+                        eolDelimiter = Environment.NewLine;
+                    }
+                }
+            }
+
+            var cfg = new ChoCSVRecordConfiguration() {
+                Delimiter = delimiter,
+                MayHaveQuotedFields = true,
+                MayContainEOLInData = true,
+                EOLDelimiter = eolDelimiter,
+                NullValue = nullValue,
+                QuoteAllFields = true,
+                Encoding = encoding ?? Encoding.UTF8,
+                DetectEncodingFromByteOrderMarks = encoding == null,
+                MaxLineSize = 1_000_000
+            };
+
+            ChoCSVReader<object> csv = new ChoCSVReader(filePath, cfg);
+
+            if (csvColumn != null) {
+                csv = csv.WithFirstLineHeader(false);
+                csvColumn = csvColumn.OrderBy(c => c.Position).ToList();
+
+                foreach (CCsvColumn cc in csvColumn) {
+                    csv = csv.WithField(cc.ColumnName, cc.Position, cc.FieldType, fieldName: cc.ColumnName);
+                }
+            }
+            else {
+                csv = csv.WithFirstLineHeader(true);
+            }
+
+            return csv;
+        }
+
+        public DataTable Csv2DataTable(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string tableName = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) {
+            var fi = new FileInfo(filePath);
+
+            using (ChoCSVReader<object> csv = this.ChoEtlSetupCsv(fi.FullName, delimiter, csvColumn, nullValue, eolDelimiter, encoding ?? Encoding.UTF8)) {
+                DataTable dt = csv.AsDataTable(tableName ?? fi.Name);
+
+                foreach (DataRow row in dt.Rows) {
+                    foreach (DataColumn col in dt.Columns) {
+                        if (row[col] is string s) {
+                            if (s.Contains("\"\"")) {
+                                row[col] = s.Replace("\"\"", "\"");
+                            }
+                        }
+                    }
+                }
+
+                return dt;
+            }
+        }
+
+        public string Csv2Json(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) {
+            var sb = new StringBuilder();
+
+            using (ChoCSVReader<object> csv = this.ChoEtlSetupCsv(new FileInfo(filePath).FullName, delimiter, csvColumn, nullValue, eolDelimiter, encoding ?? Encoding.UTF8)) {
+                IEnumerable<Dictionary<string, object>> cleaned = csv.Select(record => {
+                    var dict = new Dictionary<string, object>();
+
+                    foreach (KeyValuePair<string, object> kvp in (IDictionary<string, object>)record) {
+                        dict[kvp.Key] = kvp.Value;
+                        if (dict[kvp.Key] is string s) {
+                            if (s.Contains("\"\"")) {
+                                dict[kvp.Key] = s.Replace("\"\"", "\"");
+                            }
+                        }
+                    }
+
+                    return dict;
+                });
+
+                using (var w = new ChoJSONWriter(sb)) {
+                    w.Write(cleaned);
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        public IDataReader Csv2DataReader(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) {
+            return this.ChoEtlSetupCsv(new FileInfo(filePath).FullName, delimiter, csvColumn, nullValue, eolDelimiter, encoding ?? Encoding.UTF8).AsDataReader();
+        }
+
+        public IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo, string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) {
+            using (IDataReader dr = this.Csv2DataReader(filePath, delimiter, csvColumn, nullValue, eolDelimiter, encoding ?? Encoding.UTF8)) {
+                var propMap = new List<(JsonPropertyInfo Prop, int Index, Type TargetType)>();
+
+                var readerColumns = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < dr.FieldCount; i++) {
+                    readerColumns[dr.GetName(i)] = i;
+                }
+
+                foreach (JsonPropertyInfo prop in jsonTypeInfo.Properties) {
+                    if (prop.Set == null) {
+                        continue; // Skip read-only
+                    }
+
+                    if (readerColumns.TryGetValue(prop.Name, out int index)) {
+                        Type targetType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+                        propMap.Add((prop, index, targetType));
+                    }
+                }
+
+                while (dr.Read()) {
+                    if (jsonTypeInfo.CreateObject == null) {
+                        throw new InvalidOperationException($"Type {typeof(T).Name} must have a parameterless constructor.");
+                    }
+
+                    T objT = jsonTypeInfo.CreateObject();
+
+                    foreach ((JsonPropertyInfo Prop, int Index, Type TargetType) map in propMap) {
+                        if (!dr.IsDBNull(map.Index)) {
+                            object val = dr.GetValue(map.Index);
+
+                            if (val is string s && s.Contains("\"\"")) {
+                                val = s.Replace("\"\"", "\"");
+                            }
+
+                            val = Convert.ChangeType(val, map.TargetType);
+                            map.Prop.Set(objT, val);
+                        }
+                    }
+
+                    yield return objT;
+                }
+            }
+        }
+
+    }
+
+}
