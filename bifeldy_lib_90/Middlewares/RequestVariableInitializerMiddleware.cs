@@ -62,8 +62,8 @@ namespace bifeldy_lib_90.Middlewares {
             context.Items["api_key"] = apiKey;
 
             string token = this._gs.GetTokenData(request, reqBody);
-            if (token.StartsWith("Bearer ")) {
-                token = token[7..];
+            if (token.StartsWith("Bearer")) {
+                token = token[6..].Trim();
             }
 
             context.Items["token"] = token;

@@ -140,7 +140,7 @@ namespace bifeldy_lib_90.Services {
                 this._logger.LogError("[SFTP_GET_DIRECTORY_LIST] {ex}", ex.Message);
             }
 
-            return response.Select(r => r.FullName).ToArray();
+            return [.. response.Select(r => r.FullName)];
         }
 
     }

@@ -138,7 +138,7 @@ namespace bifeldy_lib_90.Databases {
                 result = realPath;
             }
             catch (Exception ex) {
-                this._logger.LogError("[{name}_BULK_GET_CSV] {ex}", this.GetType().Name, ex.Message);
+                this._logger.LogError("[PG_BULK_GET_CSV] {ex}", ex.Message);
                 exception = ex;
             }
             finally {

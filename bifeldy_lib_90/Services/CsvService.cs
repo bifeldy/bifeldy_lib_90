@@ -71,7 +71,7 @@ namespace bifeldy_lib_90.Services {
 
             if (csvColumn != null) {
                 csv = csv.WithFirstLineHeader(false);
-                csvColumn = csvColumn.OrderBy(c => c.Position).ToList();
+                csvColumn = [.. csvColumn.OrderBy(c => c.Position)];
 
                 foreach (CCsvColumn cc in csvColumn) {
                     csv = csv.WithField(cc.ColumnName, cc.Position, cc.FieldType, fieldName: cc.ColumnName);

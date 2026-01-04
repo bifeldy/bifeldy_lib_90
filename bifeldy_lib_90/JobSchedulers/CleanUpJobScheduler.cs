@@ -37,7 +37,7 @@ namespace bifeldy_lib_90.JobSchedulers {
                 await Task.CompletedTask;
             }
             catch (Exception e) {
-                this._logger.LogError("[{name}_ERROR] ⌚ {ex}", this.GetType().Name, e.Message);
+                this._logger.LogError("[CLEANUP_ERROR] ⌚ {ex}", e.Message);
             }
         }
 

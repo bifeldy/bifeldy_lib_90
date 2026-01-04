@@ -78,7 +78,7 @@ namespace bifeldy_lib_90.Services {
             var directoryInfo = new DirectoryInfo(localDirPath);
             FileInfo[] fileInfos = directoryInfo.GetFiles();
             if (fileName != null) {
-                fileInfos = fileInfos.Where(f => f.Name.Contains(fileName)).ToArray();
+                fileInfos = [.. fileInfos.Where(f => f.Name.Contains(fileName))];
             }
 
             string cwd = await ftpConnection.GetWorkingDirectoryAsync();
