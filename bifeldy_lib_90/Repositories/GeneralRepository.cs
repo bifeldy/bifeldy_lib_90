@@ -119,8 +119,8 @@ namespace bifeldy_lib_90.Repositories {
         // Item1 => bool :: Apakah Menggunakan Postgre
         // Item2 => IDatabase :: Koneksi Ke Database Oracle / Postgre (Tidak Ada SqlServer)
         //
-        // IDictionary<string, (bool, IDatabase)> dbOraPgBranch = await GetListBranchDbConnection(..., "G001", ...);
-        // var res = dbOraPgBranch["G055"].Item2.ExecScalarAsync<...>(...);
+        // IDictionary<string, (bool, IDatabase)> dbPgBranch = await GetListBranchDbConnection(..., "G001", ...);
+        // var res = dbPgBranch["G055"].Item2.ExecScalarAsync<...>(...);
         //
         public async Task<IDictionary<string, IDatabase>> GetListBranchDbConnection(IDatabase db, string kodeDcInduk, IServiceProvider sp) {
             if (!this.BranchConnectionInfo.ContainsKey(kodeDcInduk)) {
@@ -130,7 +130,7 @@ namespace bifeldy_lib_90.Repositories {
                 foreach (DC_TABEL_V dbi in dbInfo) {
                     IPostgres postgres = sp.GetRequiredService<IPostgres>();
 
-                    IDatabase dbOraPgBranch = postgres.NewExternalConnection(
+                    IDatabase dbPgBranch = postgres.NewExternalConnection(
                         dbi.DBPG_IP ?? dbi.IP_DB,
                         dbi.DBPG_PORT ?? dbi.DB_PORT.ToString(),
                         dbi.DBPG_USER ?? dbi.DB_USER_NAME,
@@ -138,7 +138,7 @@ namespace bifeldy_lib_90.Repositories {
                         dbi.DBPG_NAME ?? dbi.DB_SID
                     );
 
-                    dbCons.Add(dbi.TBL_DC_KODE.ToUpper(), dbOraPgBranch);
+                    dbCons.Add(dbi.TBL_DC_KODE.ToUpper(), dbPgBranch);
                 }
 
                 this.BranchConnectionInfo[kodeDcInduk] = dbCons;
