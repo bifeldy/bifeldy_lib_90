@@ -131,16 +131,18 @@ namespace bifeldy_lib_90.Services {
                 }
             }
 
-            using (var reader = new BinaryReader(new FileStream(fileInfo.FullName, FileMode.Open), encoding ?? Encoding.UTF8)) {
-                byte[] buff = new byte[minFileSize];
-                _ = reader.BaseStream.Seek(0, SeekOrigin.Begin);
-                _ = reader.Read(buff, 0, buff.Length);
-                for (int i = 0; i < intList.Length; i++) {
-                    if (intList[i] == -1 || buff[i] == intList[i]) {
-                        continue;
-                    }
+            using (var fs = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096)) {
+                using (var reader = new BinaryReader(fs, encoding ?? Encoding.UTF8)) {
+                    byte[] buff = new byte[minFileSize];
+                    _ = reader.BaseStream.Seek(0, SeekOrigin.Begin);
+                    _ = reader.Read(buff, 0, buff.Length);
+                    for (int i = 0; i < intList.Length; i++) {
+                        if (intList[i] == -1 || buff[i] == intList[i]) {
+                            continue;
+                        }
 
-                    return false;
+                        return false;
+                    }
                 }
             }
 
@@ -150,7 +152,7 @@ namespace bifeldy_lib_90.Services {
         public List<string> ReadFileTextGetLastLines(string filePath, int numberOfLines) {
             var lastLines = new List<string>();
 
-            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096)) {
                 long position = fs.Length;
                 var currentLine = new StringBuilder();
 

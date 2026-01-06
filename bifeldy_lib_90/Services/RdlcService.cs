@@ -355,7 +355,7 @@ namespace bifeldy_lib_90.Services {
                     rdlcDataWithParam.DataFilePath = dataFilePath;
                 }
 
-                using (var fs = new FileStream(rdlcDataWithParam.DataFilePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096)) {
+                using (var fs = new FileStream(rdlcDataWithParam.DataFilePath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096)) {
                     using (var writer = new Utf8JsonWriter(fs)) {
                         writer.WriteStartArray();
 

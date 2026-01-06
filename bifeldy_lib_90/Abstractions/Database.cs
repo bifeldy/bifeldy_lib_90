@@ -245,7 +245,7 @@ namespace bifeldy_lib_90.Abstractions {
                             filePath = Path.Combine(stringPathDownload, fileMultipleName);
                         }
 
-                        using (var fs = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write)) {
+                        using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096)) {
                             using (var bw = new BinaryWriter(fs, encoding ?? Encoding.UTF8)) {
                                 long startIndex = 0;
                                 long retval = rdrGetBlob.GetBytes(0, startIndex, outByte, 0, bufferSize);

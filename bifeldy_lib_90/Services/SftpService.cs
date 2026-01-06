@@ -82,7 +82,7 @@ namespace bifeldy_lib_90.Services {
                 using (var sftp = new SftpClient(hostname, port, username, password)) {
                     sftp.Connect();
 
-                    using (var fs = new FileStream(localFile, FileMode.OpenOrCreate)) {
+                    using (var fs = new FileStream(localFile, FileMode.Create, FileAccess.Write, FileShare.Read, 4096)) {
                         sftp.DownloadFile(remotePath, fs, downloaded => {
                             double percentage = (double)downloaded / fs.Length * 100;
                             progress?.Invoke(percentage);
@@ -107,7 +107,7 @@ namespace bifeldy_lib_90.Services {
                 using (var sftp = new SftpClient(hostname, port, username, password)) {
                     sftp.Connect();
 
-                    using (var fs = new FileStream(localFile, FileMode.Open)) {
+                    using (var fs = new FileStream(localFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096)) {
                         sftp.UploadFile(fs, remotePath, uploaded => {
                             double percentage = (double)uploaded / fs.Length * 100;
                             progress?.Invoke(percentage);
