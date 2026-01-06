@@ -14,7 +14,6 @@ namespace bifeldy_lib_90.Backgrounds {
     public sealed class KafkaProducer : BackgroundService {
 
         private readonly ILogger<KafkaProducer> _logger;
-        private readonly IConverterService _converter;
         private readonly IPubSubService _pubSub;
         private readonly IKafkaService _kafka;
         private readonly ILockerService _locker;
@@ -39,7 +38,6 @@ namespace bifeldy_lib_90.Backgrounds {
             bool suffixKodeDc = false, List<EJenisDc> excludeJenisDc = null, string pubSubName = null
         ) {
             this._logger = serviceProvider.GetRequiredService<ILogger<KafkaProducer>>();
-            this._converter = serviceProvider.GetRequiredService<IConverterService>();
             this._pubSub = serviceProvider.GetRequiredService<IPubSubService>();
             this._kafka = serviceProvider.GetRequiredService<IKafkaService>();
             this._locker = serviceProvider.GetRequiredService<ILockerService>();
@@ -63,7 +61,7 @@ namespace bifeldy_lib_90.Backgrounds {
         }
 
         private async Task DoWorkMultiDc(IServiceProvider sp, CancellationToken stoppingToken) {
-            BehaviorSubject<Message<string, object>> observeable = null;
+            BehaviorSubject<Message<string, string>> observeable = null;
             IProducer<string, string> producer = null;
 
             IDisposable subs = null;
@@ -103,19 +101,22 @@ namespace bifeldy_lib_90.Backgrounds {
                 await this._kafka.CreateTopicIfNotExist(this._hostPort, this._topicName, this._replication, this._partition);
                 producer = this._kafka.CreateKafkaProducerInstance<string, string>(this._hostPort);
 
-                observeable = this._pubSub.GetGlobalAppBehaviorSubject<Message<string, object>>(this.KAFKA_NAME);
+                observeable = this._pubSub.GetGlobalAppBehaviorSubject<Message<string, string>>(this.KAFKA_NAME);
                 subs = observeable.Subscribe(async data => {
                     if (data != null) {
-                        var msg = new Message<string, string>() {
-                            Key = data.Key,
-                            Value = typeof(string) == data.Value.GetType() ? data.Value.ToString() : this._converter.ObjectToJson(data.Value)
-                        };
+                        try {
+                            var msg = new Message<string, string>() {
+                                Key = data.Key,
+                                Value = data.Value
+                            };
 
-                        await this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).WaitAsync(stoppingToken);
+                            await this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).WaitAsync(stoppingToken);
 
-                        msgs.Add(msg);
-
-                        _ = this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).Release();
+                            msgs.Add(msg);
+                        }
+                        finally {
+                            _ = this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).Release();
+                        }
                     }
                 });
 

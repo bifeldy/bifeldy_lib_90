@@ -17,7 +17,6 @@ namespace bifeldy_lib_90.Backgrounds {
         private readonly EnvVar _env;
         private readonly ILogger<KafkaConsumer> _logger;
         private readonly IApplicationService _app;
-        private readonly IConverterService _converter;
         private readonly IPubSubService _pubSub;
         private readonly IKafkaService _kafka;
 
@@ -45,7 +44,6 @@ namespace bifeldy_lib_90.Backgrounds {
             this._env = serviceProvider.GetRequiredService<IOptions<EnvVar>>().Value;
             this._logger = serviceProvider.GetRequiredService<ILogger<KafkaConsumer>>();
             this._app = serviceProvider.GetRequiredService<IApplicationService>();
-            this._converter = serviceProvider.GetRequiredService<IConverterService>();
             this._pubSub = serviceProvider.GetRequiredService<IPubSubService>();
             this._kafka = serviceProvider.GetRequiredService<IKafkaService>();
 
@@ -68,7 +66,7 @@ namespace bifeldy_lib_90.Backgrounds {
         }
 
         private async Task DoWorkMultiDc(IServiceProvider sp, CancellationToken stoppingToken) {
-            BehaviorSubject<Message<string, object>> observeable = null;
+            BehaviorSubject<Message<string, string>> observeable = null;
             IConsumer<string, string> consumer = null;
 
             try {
@@ -105,7 +103,7 @@ namespace bifeldy_lib_90.Backgrounds {
                     this._topicName += kodeDc;
                 }
 
-                observeable = this._pubSub.GetGlobalAppBehaviorSubject<Message<string, object>>(this.KAFKA_NAME);
+                observeable = this._pubSub.GetGlobalAppBehaviorSubject<Message<string, string>>(this.KAFKA_NAME);
 
                 await this._kafka.CreateTopicIfNotExist(this._hostPort, this._topicName);
                 consumer = this._kafka.CreateKafkaConsumerInstance<string, string>(this._hostPort, this._groupId);
@@ -124,14 +122,15 @@ namespace bifeldy_lib_90.Backgrounds {
                         ConsumeResult<string, string> result = consumer.Consume(stoppingToken);
                         _ = await generalRepo.SaveKafkaToTable(pg, result.Topic, result.Offset.Value, result.Partition.Value, result.Message, this._logTableName);
 
-                        var msg = new Message<string, object>() {
+                        var msg = new Message<string, string>() {
                             Headers = result.Message.Headers,
                             Key = result.Message.Key,
-                            Value = result.Message.Value.StartsWith("{") ? this._converter.JsonToObject(result.Message.Value) : result.Message.Value,
+                            Value = result.Message.Value,
                             Timestamp = result.Message.Timestamp
                         };
 
                         observeable.OnNext(msg);
+
                         if (++i % COMMIT_AFTER_N_MESSAGES == 0) {
                             _ = consumer.Commit();
                             i = 0;
