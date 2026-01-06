@@ -2,6 +2,7 @@
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Repositories;
 using bifeldy_lib_90.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -45,8 +46,12 @@ namespace bifeldy_lib_90.Middlewares {
                 return;
             }
 
+            Endpoint endpoint = context.GetEndpoint();
+            IAllowAnonymous allowAnonymous = endpoint?.Metadata.GetMetadata<IAllowAnonymous>();
+
             bool isApi = apiPathRequested.StartsWith($"/{Bifeldy.API_PREFIX}/", StringComparison.InvariantCultureIgnoreCase);
-            if (!isApi) {
+
+            if (!isApi || allowAnonymous != null) {
                 await this._next(context);
                 return;
             }
