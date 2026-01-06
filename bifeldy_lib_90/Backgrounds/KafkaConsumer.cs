@@ -20,9 +20,9 @@ namespace bifeldy_lib_90.Backgrounds {
         private readonly IPubSubService _pubSub;
         private readonly IKafkaService _kafka;
 
-        private string _hostPort;
-        private string _groupId;
-        private string _topicName;
+        private readonly string _hostPort;
+        private readonly string _topicName;
+        private readonly string _groupId;
 
         private readonly string _logTableName;
         private readonly bool _suffixKodeDc;
@@ -51,7 +51,7 @@ namespace bifeldy_lib_90.Backgrounds {
 
             this._hostPort = hostPort;
             this._topicName = topicName;
-            this._groupId = !string.IsNullOrEmpty(groupId) ? groupId : this._app.AppName;
+            this._groupId = groupId;
 
             this._logTableName = logTableName ?? "KAFKA_CONSUMER_AUTO_LOG";
             this._suffixKodeDc = suffixKodeDc;
@@ -80,39 +80,63 @@ namespace bifeldy_lib_90.Backgrounds {
                     }
                 }
 
-                if (string.IsNullOrEmpty(this._hostPort)) {
-                    KAFKA_SERVER_T kafka = await generalRepo.GetKafkaServerInfo(pg, this._topicName);
+                string hostPort = this._hostPort;
+                string topicName = this._topicName;
+                string groupId = this._groupId;
+
+                if (
+                    string.IsNullOrEmpty(hostPort) ||
+                    string.IsNullOrEmpty(topicName) ||
+                    string.IsNullOrEmpty(groupId)
+                ) {
+                    KAFKA_SERVER_T kafka = await generalRepo.GetKafkaServerInfo(pg, topicName);
                     if (kafka == null) {
                         throw new Exception("KAFKA Tidak Tersedia");
                     }
 
-                    this._hostPort = $"{kafka.HOST}:{kafka.PORT}";
+                    if (string.IsNullOrEmpty(hostPort)) {
+                        hostPort = $"{kafka.HOST}:{kafka.PORT}";
+                    }
+
+                    if (string.IsNullOrEmpty(topicName)) {
+                        topicName = kafka.TOPIC;
+                    }
+
+                    if (string.IsNullOrEmpty(groupId)) {
+                        groupId = kafka.GROUP_ID;
+                    }
                 }
 
                 if (this._suffixKodeDc) {
-                    if (!this._groupId.EndsWith("_")) {
-                        this._groupId += "_";
-                    }
-
-                    if (!this._topicName.EndsWith("_")) {
-                        this._topicName += "_";
-                    }
-
                     string kodeDc = await generalRepo.GetKodeDc(pg);
-                    this._groupId += kodeDc;
-                    this._topicName += kodeDc;
+
+                    if (!topicName.ToLower().EndsWith($"_{kodeDc.ToLower()}")) {
+                        if (!topicName.EndsWith("_")) {
+                            topicName += "_";
+                        }
+
+                        topicName += kodeDc;
+                    }
+
+                    if (!groupId.ToLower().EndsWith($"_{kodeDc.ToLower()}")) {
+                        if (!groupId.EndsWith("_")) {
+                            groupId += "_";
+                        }
+
+                        groupId += kodeDc;
+                    }
                 }
 
                 observeable = this._pubSub.GetGlobalAppBehaviorSubject<Message<string, string>>(this.KAFKA_NAME);
 
-                await this._kafka.CreateTopicIfNotExist(this._hostPort, this._topicName);
-                consumer = this._kafka.CreateKafkaConsumerInstance<string, string>(this._hostPort, this._groupId);
+                await this._kafka.CreateTopicIfNotExist(hostPort, topicName);
+                consumer = this._kafka.CreateKafkaConsumerInstance<string, string>(hostPort, groupId);
 
-                TopicPartition topicPartition = this._kafka.CreateKafkaConsumerTopicPartition(this._topicName, -1);
+                TopicPartition topicPartition = this._kafka.CreateKafkaConsumerTopicPartition(topicName, -1);
                 TopicPartitionOffset topicPartitionOffset = this._kafka.CreateKafkaConsumerTopicPartitionOffset(topicPartition, 0);
 
                 consumer.Assign(topicPartitionOffset);
-                consumer.Subscribe(this._topicName);
+                consumer.Subscribe(topicName);
 
                 ulong i = 0;
                 while (!stoppingToken.IsCancellationRequested) {

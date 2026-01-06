@@ -18,10 +18,10 @@ namespace bifeldy_lib_90.Backgrounds {
         private readonly IKafkaService _kafka;
         private readonly ILockerService _locker;
 
-        private string _hostPort;
-        private string _topicName;
-        private short _replication;
-        private int _partition;
+        private readonly string _hostPort;
+        private readonly string _topicName;
+        private readonly short _replication;
+        private readonly int _partition;
 
         private readonly bool _suffixKodeDc;
         private readonly string _pubSubName;
@@ -78,28 +78,50 @@ namespace bifeldy_lib_90.Backgrounds {
                     }
                 }
 
-                if (string.IsNullOrEmpty(this._hostPort)) {
-                    KAFKA_SERVER_T kafka = await generalRepo.GetKafkaServerInfo(pg, this._topicName);
+                string hostPort = this._hostPort;
+                string topicName = this._topicName;
+                short replication = this._replication;
+                int partition = this._partition;
+
+                if (
+                    string.IsNullOrEmpty(hostPort) ||
+                    string.IsNullOrEmpty(topicName)
+                ) {
+                    KAFKA_SERVER_T kafka = await generalRepo.GetKafkaServerInfo(pg, topicName);
                     if (kafka == null) {
                         throw new Exception("KAFKA Tidak Tersedia");
                     }
 
-                    this._hostPort = $"{kafka.HOST}:{kafka.PORT}";
-                    this._replication = (short)kafka.REPLI;
-                    this._partition = (int)kafka.PARTI;
+                    if (string.IsNullOrEmpty(hostPort)) {
+                        hostPort = $"{kafka.HOST}:{kafka.PORT}";
+                    }
+
+                    if (string.IsNullOrEmpty(topicName)) {
+                        topicName = kafka.TOPIC;
+                    }
+
+                    if (replication <= 0) {
+                        replication = (short)kafka.REPLI;
+                    }
+
+                    if (partition <= 0) {
+                        partition = (int)kafka.PARTI;
+                    }
                 }
 
                 if (this._suffixKodeDc) {
-                    if (!this._topicName.EndsWith("_")) {
-                        this._topicName += "_";
-                    }
-
                     string kodeDc = await generalRepo.GetKodeDc(pg);
-                    this._topicName += kodeDc;
+                    if (!topicName.ToLower().EndsWith($"_{kodeDc.ToLower()}")) {
+                        if (!topicName.EndsWith("_")) {
+                            topicName += "_";
+                        }
+
+                        topicName += kodeDc;
+                    }
                 }
 
-                await this._kafka.CreateTopicIfNotExist(this._hostPort, this._topicName, this._replication, this._partition);
-                producer = this._kafka.CreateKafkaProducerInstance<string, string>(this._hostPort);
+                await this._kafka.CreateTopicIfNotExist(hostPort, topicName, replication, partition);
+                producer = this._kafka.CreateKafkaProducerInstance<string, string>(hostPort);
 
                 observeable = this._pubSub.GetGlobalAppBehaviorSubject<Message<string, string>>(this.KAFKA_NAME);
                 subs = observeable.Subscribe(async data => {
@@ -131,7 +153,7 @@ namespace bifeldy_lib_90.Backgrounds {
 
                         foreach (Message<string, string> msg in cpMsgs) {
                             try {
-                                _ = await producer.ProduceAsync(this._topicName, msg, stoppingToken);
+                                _ = await producer.ProduceAsync(topicName, msg, stoppingToken);
                             }
                             catch (Exception e) {
                                 this._logger.LogError("[KAFKA_PRODUCER_MESSAGE] {e}", e.Message);
