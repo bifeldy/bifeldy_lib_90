@@ -144,7 +144,7 @@ namespace bifeldy_lib_90.Handlers {
                 info = $"200 - {callerMemberName}",
                 result = new CTableClassModel() {
                     table_name = typeof(T).Name,
-                    properties = this._cs.GetTableClassStructureModel<T>(jsonTypeInfo)
+                    properties = this._cs.GetTableClassStructureModel(jsonTypeInfo)
                 }
             });
         }
@@ -154,7 +154,7 @@ namespace bifeldy_lib_90.Handlers {
                 info = $"200 - {callerMemberName}",
                 result = new CPocoModel() {
                     poco_name = typeof(T).Name,
-                    properties = this._cs.GetPocoStructureModel<T>(jsonTypeInfo)
+                    properties = this._cs.GetPocoStructureModel(jsonTypeInfo)
                 }
             });
         }
