@@ -21,23 +21,23 @@ namespace bifeldy_lib_90.Repositories {
         }
 
         public async Task<bool> Create(IDatabase db, DC_USER_T user) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("user_name", user.USER_NAME);
-            sqlParameters.Add("user_password", user.USER_PASSWORD);
-            sqlParameters.Add("user_app_modul", user.USER_APP_MODUL);
-            sqlParameters.Add("user_privs", user.USER_PRIVS);
-            sqlParameters.Add("user_group", user.USER_GROUP);
-            sqlParameters.Add("user_fk_tbl_dcid", user.USER_FK_TBL_DCID);
-            sqlParameters.Add("user_updrec_date", user.USER_UPDREC_DATE);
-            sqlParameters.Add("user_updrec_id", user.USER_UPDREC_ID);
-            sqlParameters.Add("user_fk_tbl_lokasiid", user.USER_FK_TBL_LOKASIID);
-            sqlParameters.Add("user_fk_tbl_gudangid", user.USER_FK_TBL_GUDANGID);
-            sqlParameters.Add("user_fk_tbl_depoid", user.USER_FK_TBL_DEPOID);
-            sqlParameters.Add("user_flag_handheld", user.USER_FLAG_HANDHELD);
-            sqlParameters.Add("user_nik", user.USER_NIK);
-            sqlParameters.Add("user_flag_ho", user.USER_FLAG_HO);
-            sqlParameters.Add("last_pass_change", user.LAST_PASS_CHANGE);
-            sqlParameters.Add("pass_valid_days", user.PASS_VALID_DAYS);
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("user_name", user.USER_NAME);
+            sqlParam.Add("user_password", user.USER_PASSWORD);
+            sqlParam.Add("user_app_modul", user.USER_APP_MODUL);
+            sqlParam.Add("user_privs", user.USER_PRIVS);
+            sqlParam.Add("user_group", user.USER_GROUP);
+            sqlParam.Add("user_fk_tbl_dcid", user.USER_FK_TBL_DCID);
+            sqlParam.Add("user_updrec_date", user.USER_UPDREC_DATE);
+            sqlParam.Add("user_updrec_id", user.USER_UPDREC_ID);
+            sqlParam.Add("user_fk_tbl_lokasiid", user.USER_FK_TBL_LOKASIID);
+            sqlParam.Add("user_fk_tbl_gudangid", user.USER_FK_TBL_GUDANGID);
+            sqlParam.Add("user_fk_tbl_depoid", user.USER_FK_TBL_DEPOID);
+            sqlParam.Add("user_flag_handheld", user.USER_FLAG_HANDHELD);
+            sqlParam.Add("user_nik", user.USER_NIK);
+            sqlParam.Add("user_flag_ho", user.USER_FLAG_HO);
+            sqlParam.Add("last_pass_change", user.LAST_PASS_CHANGE);
+            sqlParam.Add("pass_valid_days", user.PASS_VALID_DAYS);
 
             int res = await db.ExecQueryWithResultAsync(
                 @"
@@ -54,7 +54,7 @@ namespace bifeldy_lib_90.Repositories {
                         :user_flag_ho, :last_pass_change, :pass_valid_days
                     )
                 ",
-                sqlParameters
+                sqlParam
             );
 
             return res > 0;
@@ -63,18 +63,18 @@ namespace bifeldy_lib_90.Repositories {
         public async Task<IEnumerable<DC_USER_T>> GetAll(IDatabase db, string userNameNik = null) {
             string sqlQuery = "SELECT * FROM dc_user_t";
 
-            var sqlParameters = new DynamicParameters();
+            var sqlParam = new DynamicParameters();
             if (!string.IsNullOrEmpty(userNameNik)) {
                 sqlQuery += " WHERE UPPER(user_name) = :userNameNik OR UPPER(user_nik) = :userNameNik";
-                sqlParameters.Add("userNameNik", userNameNik.ToUpper());
+                sqlParam.Add("userNameNik", userNameNik.ToUpper());
             }
 
-            return await db.GetEnumerableAsync(DC_USER_T_JsonSerializerContext.Default.DC_USER_T, sqlQuery, sqlParameters);
+            return await db.GetEnumerableAsync(DC_USER_T_JsonSerializerContext.Default.DC_USER_T, sqlQuery, sqlParam);
         }
 
         public async Task<DC_USER_T> GetByUserNik(IDatabase db, string userNik) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("user_nik", userNik.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("user_nik", userNik.ToUpper());
 
             return await db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
@@ -82,13 +82,13 @@ namespace bifeldy_lib_90.Repositories {
                     SELECT * FROM dc_user_t
                     FROM UPPER(user_nik) = :user_nik
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
         public async Task<DC_USER_T> GetByUserName(IDatabase db, string userName) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("user_name", userName.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("user_name", userName.ToUpper());
 
             return await db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
@@ -96,13 +96,13 @@ namespace bifeldy_lib_90.Repositories {
                     SELECT * FROM dc_user_t
                     WHERE UPPER(user_name) = :user_name
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
         public async Task<DC_USER_T> GetByUserNameNik(IDatabase db, string userNameNik) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("userNameNik", userNameNik.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("userNameNik", userNameNik.ToUpper());
 
             return await db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
@@ -111,14 +111,14 @@ namespace bifeldy_lib_90.Repositories {
                     WHERE (UPPER(user_name) = :userNameNik OR UPPER(user_nik) = :userNameNik)
                         AND UPPER(user_name) IS NOT NULL AND UPPER(user_nik) IS NOT NULL
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
         public async Task<DC_USER_T> GetByUserNameNikPassword(IDatabase db, string userNameNik, string password) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("userNameNik", userNameNik.ToUpper());
-            sqlParameters.Add("password", password.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("userNameNik", userNameNik.ToUpper());
+            sqlParam.Add("password", password.ToUpper());
 
             return await db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
@@ -128,20 +128,20 @@ namespace bifeldy_lib_90.Repositories {
                         AND UPPER(user_name) IS NOT NULL AND UPPER(user_nik) IS NOT NULL
                         AND UPPER(user_password) = :password
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
         public async Task<bool> Delete(IDatabase db, string userNik) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("user_nik", userNik.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("user_nik", userNik.ToUpper());
 
             int res = await db.ExecQueryWithResultAsync(
                 @"
                     DELETE FROM dc_user_t
                     FROM UPPER(user_nik) = :user_nik
                 ",
-                sqlParameters
+                sqlParam
             );
 
             return res > 0;

@@ -135,17 +135,17 @@ namespace bifeldy_lib_90.Repositories {
                 throw new TidakMemenuhiException("Kode DC / Kunci GXXX / Server Target Tidak Boleh Kosong");
             }
 
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("kode_dc", kodeDc.ToLower());
-            sqlParameters.Add("kunci_gxxx", kunciGxxx);
-            sqlParameters.Add("server_target", serverTarget);
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("kode_dc", kodeDc.ToLower());
+            sqlParam.Add("kunci_gxxx", kunciGxxx);
+            sqlParam.Add("server_target", serverTarget);
 
             return await this._sqlite.ExecQueryAsync(
                 $@"
                     INSERT INTO server_kunci (kode_dc, kunci_gxxx, server_target)
                     VALUES (:kode_dc, :kunci_gxxx, :server_target)
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
@@ -154,10 +154,10 @@ namespace bifeldy_lib_90.Repositories {
                 throw new TidakMemenuhiException("Kode DC / Kunci GXXX / Server Target Tidak Boleh Kosong");
             }
 
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("kode_dc", kodeDc.ToLower());
-            sqlParameters.Add("kunci_gxxx", kunciGxxx);
-            sqlParameters.Add("server_target", serverTarget);
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("kode_dc", kodeDc.ToLower());
+            sqlParam.Add("kunci_gxxx", kunciGxxx);
+            sqlParam.Add("server_target", serverTarget);
 
             return await this._sqlite.ExecQueryAsync(
                 $@"
@@ -165,7 +165,7 @@ namespace bifeldy_lib_90.Repositories {
                     SET kunci_gxxx = :kunci_gxxx, server_target = :server_target
                     WHERE LOWER(kode_dc) = :kode_dc
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
@@ -174,15 +174,15 @@ namespace bifeldy_lib_90.Repositories {
                 throw new TidakMemenuhiException("Kode DC Tidak Boleh Kosong");
             }
 
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("kode_dc", kodeDc.ToLower());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("kode_dc", kodeDc.ToLower());
 
             return await this._sqlite.ExecQueryAsync(
                 $@"
                     DELETE FROM server_kunci
                     WHERE LOWER(kode_dc) = :kode_dc
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
@@ -201,15 +201,15 @@ namespace bifeldy_lib_90.Repositories {
             }
 
             string sqlQuery = "SELECT * FROM server_kunci";
-            var sqlParameters = new DynamicParameters();
+            var sqlParam = new DynamicParameters();
 
             if (!string.IsNullOrEmpty(kodeDc)) {
                 sqlQuery += " WHERE LOWER(kode_dc) = :kode_dc";
-                sqlParameters.Add("kode_dc", kodeDc.ToLower());
+                sqlParam.Add("kode_dc", kodeDc.ToLower());
             }
 
             sqlQuery += " ORDER BY kode_dc ASC";
-            return await this._sqlite.GetEnumerableAsync(ServerConfigJsonSerializerContext.Default.ServerConfigKunci, sqlQuery, sqlParameters);
+            return await this._sqlite.GetEnumerableAsync(ServerConfigJsonSerializerContext.Default.ServerConfigKunci, sqlQuery, sqlParam);
         }
 
         // Panggil Ini Dulu Sebelum Resolve Menggunakan Service Provider (_sp.GetService / _sp.GetRequiredService)

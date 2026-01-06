@@ -24,19 +24,19 @@ namespace bifeldy_lib_90.Repositories {
         }
 
         public async Task<bool> Create(IDatabase db, API_TOKEN_T apiToken) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("user_name", apiToken.USER_NAME);
-            sqlParameters.Add("password", apiToken.PASSWORD);
-            sqlParameters.Add("app_name", apiToken.APP_NAME);
-            sqlParameters.Add("last_login", apiToken.LAST_LOGIN);
-            sqlParameters.Add("token_sekali_pakai", apiToken.TOKEN_SEKALI_PAKAI);
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("user_name", apiToken.USER_NAME);
+            sqlParam.Add("password", apiToken.PASSWORD);
+            sqlParam.Add("app_name", apiToken.APP_NAME);
+            sqlParam.Add("last_login", apiToken.LAST_LOGIN);
+            sqlParam.Add("token_sekali_pakai", apiToken.TOKEN_SEKALI_PAKAI);
 
             int res = await db.ExecQueryWithResultAsync(
                 @"
                     INSERT INTO api_token_t (user_name, password, app_name, last_login, token_sekali_pakai)
                     VALUES (:user_name, :password, :app_name, :last_login, :token_sekali_pakai)
                 ",
-                sqlParameters
+                sqlParam
             );
 
             return res > 0;
@@ -45,21 +45,21 @@ namespace bifeldy_lib_90.Repositories {
         public async Task<IEnumerable<API_TOKEN_T>> GetAll(IDatabase db, string userName = null) {
             string sqlQuery = "SELECT * FROM api_token_t WHERE (app_name = '*' OR UPPER(app_name) = :app_name)";
 
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("app_name", this._as.AppName.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("app_name", this._as.AppName.ToUpper());
 
             if (!string.IsNullOrEmpty(userName)) {
                 sqlQuery += " AND UPPER(user_name) = :user_name";
-                sqlParameters.Add("user_name", userName.ToUpper());
+                sqlParam.Add("user_name", userName.ToUpper());
             }
 
-            return await db.GetEnumerableAsync(API_TOKEN_T_JsonSerializerContext.Default.API_TOKEN_T, sqlQuery, sqlParameters);
+            return await db.GetEnumerableAsync(API_TOKEN_T_JsonSerializerContext.Default.API_TOKEN_T, sqlQuery, sqlParam);
         }
 
         public async Task<API_TOKEN_T> GetByUserName(IDatabase db, string userName) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("app_name", this._as.AppName.ToUpper());
-            sqlParameters.Add("user_name", userName.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("app_name", this._as.AppName.ToUpper());
+            sqlParam.Add("user_name", userName.ToUpper());
 
             return await db.ExecScalarAsync(
                 API_TOKEN_T_JsonSerializerContext.Default.API_TOKEN_T,
@@ -67,15 +67,15 @@ namespace bifeldy_lib_90.Repositories {
                     SELECT * FROM api_token_t
                     WHERE (app_name = '*' OR UPPER(app_name) = :app_name) AND UPPER(user_name) = :user_name
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
         public async Task<API_TOKEN_T> GetByUserNamePass(IDatabase db, string userName, string password) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("app_name", this._as.AppName.ToUpper());
-            sqlParameters.Add("user_name", userName.ToUpper());
-            sqlParameters.Add("password", password.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("app_name", this._as.AppName.ToUpper());
+            sqlParam.Add("user_name", userName.ToUpper());
+            sqlParam.Add("password", password.ToUpper());
 
             return await db.ExecScalarAsync(
                 API_TOKEN_T_JsonSerializerContext.Default.API_TOKEN_T,
@@ -84,21 +84,21 @@ namespace bifeldy_lib_90.Repositories {
                     WHERE (app_name = '*' OR UPPER(app_name) = :app_name)
                         AND UPPER(user_name) = :user_name AND UPPER(password) = :password
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
         public async Task<bool> Delete(IDatabase db, string userName) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("app_name", this._as.AppName.ToUpper());
-            sqlParameters.Add("user_name", userName.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("app_name", this._as.AppName.ToUpper());
+            sqlParam.Add("user_name", userName.ToUpper());
 
             int res = await db.ExecQueryWithResultAsync(
                 @"
                     DELETE FROM api_token_t
                     WHERE UPPER(app_name) = :app_name AND UPPER(user_name) = :user_name
                 ",
-                sqlParameters
+                sqlParam
             );
 
             return res > 0;
@@ -111,10 +111,10 @@ namespace bifeldy_lib_90.Repositories {
 
             bool tokenSekaliPakaiValid = apiToken?.TOKEN_SEKALI_PAKAI.ToUpper() == token;
             if (tokenSekaliPakaiValid) {
-                var sqlParameters = new DynamicParameters();
-                sqlParameters.Add("app_name", this._as.AppName.ToUpper());
-                sqlParameters.Add("user_name", apiToken.USER_NAME.ToUpper());
-                sqlParameters.Add("token_sekali_pakai", token);
+                var sqlParam = new DynamicParameters();
+                sqlParam.Add("app_name", this._as.AppName.ToUpper());
+                sqlParam.Add("user_name", apiToken.USER_NAME.ToUpper());
+                sqlParam.Add("token_sekali_pakai", token);
 
                 int res = await db.ExecQueryWithResultAsync(
                     @"
@@ -123,7 +123,7 @@ namespace bifeldy_lib_90.Repositories {
                         WHERE UPPER(app_name) = :app_name AND UPPER(user_name) = :user_name
                             AND UPPER(token_sekali_pakai) = :token_sekali_pakai
                     ",
-                    sqlParameters
+                    sqlParam
                 );
 
                 tokenSekaliPakaiValid = res > 0;
@@ -135,9 +135,9 @@ namespace bifeldy_lib_90.Repositories {
         public async Task<API_TOKEN_T> LoginBot(IDatabase db, string userName, string password) {
             API_TOKEN_T apiToken = await this.GetByUserNamePass(db, userName, password);
             if (apiToken != null) {
-                var sqlParameters = new DynamicParameters();
-                sqlParameters.Add("app_name", this._as.AppName.ToUpper());
-                sqlParameters.Add("user_name", apiToken.USER_NAME.ToUpper());
+                var sqlParam = new DynamicParameters();
+                sqlParam.Add("app_name", this._as.AppName.ToUpper());
+                sqlParam.Add("user_name", apiToken.USER_NAME.ToUpper());
 
                 int res = await db.ExecQueryWithResultAsync(
                     @"
@@ -145,7 +145,7 @@ namespace bifeldy_lib_90.Repositories {
                         SET token_sekali_pakai = NULL, LAST_LOGIN = CURRENT_TIMESTAMP
                         WHERE UPPER(app_name) = :app_name AND UPPER(user_name) = :user_name
                     ",
-                    sqlParameters
+                    sqlParam
                 );
 
                 if (res > 0) {

@@ -60,10 +60,10 @@ namespace bifeldy_lib_90.Repositories {
         public async Task<string> GetURLWebService(IDatabase db, string webType) {
             string sqlQuery = "SELECT web_url FROM dc_webservice_t WHERE UPPER(web_type) = :web_type";
 
-            var sqlParameter = new DynamicParameters();
-            sqlParameter.Add("web_type", webType.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("web_type", webType.ToUpper());
 
-            return await db.ExecScalarAsync<string>(sqlQuery, sqlParameter);
+            return await db.ExecScalarAsync<string>(sqlQuery, sqlParam);
         }
 
         public async Task<bool> SaveKafkaToTable(IDatabase db, string topic, decimal offset, decimal partition, Message<string, string> msg, string logTableName) {
@@ -72,26 +72,26 @@ namespace bifeldy_lib_90.Repositories {
                 VALUES (:tpc, :offs, :partt, :key, :value, :tmstmp)
             ";
 
-            var sqlParameter = new DynamicParameters();
-            sqlParameter.Add("tpc", topic);
-            sqlParameter.Add("offs", offset);
-            sqlParameter.Add("partt", partition);
-            sqlParameter.Add("key", msg.Key);
-            sqlParameter.Add("value", msg.Value);
-            sqlParameter.Add("tmstmp", msg.Timestamp.UtcDateTime);
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("tpc", topic);
+            sqlParam.Add("offs", offset);
+            sqlParam.Add("partt", partition);
+            sqlParam.Add("key", msg.Key);
+            sqlParam.Add("value", msg.Value);
+            sqlParam.Add("tmstmp", msg.Timestamp.UtcDateTime);
 
-            return await db.ExecQueryAsync(sqlQuery, sqlParameter);
+            return await db.ExecQueryAsync(sqlQuery, sqlParam);
         }
 
         public async Task<KAFKA_SERVER_T> GetKafkaServerInfo(IDatabase db, string topicName) {
             string sqlQuery = "SELECT * FROM kafka_server_t WHERE UPPER(topic) = :topic_name";
 
-            var sqlParameter = new DynamicParameters();
-            sqlParameter.Add("topic_name", topicName.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("topic_name", topicName.ToUpper());
 
             return await db.ExecScalarAsync(
                 KAFKA_SERVER_T_JsonSerializerContext.Default.KAFKA_SERVER_T,
-                sqlQuery, sqlParameter
+                sqlQuery, sqlParam
             );
         }
 
@@ -171,12 +171,12 @@ namespace bifeldy_lib_90.Repositories {
             if (dbConHo != null) {
                 string sqlQuery = "SELECT * FROM dc_tabel_ip_t WHERE UPPER(dc_kode) = :dc_kode";
 
-                var sqlParameter = new DynamicParameters();
-                sqlParameter.Add("dc_kode", kodeDcTarget.ToUpper());
+                var sqlParam = new DynamicParameters();
+                sqlParam.Add("dc_kode", kodeDcTarget.ToUpper());
 
                 DC_TABEL_IP_T dbi = await dbConHo.ExecScalarAsync(
                     DC_TABEL_IP_T_JsonSerializerContext.Default.DC_TABEL_IP_T,
-                    sqlQuery, sqlParameter
+                    sqlQuery, sqlParam
                 );
 
                 if (dbi != null) {
@@ -224,13 +224,13 @@ namespace bifeldy_lib_90.Repositories {
                     UPPER(a.dc_kode) = :kode_dc
             ";
 
-            var sqlParameter = new DynamicParameters();
-            sqlParameter.Add("app_name", this._as.AppName.ToUpper());
-            sqlParameter.Add("kode_dc", dcKode.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("app_name", this._as.AppName.ToUpper());
+            sqlParam.Add("kode_dc", dcKode.ToUpper());
 
             ListApiDc dbi = await db.ExecScalarAsync(
                 ListApiDcJsonSerializerContext.Default.ListApiDc,
-                sqlQuery, sqlParameter
+                sqlQuery, sqlParam
             );
 
             string hostApiDc = string.IsNullOrEmpty(dbi?.API_HOST) ? dbi?.IP_NGINX : dbi?.API_HOST;

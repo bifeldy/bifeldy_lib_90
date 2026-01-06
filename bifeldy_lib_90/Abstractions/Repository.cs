@@ -27,14 +27,14 @@ namespace bifeldy_lib_90.Abstractions {
 
         public async Task<string> GetJenisDc(IDatabase db, string kodeDc) {
             string sqlQuery = "SELECT UPPER(tbl_jenis_dc) FROM dc_tabel_dc_t";
-            var sqlParameters = new DynamicParameters();
+            var sqlParam = new DynamicParameters();
 
             if (!string.IsNullOrEmpty(kodeDc)) {
                 sqlQuery += " WHERE UPPER(tbl_dc_kode) = :tbl_dc_kode";
-                sqlParameters.Add("tbl_dc_kode", kodeDc.ToUpper());
+                sqlParam.Add("tbl_dc_kode", kodeDc.ToUpper());
             }
 
-            return await db.ExecScalarAsync<string>(sqlQuery, sqlParameters);
+            return await db.ExecScalarAsync<string>(sqlQuery, sqlParam);
         }
 
         public async Task<EJenisDc> GetJenisDc(IDatabase db) {

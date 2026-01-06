@@ -1,4 +1,5 @@
 ﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Libraries;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
@@ -8,6 +9,7 @@ namespace bifeldy_lib_90.Models {
         [JsonPropertyOrder(1)] public string info { get; set; }
     }
 
+    [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public sealed class ResponseRedirect : ResponseJson {
         [JsonPropertyOrder(2)] public string url { get; set; }
@@ -23,11 +25,13 @@ namespace bifeldy_lib_90.Models {
         [JsonPropertyOrder(4)] public decimal? count { get; set; }
     }
 
+    [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public class ResponseJsonMessage : JsonSerDe {
         [JsonPropertyOrder(1)] public string message { get; set; }
     }
 
+    [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public sealed class ResponseJsonErrorApiKeyIpOrigin : ResponseJsonMessage {
         [JsonPropertyOrder(2)] public string api_key { get; set; }
@@ -67,6 +71,7 @@ namespace bifeldy_lib_90.Models {
 
     /* ** */
 
+    [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public class RequestJson : JsonSerDe {
         [JsonPropertyOrder(1)] public string secret { get; set; }
@@ -83,9 +88,11 @@ namespace bifeldy_lib_90.Models {
     }
 
     // Kosongan Bisa Buat Kirim JWT Via Body (POST, PUT, PATCH, Etc.)
+    [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public class InputJson : RequestJson { }
 
+    [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public class InputJsonNonDc : InputJson { }
 
@@ -101,6 +108,7 @@ namespace bifeldy_lib_90.Models {
 
     public class InputJsonHoDataMulti<T> : InputJsonNonDcDataMulti<T> { }
 
+    [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
     public class InputJsonDc : InputJson {
         [JsonPropertyOrder(5)] public string kode_dc { get; set; }

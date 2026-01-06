@@ -25,17 +25,17 @@ namespace bifeldy_lib_90.Repositories {
         }
 
         public async Task<bool> Create(IDatabase db, API_KEY_T apiKey) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("ip_origin", apiKey.IP_ORIGIN);
-            sqlParameters.Add("app_name", this._as.AppName.ToUpper());
-            sqlParameters.Add("keter", apiKey.KETER);
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("ip_origin", apiKey.IP_ORIGIN);
+            sqlParam.Add("app_name", this._as.AppName.ToUpper());
+            sqlParam.Add("keter", apiKey.KETER);
 
             int res = await db.ExecQueryWithResultAsync(
                 @"
                     INSERT INTO api_key_t (ip_origin, app_name, keter)
                     VALUES (:ip_origin, :app_name, :keter)
                 ",
-                sqlParameters
+                sqlParam
             );
 
             return res > 0;
@@ -44,21 +44,21 @@ namespace bifeldy_lib_90.Repositories {
         public async Task<IEnumerable<API_KEY_T>> GetAll(IDatabase db, string key = null) {
             string sqlQuery = "SELECT * FROM api_key_t WHERE (app_name = '*' OR UPPER(app_name) = :app_name)";
 
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("app_name", this._as.AppName.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("app_name", this._as.AppName.ToUpper());
 
             if (!string.IsNullOrEmpty(key)) {
                 sqlQuery += " AND UPPER(key) = :key";
-                sqlParameters.Add("key", key.ToUpper());
+                sqlParam.Add("key", key.ToUpper());
             }
 
-            return await db.GetEnumerableAsync(API_KEY_T_JsonSerializerContext.Default.API_KEY_T, sqlQuery, sqlParameters);
+            return await db.GetEnumerableAsync(API_KEY_T_JsonSerializerContext.Default.API_KEY_T, sqlQuery, sqlParam);
         }
 
         public async Task<API_KEY_T> GetByKey(IDatabase db, string key) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("app_name", this._as.AppName.ToUpper());
-            sqlParameters.Add("key", key.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("app_name", this._as.AppName.ToUpper());
+            sqlParam.Add("key", key.ToUpper());
 
             return await db.ExecScalarAsync(
                 API_KEY_T_JsonSerializerContext.Default.API_KEY_T,
@@ -66,21 +66,21 @@ namespace bifeldy_lib_90.Repositories {
                     SELECT * FROM api_key_t
                     WHERE (app_name = '*' OR UPPER(app_name) = :app_name) AND UPPER(key) = :key
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
         public async Task<bool> Delete(IDatabase db, string key) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("app_name", this._as.AppName.ToUpper());
-            sqlParameters.Add("key", key.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("app_name", this._as.AppName.ToUpper());
+            sqlParam.Add("key", key.ToUpper());
 
             int res = await db.ExecQueryWithResultAsync(
                 @"
                     DELETE FROM api_key_t
                     WHERE UPPER(app_name) = :app_name AND UPPER(key) = :key
                 ",
-                sqlParameters
+                sqlParam
             );
 
             return res > 0;
@@ -89,8 +89,8 @@ namespace bifeldy_lib_90.Repositories {
         /* ** */
 
         public async Task<API_KEY_T> SecretLogin(IDatabase db, string key) {
-            var sqlParameters = new DynamicParameters();
-            sqlParameters.Add("key", key.ToUpper());
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("key", key.ToUpper());
 
             return await db.ExecScalarAsync(
                 API_KEY_T_JsonSerializerContext.Default.API_KEY_T,
@@ -98,7 +98,7 @@ namespace bifeldy_lib_90.Repositories {
                     SELECT * FROM api_key_t
                     WHERE ip_origin = '*' AND app_name = '*' AND UPPER(key) = :key
                 ",
-                sqlParameters
+                sqlParam
             );
         }
 
