@@ -1,5 +1,6 @@
 ﻿using bifeldy_lib_90.Backgrounds;
 using bifeldy_lib_90.Databases;
+using bifeldy_lib_90.Handlers;
 using bifeldy_lib_90.JobSchedulers;
 using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Middlewares;
@@ -43,14 +44,10 @@ namespace bifeldy_lib_90 {
 
         public static DateTime? LAST_GC_RUN = null;
 
-        public static bool IS_USING_SECRET = false;
-        public static bool IS_USING_API_KEY = false;
-        public static bool IS_USING_JWT = false;
-
         public static string API_PREFIX = null;
         public static string NGINX_PATH_NAME = "x-forwarded-prefix";
 
-        public static List<string> OPEN_API_DOCUMENTS = ["latest-" + Assembly.GetEntryAssembly().GetName().Version?.ToString().Replace(".", string.Empty)];
+        public static List<string> OPEN_API_DOCUMENTS = ApiDocumentName.ApiDefaultDocuments;
 
         public static WebApplicationBuilder Builder = null;
         public static IServiceCollection Services = null;
@@ -274,6 +271,11 @@ namespace bifeldy_lib_90 {
             _ = Services.AddScoped<IGeneralRepository, CGeneralRepository>();
             _ = Services.AddScoped<IServerConfigRepository, CServerConfigRepository>();
             _ = Services.AddScoped<IUserRepository, CUserRepository>();
+
+            // --
+            // Setiap Request Cycle 1 Scope 1x New Object 1x Sesion Saja
+            // --
+            _ = Services.AddScoped<IEndpointProsesDataHandler, CEndpointProsesDataHandler>();
         }
 
         public static void InitApp(WebApplication app, bool forceGcToCleanUpRamEveryRequest = false, int gcDelaySkipRunMinutes = 30) {
@@ -376,17 +378,14 @@ namespace bifeldy_lib_90 {
 
         public static void UseSecretMiddleware() {
             _ = App.UseMiddleware<SecretMiddleware>();
-            IS_USING_SECRET = true;
         }
 
         public static void UseApiKeyMiddleware() {
             _ = App.UseMiddleware<ApiKeyMiddleware>();
-            IS_USING_API_KEY = true;
         }
 
         public static void UseJwtMiddleware() {
             _ = App.UseMiddleware<JwtMiddleware>();
-            IS_USING_JWT = true;
         }
 
         public static void Handle500ApiError<T>(string apiPrefix = "api") {
