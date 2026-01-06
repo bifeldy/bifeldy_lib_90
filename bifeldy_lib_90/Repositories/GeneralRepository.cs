@@ -105,10 +105,7 @@ namespace bifeldy_lib_90.Repositories {
 
             string httpResString = await httpResponse.Content.ReadAsStringAsync();
 
-            return this._converter.JsonToObject(
-                httpResString,
-                DC_TABEL_V_JsonSerializerContext.Default.ListDC_TABEL_V
-            );
+            return this._converter.JsonToObject(httpResString, DC_TABEL_V_JsonSerializerContext.Default.ListDC_TABEL_V);
         }
 
         //
@@ -231,12 +228,11 @@ namespace bifeldy_lib_90.Repositories {
             sqlParameter.Add("app_name", this._as.AppName.ToUpper());
             sqlParameter.Add("kode_dc", dcKode.ToUpper());
 
-            IEnumerable<ListApiDc> listApiDcs = await db.GetEnumerableAsync(
+            ListApiDc dbi = await db.ExecScalarAsync(
                 ListApiDcJsonSerializerContext.Default.ListApiDc,
                 sqlQuery, sqlParameter
             );
 
-            ListApiDc dbi = listApiDcs.FirstOrDefault();
             string hostApiDc = string.IsNullOrEmpty(dbi?.API_HOST) ? dbi?.IP_NGINX : dbi?.API_HOST;
             if (dbi == null || string.IsNullOrEmpty(hostApiDc)) {
                 callback($"Kode DC {dcKode.ToUpper()} tidak tersedia!", null);
