@@ -55,7 +55,9 @@ namespace bifeldy_lib_90.Handlers {
 
                 switch (statusCode) {
                     case StatusCodes.Status301MovedPermanently:
-                        return Results.Redirect(redir.url, true);
+                        return Results.Redirect(redir.url, true, false);
+                    case StatusCodes.Status302Found:
+                        return Results.Redirect(redir.url, false, false);
                     case StatusCodes.Status307TemporaryRedirect:
                         return Results.Redirect(redir.url, false, true);
                     case StatusCodes.Status308PermanentRedirect:
