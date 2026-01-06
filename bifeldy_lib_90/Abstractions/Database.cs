@@ -132,25 +132,25 @@ namespace bifeldy_lib_90.Abstractions {
         }
 
         public virtual async Task<IEnumerable<T>> GetEnumerableAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
-            try {
-                using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
-                    return dr.ToEnumerable(typeInfo, token);
-                }
+            var ls = new List<T>();
+            
+            IAsyncEnumerable<T> iae = this.GetAsyncEnumerable(typeInfo, sqlQuery, sqlParameter, commandTimeoutSeconds, token);
+            await foreach (T item in iae) {
+                ls.Add(item);
             }
-            finally {
-                this.TryCloseConnection();
-            }
+
+            return ls;
         }
 
         public virtual async Task<IEnumerable<T>> GetEnumerableAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
-            try {
-                using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
-                    return dr.ToEnumerable<T>(token);
-                }
+            var ls = new List<T>();
+
+            IAsyncEnumerable<T> iae = this.GetAsyncEnumerable<T>(sqlQuery, sqlParameter, commandTimeoutSeconds, token);
+            await foreach (T item in iae) {
+                ls.Add(item);
             }
-            finally {
-                this.TryCloseConnection();
-            }
+
+            return ls;
         }
 
         public virtual async Task<T> ExecScalarAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {

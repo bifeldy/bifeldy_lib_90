@@ -31,7 +31,7 @@ namespace bifeldy_lib_90.Abstractions {
 
             if (!string.IsNullOrEmpty(kodeDc)) {
                 sqlQuery += " WHERE UPPER(tbl_dc_kode) = :tbl_dc_kode";
-                sqlParameters.Add("tbl_dc_kode", kodeDc.ToLower());
+                sqlParameters.Add("tbl_dc_kode", kodeDc.ToUpper());
             }
 
             return await db.ExecScalarAsync<string>(sqlQuery, sqlParameters);
