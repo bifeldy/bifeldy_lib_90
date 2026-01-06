@@ -2,7 +2,6 @@
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Transformers;
 using Microsoft.AspNetCore.Builder;
-using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace bifeldy_lib_90.Extensions {
@@ -10,7 +9,7 @@ namespace bifeldy_lib_90.Extensions {
     public static class TBuilderExtensions {
 
         public static TBuilder WithApiDocumentNames<TBuilder>(this TBuilder builder, params string[] documents) where TBuilder : IEndpointConventionBuilder {
-            List<string> docs = ["latest-" + Assembly.GetEntryAssembly().GetName().Version?.ToString().Replace(".", string.Empty)];
+            List<string> docs = [ApiDocumentName.DEFAULT];
 
             if (documents != null) {
                 foreach (string document in documents) {
@@ -35,6 +34,14 @@ namespace bifeldy_lib_90.Extensions {
 
         public static TBuilder WithMinRole<TBuilder>(this TBuilder builder, ESessionRole role) where TBuilder : IEndpointConventionBuilder {
             return builder.WithMetadata(new MinRoleAttribute(role));
+        }
+
+        public static TBuilder WithRouteExclude<TBuilder>(this TBuilder builder, params DenyAccessAttribute[] routeExclude) where TBuilder : IEndpointConventionBuilder {
+            foreach (DenyAccessAttribute re in routeExclude) {
+                _ = builder.WithMetadata(re);
+            }
+
+            return builder;
         }
 
     }

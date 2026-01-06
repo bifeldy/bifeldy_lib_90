@@ -1,4 +1,5 @@
-﻿using bifeldy_lib_90.Extensions;
+﻿using bifeldy_lib_90.Attributes;
+using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
@@ -30,6 +31,7 @@ namespace bifeldy_lib_90.Services {
         Task<(string, string)> ParseHttpRequestBodyJsonString(HttpRequest request);
         Task<T> GetHttpRequestBody<T>(HttpRequest request, JsonTypeInfo<T> typeInfo);
         Task CheckDownloadUpdate(string apiUpdaterUrl, Dictionary<string, object> HashFileFromServer);
+        bool IsAllowedRoutingTarget(Type hideType, string kodeDc, EJenisDc jenisDc);
     }
 
     public sealed class CGlobalService : IGlobalService {
@@ -411,6 +413,30 @@ exit /b 0
             }
 
             this._host.StopApplication();
+        }
+
+        public bool IsAllowedRoutingTarget(Type hideType, string kodeDc, EJenisDc jenisDc) {
+            bool isVisibleAllowed = true;
+
+            if (
+                (hideType == typeof(DenyAccessNonDc) && jenisDc == EJenisDc.NONDC) ||
+                (hideType == typeof(DenyAccessHo) && jenisDc == EJenisDc.HO) ||
+                (hideType == typeof(DenyAccessDcHo) && jenisDc == EJenisDc.HO && kodeDc == "DCHO") ||
+                (hideType == typeof(DenyAccessWhHo) && jenisDc == EJenisDc.HO && kodeDc == "WHHO") ||
+                (hideType == typeof(DenyAccessAllDc) && jenisDc != EJenisDc.NONDC && jenisDc != EJenisDc.HO) ||
+                (hideType == typeof(DenyAccessInduk) && jenisDc == EJenisDc.INDUK) ||
+                (hideType == typeof(DenyAccessDepo) && jenisDc == EJenisDc.DEPO) ||
+                (hideType == typeof(DenyAccessKonvinience) && jenisDc == EJenisDc.KONVINIENCE) ||
+                (hideType == typeof(DenyAccessIplaza) && jenisDc == EJenisDc.IPLAZA) ||
+                (hideType == typeof(DenyAccessFrozen) && jenisDc == EJenisDc.FROZEN) ||
+                (hideType == typeof(DenyAccessPerishable) && jenisDc == EJenisDc.PERISHABLE) ||
+                (hideType == typeof(DenyAccessLpg) && jenisDc == EJenisDc.LPG) ||
+                (hideType == typeof(DenyAccessSewa) && jenisDc == EJenisDc.SEWA)
+            ) {
+                isVisibleAllowed = false;
+            }
+
+            return isVisibleAllowed;
         }
 
     }
