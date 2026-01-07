@@ -23,9 +23,10 @@ namespace bifeldy_lib_90.Services {
         ReportDataSource CreateReportDataSource<T>(string name, IEnumerable<T> dt);
         HtmlToPdfDocument GenerateHtmlReport(RdlcReport reportModel, string width, string height, double top, double bottom, double left, double right);
         ReportParameter[] CreateReportParameter(IDictionary<string, string> dict);
+        RdlcInfoWrapper CreateInfoWrapper(IDictionary<string, string> dict);
         RdlcReport GeneratePdfWordExcelHtmlReport(string rdlcName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
         RdlcReport GeneratePdfWordExcelHtmlReport<T>(string rdlcName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
-        Task GeneratePdfWordExcelHtmlReportExternal<T>(CancellationToken ct, Stream streamDestination, IAsyncEnumerable<T> dataStream, JsonTypeInfo<T> typeInfo, RdlcInfoWrapper rdlcDataWithParam, string rdlcPath, string datasetName, string fileType = "PDF");
+        Task GeneratePdfWordExcelHtmlReportExternal<T>(CancellationToken ct, Stream streamDestination, IAsyncEnumerable<T> dataStream, JsonTypeInfo<T> typeInfo, RdlcInfoWrapper rdlcDataWithParam, string rdlcPath, string datasetName, string fileType = "PDF", string rdlcGeneratorExecutablePath = null);
     }
 
     public sealed class CRdlcService : IRdlcService {
@@ -193,6 +194,10 @@ namespace bifeldy_lib_90.Services {
             return [.. ls];
         }
 
+        public RdlcInfoWrapper CreateInfoWrapper(IDictionary<string, string> dict) {
+            return new RdlcInfoWrapper(dict);
+        }
+
         private double? ParseDimensionToInch(string dim) {
             if (string.IsNullOrEmpty(dim)) {
                 return null;
@@ -340,7 +345,8 @@ namespace bifeldy_lib_90.Services {
             RdlcInfoWrapper rdlcDataWithParam,
             string rdlcPath,
             string datasetName,
-            string fileType = "PDF"
+            string fileType = "PDF",
+            string rdlcGeneratorExecutablePath = null
         ) {
             try {
                 if (string.IsNullOrEmpty(rdlcDataWithParam.DataFilePath)) {
@@ -368,20 +374,20 @@ namespace bifeldy_lib_90.Services {
                     }
                 }
 
-                string externalRdlcProcessPath = Path.Combine(this._app.AppLocation, "sidecar", "rdlcs_generator");
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !externalRdlcProcessPath.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase)) {
-                    externalRdlcProcessPath += ".exe";
+                rdlcGeneratorExecutablePath ??= Path.Combine(this._app.AppLocation, "sidecar", "rdlcs_generator");
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !rdlcGeneratorExecutablePath.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase)) {
+                    rdlcGeneratorExecutablePath += ".exe";
                 }
 
                 var psi = new ProcessStartInfo() {
-                    FileName = externalRdlcProcessPath,
+                    FileName = rdlcGeneratorExecutablePath,
                     Arguments = $"\"{rdlcPath}\" \"{datasetName}\" \"{fileType}\"",
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    WorkingDirectory = Path.GetDirectoryName(externalRdlcProcessPath)
+                    WorkingDirectory = Path.GetDirectoryName(rdlcGeneratorExecutablePath)
                 };
 
                 using (var process = Process.Start(psi)) {
