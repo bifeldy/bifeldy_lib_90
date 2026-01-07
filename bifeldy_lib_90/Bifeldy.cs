@@ -264,18 +264,16 @@ namespace bifeldy_lib_90 {
             _ = Services.AddSingleton<IZipService, CZipService>();
 
             // --
-            // Transient Selalu Dapat Object Baru ~
+            // Setiap Request Cycle 1 Scope 1x New Object 1x Sesion Saja
             // --
             _ = Services.AddScoped<IApiKeyRepository, CApiKeyRepository>();
             _ = Services.AddScoped<IApiTokenRepository, CApiTokenRepository>();
             _ = Services.AddScoped<IGeneralRepository, CGeneralRepository>();
             _ = Services.AddScoped<IServerConfigRepository, CServerConfigRepository>();
             _ = Services.AddScoped<IUserRepository, CUserRepository>();
-
-            // --
-            // Setiap Request Cycle 1 Scope 1x New Object 1x Sesion Saja
             // --
             _ = Services.AddScoped<IEndpointProsesDataHandler, CEndpointProsesDataHandler>();
+            _ = Services.AddScoped<IEndpointTarikDataHandler, CEndpointTarikDataHandler>();
         }
 
         public static void InitApp(WebApplication app, bool forceGcToCleanUpRamEveryRequest = false, int gcDelaySkipRunMinutes = 30) {
