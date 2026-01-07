@@ -1,4 +1,5 @@
 ﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Resolvers;
 using bifeldy_lib_90.TableView;
@@ -11,6 +12,10 @@ namespace bifeldy_lib_90.Extensions {
 
         // TODO: Add additional JsonSerializerContext generated resolvers here
         private static readonly IJsonTypeInfoResolver[] JsonTypeInfoResolvers = [
+            CDynamicClassPropertyJsonSerializerContext.Default,
+            CDynamicClassPropertyV2JsonSerializerContext.Default,
+            CPocoModelJsonSerializerContext.Default,
+            CTableClassModelJsonSerializerContext.Default,
             EnvVarJsonSerializerContext.Default,
             JsonSerDeJsonSerializerContext.Default,
             KunciRequestJsonSerializerContext.Default,

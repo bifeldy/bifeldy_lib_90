@@ -143,7 +143,7 @@ namespace bifeldy_lib_90.Handlers {
                     });
                 }
 
-                IResult er = await this.CheckExcludeJenisDc(db, f.kode_dc, callerMemberName);
+                IResult er = await this.CheckExcludeJenisDcWithResult(db, f.kode_dc, callerMemberName);
                 if (er != null) {
                     return er;
                 }
@@ -238,7 +238,7 @@ namespace bifeldy_lib_90.Handlers {
                     });
                 }
 
-                IResult er = await this.CheckExcludeJenisDc(db, f.kode_dc, callerMemberName);
+                IResult er = await this.CheckExcludeJenisDcWithResult(db, f.kode_dc, callerMemberName);
                 if (er != null) {
                     return er;
                 }

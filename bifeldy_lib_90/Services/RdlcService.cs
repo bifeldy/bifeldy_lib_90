@@ -379,6 +379,13 @@ namespace bifeldy_lib_90.Services {
                     rdlcGeneratorExecutablePath += ".exe";
                 }
 
+                if (!File.Exists(rdlcPath)) {
+                    rdlcPath = Path.Combine(this._app.AppLocation, "Rdlcs", rdlcPath);
+                    if (!File.Exists(rdlcPath)) {
+                        throw new Exception("File RDLCs Tidak Ada");
+                    }
+                }
+
                 var psi = new ProcessStartInfo() {
                     FileName = rdlcGeneratorExecutablePath,
                     Arguments = $"\"{rdlcPath}\" \"{datasetName}\" \"{fileType}\"",

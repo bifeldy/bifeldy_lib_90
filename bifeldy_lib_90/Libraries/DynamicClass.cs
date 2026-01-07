@@ -1,5 +1,8 @@
-﻿using System.Collections;
+﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Models;
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace bifeldy_lib_90.Libraries {
 
@@ -171,10 +174,28 @@ namespace bifeldy_lib_90.Libraries {
     // ==================================================================================
     // 2. CDynamicClass (Simple / Flat)
     // ==================================================================================
-    public sealed class CDynamicClassProperty {
+    [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
+    public sealed class CDynamicClassProperty : JsonSerDe {
         public string ColumnName { get; set; }
         public bool IsNullable { get; set; }
         public string DataType { get; set; }
+    }
+
+    [JsonSerializable(typeof(CDynamicClassProperty))]
+    [JsonSerializable(typeof(CDynamicClassProperty[]))]
+    [JsonSerializable(typeof(List<CDynamicClassProperty>))]
+    [JsonSerializable(typeof(Dictionary<string, CDynamicClassProperty>))]
+    [JsonSerializable(typeof(InputJsonDcDataSingle<CDynamicClassProperty>))]
+    [JsonSerializable(typeof(InputJsonHoDataSingle<CDynamicClassProperty>))]
+    [JsonSerializable(typeof(InputJsonNonDcDataSingle<CDynamicClassProperty>))]
+    [JsonSerializable(typeof(InputJsonDcDataMulti<CDynamicClassProperty>))]
+    [JsonSerializable(typeof(InputJsonHoDataMulti<CDynamicClassProperty>))]
+    [JsonSerializable(typeof(InputJsonNonDcDataMulti<CDynamicClassProperty>))]
+    [JsonSerializable(typeof(ResponseJsonSingle<CDynamicClassProperty>))]
+    [JsonSerializable(typeof(ResponseJsonMulti<CDynamicClassProperty>))]
+    public partial class CDynamicClassPropertyJsonSerializerContext : JsonSerializerContext {
+        // This class is used for source generation of JSON serialization metadata
     }
 
     public sealed class CDynamicClass : IEnumerable<KeyValuePair<string, object>> {
@@ -239,7 +260,9 @@ namespace bifeldy_lib_90.Libraries {
     // ==================================================================================
     // 3. CDynamicClassV2 (Complex / Recursive)
     // ==================================================================================
-    public sealed class CDynamicClassPropertyV2 {
+    [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
+    public sealed class CDynamicClassPropertyV2 : JsonSerDe {
         public string ColumnName { get; set; }
         public bool IsNullable { get; set; }
         public string TypeName { get; set; }
@@ -247,6 +270,22 @@ namespace bifeldy_lib_90.Libraries {
         public bool IsList { get; set; }
         public bool IsDictionary { get; set; }
         public bool IsClass { get; set; }
+    }
+
+    [JsonSerializable(typeof(CDynamicClassPropertyV2))]
+    [JsonSerializable(typeof(CDynamicClassPropertyV2[]))]
+    [JsonSerializable(typeof(List<CDynamicClassPropertyV2>))]
+    [JsonSerializable(typeof(Dictionary<string, CDynamicClassPropertyV2>))]
+    [JsonSerializable(typeof(InputJsonDcDataSingle<CDynamicClassPropertyV2>))]
+    [JsonSerializable(typeof(InputJsonHoDataSingle<CDynamicClassPropertyV2>))]
+    [JsonSerializable(typeof(InputJsonNonDcDataSingle<CDynamicClassPropertyV2>))]
+    [JsonSerializable(typeof(InputJsonDcDataMulti<CDynamicClassPropertyV2>))]
+    [JsonSerializable(typeof(InputJsonHoDataMulti<CDynamicClassPropertyV2>))]
+    [JsonSerializable(typeof(InputJsonNonDcDataMulti<CDynamicClassPropertyV2>))]
+    [JsonSerializable(typeof(ResponseJsonSingle<CDynamicClassPropertyV2>))]
+    [JsonSerializable(typeof(ResponseJsonMulti<CDynamicClassPropertyV2>))]
+    public partial class CDynamicClassPropertyV2JsonSerializerContext : JsonSerializerContext {
+        // This class is used for source generation of JSON serialization metadata
     }
 
     public sealed class CDynamicClassV2 : IEnumerable<KeyValuePair<string, object>> {

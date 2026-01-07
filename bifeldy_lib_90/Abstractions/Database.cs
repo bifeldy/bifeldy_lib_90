@@ -107,8 +107,8 @@ namespace bifeldy_lib_90.Abstractions {
 
         public virtual async IAsyncEnumerable<T> GetAsyncEnumerable<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) where T : JsonSerDe, new() {
             try {
-                using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
-                    foreach (T item in dr.ToEnumerable(typeInfo, token)) {
+                await using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
+                    await foreach (T item in dr.ToAsyncEnumerable(typeInfo, token)) {
                         yield return item;
                     }
                 }
@@ -120,8 +120,8 @@ namespace bifeldy_lib_90.Abstractions {
 
         public virtual async IAsyncEnumerable<T> GetAsyncEnumerable<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) {
             try {
-                using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
-                    foreach (T item in dr.ToEnumerable<T>(token)) {
+                await using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
+                    await foreach (T item in dr.ToAsyncEnumerable<T>(token)) {
                         yield return item;
                     }
                 }
@@ -155,9 +155,27 @@ namespace bifeldy_lib_90.Abstractions {
 
         public virtual async Task<T> ExecScalarAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
             try {
-                using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
-                    foreach (T item in dr.ToEnumerable(typeInfo, token)) {
-                        return item;
+                await using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
+                    if (await dr.ReadAsync(token)) {
+                        var obj = new T();
+
+                        foreach (JsonPropertyInfo p in typeInfo.Properties) {
+                            int idx;
+
+                            try {
+                                idx = dr.GetOrdinal(p.Name);
+                            }
+                            catch {
+                                continue;
+                            }
+
+                            if (!await dr.IsDBNullAsync(idx, token)) {
+                                object value = DbDataReaderExtension.ReadValue(dr, idx, p.PropertyType);
+                                p.Set(obj, value);
+                            }
+                        }
+
+                        return obj;
                     }
                 }
 

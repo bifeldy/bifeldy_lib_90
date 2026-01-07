@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Specialized;
+using System.Net.Mime;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -20,23 +21,19 @@ using System.Web;
 namespace bifeldy_lib_90.Handlers {
 
     public interface IEndpointTarikDataHandler : IEndpointBaseHandler {
-        Task<IResult> HitDimanaSaja<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging = false, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitDcPaging<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitDcFull<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> DirectDbDcPaging<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> DirectDbDcFull<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> DirectDbDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> DirectDbDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitHo<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitHoFull<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitHoCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitHoDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitNonDcPaging<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitNonDcFull<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitNonDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
-        Task<IResult> HitNonDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task HitDimanaSaja<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task HitDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task HitDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task HitDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task DirectDbDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task DirectDbDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task DirectDbDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task HitHo<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task HitHoCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task HitHoDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task HitNonDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task HitNonDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task HitNonDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
     }
 
     public sealed class CEndpointTarikDataHandler : CEndpointBaseHandler, IEndpointTarikDataHandler {
@@ -58,7 +55,7 @@ namespace bifeldy_lib_90.Handlers {
 
         /* ** *** ** */
 
-        public async Task<IResult> HitDimanaSaja<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging = false, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+        public async Task HitDimanaSaja<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
             try {
                 customService ??= (IServiceTarikDataHandler)this._baseService;
 
@@ -67,56 +64,83 @@ namespace bifeldy_lib_90.Handlers {
                 _ = await customService.ExecuteSebelumTarik(this._context, db, fd, searchQuery, sort, order, page, row);
 
                 if (!forceFullDataSkipPaging) {
-                    (decimal pages, decimal count, IEnumerable<TOutputJson> ls) = await customService.TarikDataPaging(jsonTypeInfoOutput, this._context, db, fd, searchQuery, sort, order, page, row);
+                    (decimal pages, decimal count, IAsyncEnumerable<TOutputJson> ls) = await customService.TarikDataPaging(jsonTypeInfoOutput, this._context, db, fd, searchQuery, sort, order, page, row);
+
+                    this._context.Response.StatusCode = StatusCodes.Status200OK;
+                    this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                    await this._context.Response.StartAsync();
+
+                    var writer = new Utf8JsonWriter(this._context.Response.BodyWriter);
+
+                    writer.WriteStartObject();
+                    writer.WriteString("info", $"200 - {callerMemberName}");
+                    writer.WritePropertyName("results");
+                    writer.WriteStartArray();
+
+                    await writer.FlushAsync(this._context.RequestAborted);
+
+                    await foreach (TOutputJson item in ls) {
+                        JsonSerializer.Serialize(writer, item, jsonTypeInfoOutput);
+                    }
+
+                    writer.WriteEndArray();
+                    writer.WriteNumber("pages", pages);
+                    writer.WriteNumber("count", count);
+                    writer.WriteEndObject();
+
+                    await writer.FlushAsync(this._context.RequestAborted);
 
                     _ = await customService.ExecuteSesudahTarik(this._context, db, fd, searchQuery, sort, order, page, row);
-
-                    return Results.Ok(new ResponseJsonMulti<TOutputJson>() {
-                        info = $"200 - {callerMemberName}",
-                        results = ls,
-                        pages = pages,
-                        count = count
-                    });
                 }
+                else {
+                    IHttpResponseBodyFeature hrbf = this._context.Features.Get<IHttpResponseBodyFeature>();
+                    if (hrbf != null) {
+                        hrbf.DisableBuffering();
+                    }
 
-                IHttpResponseBodyFeature hrbf = this._context.Features.Get<IHttpResponseBodyFeature>();
-                if (hrbf != null) {
-                    hrbf.DisableBuffering();
-                }
+                    this._context.Response.StatusCode = 200;
+                    this._context.Response.ContentType = "application/x-ndjson";
 
-                this._context.Response.StatusCode = 200;
-                this._context.Response.ContentType = "application/x-ndjson";
+                    this._context.Response.Headers.Append("X-Accel-Buffering", "no");
 
-                await this._context.Response.StartAsync();
+                    if (this._context.Response.Headers.ContainsKey("Content-Length")) {
+                        _ = this._context.Response.Headers.Remove("Content-Length");
+                    }
 
-                using (var writer = new StreamWriter(this._context.Response.Body)) {
+                    await this._context.Response.StartAsync();
+
                     IAsyncEnumerable<TOutputJson> iae = customService.TarikDataFullStream(jsonTypeInfoOutput, this._context, db, fd, searchQuery, sort, order);
-
-                    await foreach (TOutputJson item in iae) {
+                    await foreach (TOutputJson item in iae.WithCancellation(this._context.RequestAborted)) {
                         string json = JsonSerializer.Serialize(item, jsonTypeInfoOutput);
+                        await this._context.Response.WriteAsync(json, this._context.RequestAborted);
+                        await _context.Response.Body.WriteAsync("\n"u8.ToArray(), this._context.RequestAborted);
+                        await _context.Response.Body.FlushAsync(this._context.RequestAborted);
+                    }
 
-                        await writer.WriteLineAsync(json);
-                        await writer.FlushAsync();
-
-                        await this._context.Response.Body.FlushAsync();
+                    _ = await customService.ExecuteSesudahTarik(this._context, db, fd, searchQuery, sort, order);
+                }
+            }
+            catch (TidakMemenuhiException tm) {
+                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
+                    info = $"400 - {callerMemberName}",
+                    result = new ResponseJsonMessage() {
+                        message = tm.Message
                     }
                 };
 
-                _ = await customService.ExecuteSesudahTarik(this._context, db, fd, searchQuery, sort, order);
+                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                this._context.Response.ContentType = MediaTypeNames.Application.Json;
 
-                return Results.Empty;
-            }
-            catch (TidakMemenuhiException e) {
-                return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
-                    result = new ResponseJsonMessage() {
-                        message = e.Message
-                    }
-                });
+                await JsonSerializer.SerializeAsync(
+                    this._context.Response.Body,
+                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                    _context.RequestAborted
+                );
             }
         }
 
-        private async Task<IResult> ExportCsvDimanaSaja<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+        private async Task ExportCsvDimanaSaja<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
             customService ??= (IServiceTarikDataHandler)this._baseService;
             if (string.IsNullOrEmpty(delimiter)) {
                 delimiter = "|";
@@ -196,16 +220,23 @@ namespace bifeldy_lib_90.Handlers {
 
             // _ = await customService.ExecuteSesudahTarik(this._context, db, fd, searchQuery, sort, order);
 
-            return Results.Accepted(
-                $"/downloader?completedOnly=true&fileType=csv&fileName={fileName}",
-                new ResponseJsonSingle<string>() {
-                    info = $"202 - {callerMemberName}",
-                    result = fileName
-                }
+            var response = new ResponseJsonSingle<string>() {
+                info = $"202 - {callerMemberName}",
+                result = fileName
+            };
+
+            this._context.Response.Headers.Location = $"/downloader?completedOnly=true&fileType=csv&fileName={fileName}";
+            this._context.Response.StatusCode = StatusCodes.Status202Accepted;
+            this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+            await JsonSerializer.SerializeAsync(
+                this._context.Response.Body,
+                response, ResponseJsonSerializerContext.Default.ResponseJsonSingleString,
+                _context.RequestAborted
             );
         }
 
-        private async Task<IResult> ExportDocsDimanaSaja<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+        private async Task ExportDocsDimanaSaja<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
             try {
                 customService ??= (IServiceTarikDataHandler)this._baseService;
                 fileType ??= "HTML";
@@ -299,7 +330,7 @@ namespace bifeldy_lib_90.Handlers {
                                 }
                             }
                         }
-                        catch {
+                        catch (Exception ___ex) {
                             if (File.Exists(filePath)) {
                                 File.Delete(filePath);
                             }
@@ -314,122 +345,157 @@ namespace bifeldy_lib_90.Handlers {
 
                 // _ = await customService.ExecuteSesudahTarik(this._context, db, fd, searchQuery, sort, order);
 
-                return Results.Accepted(
-                    $"/downloader?completedOnly=true&fileType={fileType}&fileName={fileName}",
-                    new ResponseJsonSingle<string>() {
-                        info = $"202 - {callerMemberName}",
-                        result = fileName
-                    }
+                var response = new ResponseJsonSingle<string>() {
+                    info = $"202 - {callerMemberName}",
+                    result = fileName
+                };
+
+                this._context.Response.Headers.Location = $"/downloader?completedOnly=true&fileType={fileType}&fileName={fileName}";
+                this._context.Response.StatusCode = StatusCodes.Status202Accepted;
+                this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                await JsonSerializer.SerializeAsync(
+                    this._context.Response.Body,
+                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleString,
+                    _context.RequestAborted
                 );
             }
             catch (TidakMemenuhiException tm) {
-                return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
+                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
                     info = $"400 - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = tm.Message
                     }
-                });
+                };
+
+                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                await JsonSerializer.SerializeAsync(
+                    this._context.Response.Body,
+                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                    _context.RequestAborted
+                );
             }
         }
 
         /* ** */
 
-        private async Task<IResult> DefaultHandlerDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, Func<Task<IResult>> callback, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) {
+        private async Task DefaultHandlerDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, Func<Task> callback, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) {
             try {
                 customService ??= (IServiceTarikDataHandler)this._baseService;
 
                 bool isNonDc = await this._generalRepo.IsNonDc(db);
                 if (isNonDc) {
-                    return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
+                    var response = new ResponseJsonSingle<ResponseJsonMessage>() {
                         info = $"400 - {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = "Endpoint ini hanya dapat diakses melalui HO / DC"
                         }
-                    });
-                }
+                    };
 
-                var f = (InputJsonDc)fd;
+                    this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    this._context.Response.ContentType = MediaTypeNames.Application.Json;
 
-                IResult er = await this.CheckExcludeJenisDc(db, f.kode_dc, callerMemberName);
-                if (er != null) {
-                    return er;
-                }
-
-                bool isHo = await this._generalRepo.IsHo(db);
-                if (!isHo) {
-                    return await callback();
+                    await JsonSerializer.SerializeAsync(
+                        this._context.Response.Body,
+                        response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                        _context.RequestAborted
+                    );
                 }
                 else {
-                    await this._generalRepo.CheckKoordinatorHO(db, f.kode_dc);
+                    var f = (InputJsonDc)fd;
 
-                    string e = null;
-                    Uri u = null;
-                    await this._generalRepo.GetDcApiPathAppFromHo(db, this._context.Request, f.kode_dc, (err, res) => {
-                        e = err;
-                        u = res;
-                    });
+                    bool success = await this.CheckExcludeJenisDcNoResult(db, f.kode_dc, callerMemberName);
+                    if (success) {
+                        bool isHo = await this._generalRepo.IsHo(db);
+                        if (!isHo) {
+                            await callback();
+                        }
+                        else {
+                            await this._generalRepo.CheckKoordinatorHO(db, f.kode_dc);
 
-                    if (u == null) {
-                        return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                            info = $"400 - {callerMemberName}",
-                            result = new ResponseJsonMessage() {
-                                message = e
+                            string e = null;
+                            Uri u = null;
+                            await this._generalRepo.GetDcApiPathAppFromHo(db, this._context.Request, f.kode_dc, (err, res) => {
+                                e = err;
+                                u = res;
+                            });
+
+                            if (u == null) {
+                                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
+                                    info = $"400 - {callerMemberName}",
+                                    result = new ResponseJsonMessage() {
+                                        message = e
+                                    }
+                                };
+
+                                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                                this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                                await JsonSerializer.SerializeAsync(
+                                    this._context.Response.Body,
+                                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                                    _context.RequestAborted
+                                );
                             }
-                        });
-                    }
+                            else {
+                                NameValueCollection queryDictionary = HttpUtility.ParseQueryString(u.Query);
 
-                    NameValueCollection queryDictionary = HttpUtility.ParseQueryString(u.Query);
+                                f.secret = queryDictionary["secret"];
+                                f.key = queryDictionary["key"];
+                                f.token = queryDictionary["token"];
 
-                    f.secret = queryDictionary["secret"];
-                    f.key = queryDictionary["key"];
-                    f.token = queryDictionary["token"];
-
-                    string jsonBody = this._cs.ObjectToJson((TInputJson)(object)f, jsonTypeInfoInput);
-                    using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
-                        this._context.Request.Body = ms;
-                        return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true);
+                                string jsonBody = this._cs.ObjectToJson((TInputJson)(object)f, jsonTypeInfoInput);
+                                using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
+                                    this._context.Request.Body = ms;
+                                    _ = await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true);
+                                }
+                            }
+                        }
                     }
                 }
             }
             catch (TidakMemenuhiException tm) {
-                return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
+                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
                     info = $"400 - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = tm.Message
                     }
-                });
+                };
+
+                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                await JsonSerializer.SerializeAsync(
+                    this._context.Response.Body,
+                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                    _context.RequestAborted
+                );
             }
         }
 
-        private async Task<IResult> HitDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging = false, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
-                return await this.HitDimanaSaja<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, forceFullDataSkipPaging, customService, callerMemberName);
+        public async Task HitDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerDc(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
+                await this.HitDimanaSaja(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, forceFullDataSkipPaging, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
-        public async Task<IResult> HitDcPaging<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.HitDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, false, customService, callerMemberName);
-        }
-
-        public async Task<IResult> HitDcFull<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.HitDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, null, null, sort, order, true, customService, callerMemberName);
-        }
-
-        public async Task<IResult> HitDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
-                return await this.ExportCsvDimanaSaja<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, prefixFileName, delimiter, customService, callerMemberName);
+        public async Task HitDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerDc(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
+                await this.ExportCsvDimanaSaja(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, prefixFileName, delimiter, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
-        public async Task<IResult> HitDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
-                return await this.ExportDocsDimanaSaja<TInputJson, TOutputJson>(rdlcPath, dsName, fileType, db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, customService, callerMemberName);
+        public async Task HitDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerDc(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
+                await this.ExportDocsDimanaSaja(rdlcPath, dsName, fileType, db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
         /* ** ALTERNATIVE DC API ** */
 
-        private async Task<IResult> DefaultHandlerDirectDbDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, Func<InputJsonDc, IDatabase, IDatabase, Task<IResult>> callback, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+        private async Task DefaultHandlerDirectDbDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, Func<InputJsonDc, IDatabase, IDatabase, Task> callback, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
             try {
                 customService ??= (IServiceTarikDataHandler)this._baseService;
 
@@ -437,176 +503,218 @@ namespace bifeldy_lib_90.Handlers {
                 bool isHo = await this._generalRepo.IsHo(db);
 
                 if (isNonDc || !isHo) {
-                    return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
+                    var response = new ResponseJsonSingle<ResponseJsonMessage>() {
                         info = $"400 - {callerMemberName} (Mirror)",
                         result = new ResponseJsonMessage() {
                             message = "Endpoint ini hanya dapat diakses melalui HO"
                         }
-                    });
+                    };
+
+                    this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                    await JsonSerializer.SerializeAsync(
+                        this._context.Response.Body,
+                        response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                        _context.RequestAborted
+                    );
                 }
+                else {
+                    var f = (InputJsonDc)fd;
 
-                var f = (InputJsonDc)fd;
+                    bool success = await this.CheckExcludeJenisDcNoResult(db, f.kode_dc, callerMemberName);
+                    if (success) {
+                        await this._generalRepo.CheckKoordinatorHO(db, f.kode_dc);
 
-                IResult er = await this.CheckExcludeJenisDc(db, f.kode_dc, callerMemberName);
-                if (er != null) {
-                    return er;
-                }
+                        (IDatabase dbOraPg, IDatabase dbMsSql) = await this._generalRepo.OpenConnectionToDcFromHo(db, f.kode_dc, this._sp);
+                        if (dbOraPg == null) {
+                            var response = new ResponseJsonSingle<ResponseJsonMessage>() {
+                                info = $"400 - {callerMemberName} (Mirror)",
+                                result = new ResponseJsonMessage() {
+                                    message = $"Kode DC {f.kode_dc} tidak tersedia!"
+                                }
+                            };
 
-                await this._generalRepo.CheckKoordinatorHO(db, f.kode_dc);
+                            this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                            this._context.Response.ContentType = MediaTypeNames.Application.Json;
 
-                (IDatabase dbOraPg, IDatabase dbMsSql) = await this._generalRepo.OpenConnectionToDcFromHo(db, f.kode_dc, this._sp);
-                if (dbOraPg == null) {
-                    return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName} (Mirror)",
-                        result = new ResponseJsonMessage() {
-                            message = $"Kode DC {f.kode_dc} tidak tersedia!"
+                            await JsonSerializer.SerializeAsync(
+                                this._context.Response.Body,
+                                response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                                _context.RequestAborted
+                            );
                         }
-                    });
-                }
+                        else {
+                            await callback(f, dbOraPg, dbMsSql);
+                        }
+                    }
 
-                return await callback(f, dbOraPg, dbMsSql);
+                }
             }
             catch (TidakMemenuhiException tm) {
-                return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
+                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
                     info = $"400 - {callerMemberName} (Mirror)",
                     result = new ResponseJsonMessage() {
                         message = tm.Message
                     }
-                });
+                };
+
+                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                await JsonSerializer.SerializeAsync(
+                    this._context.Response.Body,
+                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                    _context.RequestAborted
+                );
             }
         }
 
-        private async Task<IResult> DirectDbDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging = false, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerDirectDbDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async (InputJsonDc f, IDatabase dbOraPg, IDatabase dbMsSql) => {
-                return await this.HitDimanaSaja<TInputJson, TOutputJson>(dbOraPg, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, forceFullDataSkipPaging, customService, callerMemberName);
+        public async Task DirectDbDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerDirectDbDc(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async (InputJsonDc f, IDatabase dbOraPg, IDatabase dbMsSql) => {
+                await this.HitDimanaSaja(dbOraPg, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, forceFullDataSkipPaging, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
-        public async Task<IResult> DirectDbDcPaging<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DirectDbDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, false, customService, callerMemberName);
-        }
-
-        public async Task<IResult> DirectDbDcFull<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DirectDbDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, null, null, sort, order, true, customService, callerMemberName);
-        }
-
-        public async Task<IResult> DirectDbDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerDirectDbDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async (InputJsonDc f, IDatabase dbOraPg, IDatabase dbMsSql) => {
-                return await this.ExportCsvDimanaSaja<TInputJson, TOutputJson>(dbOraPg, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, prefixFileName, delimiter, customService, callerMemberName);
+        public async Task DirectDbDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerDirectDbDc(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async (InputJsonDc f, IDatabase dbOraPg, IDatabase dbMsSql) => {
+                await this.ExportCsvDimanaSaja(dbOraPg, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, prefixFileName, delimiter, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
-        public async Task<IResult> DirectDbDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerDirectDbDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async (InputJsonDc f, IDatabase dbOraPg, IDatabase dbMsSql) => {
-                return await this.ExportDocsDimanaSaja<TInputJson, TOutputJson>(rdlcPath, dsName, fileType, dbOraPg, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, customService, callerMemberName);
+        public async Task DirectDbDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerDirectDbDc(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async (InputJsonDc f, IDatabase dbOraPg, IDatabase dbMsSql) => {
+                await this.ExportDocsDimanaSaja(rdlcPath, dsName, fileType, dbOraPg, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
         /* ** *** ** */
 
-        private async Task<IResult> DefaultHandlerHo<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, Func<Task<IResult>> callback, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+        private async Task DefaultHandlerHo<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, Func<Task> callback, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
             try {
                 customService ??= (IServiceTarikDataHandler)this._baseService;
 
                 bool isHo = await this._generalRepo.IsHo(db);
                 if (!isHo) {
-                    return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
+                    var response = new ResponseJsonSingle<ResponseJsonMessage>() {
                         info = $"400 - {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = "Endpoint ini hanya dapat diakses melalui HO"
                         }
-                    });
-                }
+                    };
 
-                return await callback();
+                    this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                    await JsonSerializer.SerializeAsync(
+                        this._context.Response.Body,
+                        response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                        _context.RequestAborted
+                    );
+                }
+                else {
+                    await callback();
+                }
             }
             catch (TidakMemenuhiException tm) {
-                return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
+                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
                     info = $"400 - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = tm.Message
                     }
-                });
+                };
+
+                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                await JsonSerializer.SerializeAsync(
+                    this._context.Response.Body,
+                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                    _context.RequestAborted
+                );
             }
         }
 
-        private async Task<IResult> HitHo<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging = false, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerHo<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
-                return await this.HitDimanaSaja<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, forceFullDataSkipPaging, customService, callerMemberName);
+        public async Task HitHo<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerHo(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
+                await this.HitDimanaSaja(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, forceFullDataSkipPaging, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
-        public async Task<IResult> HitHo<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.HitHo<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, false, customService, callerMemberName);
-        }
-
-        public async Task<IResult> HitHoFull<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.HitHo<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, null, null, sort, order, true, customService, callerMemberName);
-        }
-
-        public async Task<IResult> HitHoCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerHo<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
-                return await this.ExportCsvDimanaSaja<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, prefixFileName, delimiter, customService, callerMemberName);
+        public async Task HitHoCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerHo(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
+                await this.ExportCsvDimanaSaja(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, prefixFileName, delimiter, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
-        public async Task<IResult> HitHoDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerHo<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
-                return await this.ExportDocsDimanaSaja<TInputJson, TOutputJson>(rdlcPath, dsName, fileType, db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, customService, callerMemberName);
+        public async Task HitHoDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerHo(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
+                await this.ExportDocsDimanaSaja(rdlcPath, dsName, fileType, db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
         /* ** *** ** */
 
-        private async Task<IResult> DefaultHandlerNonDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, Func<Task<IResult>> callback, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+        private async Task DefaultHandlerNonDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, Func<Task> callback, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
             try {
                 customService ??= (IServiceTarikDataHandler)this._baseService;
 
                 bool isNonDc = await this._generalRepo.IsNonDc(db);
                 if (!isNonDc) {
-                    return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
+                    var response = new ResponseJsonSingle<ResponseJsonMessage>() {
                         info = $"400 - {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = "Endpoint ini hanya dapat diakses melalui NON DC"
                         }
-                    });
-                }
+                    };
 
-                return await callback();
+                    this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                    await JsonSerializer.SerializeAsync(
+                        this._context.Response.Body,
+                        response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                        _context.RequestAborted
+                    );
+                }
+                else {
+                    await callback();
+                }
             }
             catch (TidakMemenuhiException tm) {
-                return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
+                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
                     info = $"400 - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = tm.Message
                     }
-                });
+                };
+
+                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                await JsonSerializer.SerializeAsync(
+                    this._context.Response.Body,
+                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                    _context.RequestAborted
+                );
             }
         }
 
-        private async Task<IResult> HitNonDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging = false, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerNonDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
-                return await this.HitDimanaSaja<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, forceFullDataSkipPaging, customService, callerMemberName);
+        public async Task HitNonDc<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerNonDc(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
+                await this.HitDimanaSaja(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, forceFullDataSkipPaging, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
-        public async Task<IResult> HitNonDcPaging<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.HitNonDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, page, row, sort, order, false, customService, callerMemberName);
-        }
-
-        public async Task<IResult> HitNonDcFull<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.HitNonDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, null, null, sort, order, true, customService, callerMemberName);
-        }
-
-        public async Task<IResult> HitNonDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerNonDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
-                return await this.ExportCsvDimanaSaja<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, prefixFileName, delimiter, customService, callerMemberName);
+        public async Task HitNonDcCsv<TInputJson, TOutputJson>(IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerNonDc(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
+                await this.ExportCsvDimanaSaja(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, prefixFileName, delimiter, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 
-        public async Task<IResult> HitNonDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
-            return await this.DefaultHandlerNonDc<TInputJson, TOutputJson>(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
-                return await this.ExportDocsDimanaSaja<TInputJson, TOutputJson>(rdlcPath, dsName, fileType, db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, customService, callerMemberName);
+        public async Task HitNonDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, InputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+            await this.DefaultHandlerNonDc(db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, async () => {
+                await this.ExportDocsDimanaSaja(rdlcPath, dsName, fileType, db, fd, jsonTypeInfoInput, jsonTypeInfoOutput, searchQuery, sort, order, customService, callerMemberName);
             }, customService, callerMemberName);
         }
 

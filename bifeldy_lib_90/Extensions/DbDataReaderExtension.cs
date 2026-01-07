@@ -1,6 +1,7 @@
 ﻿using bifeldy_lib_90.Abstractions;
 using bifeldy_lib_90.Models;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization.Metadata;
 
@@ -8,7 +9,7 @@ namespace bifeldy_lib_90.Extensions {
 
     public static class DbDataReaderExtension {
 
-        private static object ReadValue(DbDataReader dr, int index, Type targetType) {
+        public static object ReadValue(DbDataReader dr, int index, Type targetType) {
             targetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
 
             if (targetType == typeof(string)) {
@@ -64,8 +65,8 @@ namespace bifeldy_lib_90.Extensions {
             return dr.GetValue(index);
         }
 
-        public static IEnumerable<T> ToEnumerable<T>(this DbDataReader dr, JsonTypeInfo<T> jsonTypeInfo, CancellationToken token = default, Action<T> callback = null) where T : JsonSerDe, new() {
-            if (dr == null || !dr.HasRows) {
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this DbDataReader dr, JsonTypeInfo<T> jsonTypeInfo, [EnumeratorCancellation] CancellationToken token = default, Action<T> callback = null) where T : JsonSerDe, new() {
+            if (dr == null) {
                 yield break;
             }
 
@@ -84,11 +85,11 @@ namespace bifeldy_lib_90.Extensions {
 
             JsonKeyMap[] mappings = [.. maps];
 
-            while (dr.Read() && !token.IsCancellationRequested) {
+            while (await dr.ReadAsync(token)) {
                 var obj = new T();
 
                 foreach (JsonKeyMap m in mappings) {
-                    if (!dr.IsDBNull(m.Index)) {
+                    if (!await dr.IsDBNullAsync(m.Index, token)) {
                         object value = ReadValue(dr, m.Index, m.Property.PropertyType);
                         m.Property.Set(obj, value);
                     }
@@ -99,12 +100,12 @@ namespace bifeldy_lib_90.Extensions {
             }
         }
 
-        public static IEnumerable<T> ToEnumerable<T>(this DbDataReader dr, CancellationToken token = default, Action<T> callback = null) {
-            if (dr == null || !dr.HasRows) {
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this DbDataReader dr, [EnumeratorCancellation] CancellationToken token = default, Action<T> callback = null) {
+            if (dr == null) {
                 yield break;
             }
 
-            while (dr.Read() && !token.IsCancellationRequested) {
+            while (await dr.ReadAsync(token)) {
                 T objT = default;
 
                 Type t = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
@@ -112,7 +113,7 @@ namespace bifeldy_lib_90.Extensions {
                     throw new Exception("Only `string` or ValueType allowed");
                 }
 
-                if (!dr.IsDBNull(0)) {
+                if (!await dr.IsDBNullAsync(0, token)) {
                     object val = dr.GetValue(0);
                     objT = (T)Convert.ChangeType(val, typeof(T));
                 }

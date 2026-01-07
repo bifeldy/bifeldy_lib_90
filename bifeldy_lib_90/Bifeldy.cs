@@ -414,8 +414,6 @@ namespace bifeldy_lib_90 {
                         HttpRequest request = context.Request;
                         HttpResponse response = context.Response;
 
-                        response.Clear();
-
                         string xRequestTraceProxy = null;
                         if (response.Headers.ContainsKey("x-request-trace-proxy")) {
                             xRequestTraceProxy = response.Headers["x-request-trace-proxy"];
@@ -448,8 +446,6 @@ namespace bifeldy_lib_90 {
                             response.Headers.Append("x-request-trace-id", xRequestTraceId);
                         }
 
-                        response.StatusCode = StatusCodes.Status500InternalServerError;
-
                         string errMsg = ex.Message;
 
                         Exception ie = ex.InnerException;
@@ -465,7 +461,15 @@ namespace bifeldy_lib_90 {
                             xRequestTraceActivity, xRequestTraceProxy, errDtl
                         );
 
+                        if (context.Response.HasStarted) {
+                            context.Abort();
+                            return;
+                        }
+
                         context.Items["error_detail"] = errDtl;
+
+                        response.Clear();
+                        response.StatusCode = StatusCodes.Status500InternalServerError;
 
                         bool showErrorDetail = App.Environment.IsDevelopment() || user?.role <= ESessionRole.USER_SD_SSD_3;
                         await response.WriteAsJsonAsync(

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Net.Mime;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
 namespace bifeldy_lib_90.Handlers {
@@ -78,7 +79,7 @@ namespace bifeldy_lib_90.Handlers {
             return this.SetHttpContext(context).SetService(baseService);
         }
 
-        protected async Task<IResult> CheckExcludeJenisDc(IDatabase db, string kodeDc, [CallerMemberName] string callerMemberName = null) {
+        protected async Task<IResult> CheckExcludeJenisDcWithResult(IDatabase db, string kodeDc, [CallerMemberName] string callerMemberName = null) {
             string targetKodeDc = await this._generalRepo.GetKodeDc(db);
             EJenisDc targetJenisDc = await this._generalRepo.GetJenisDc(db);
 
@@ -137,6 +138,97 @@ namespace bifeldy_lib_90.Handlers {
             }
 
             return null;
+        }
+
+        protected async Task<bool> CheckExcludeJenisDcNoResult(IDatabase db, string kodeDc, [CallerMemberName] string callerMemberName = null) {
+            string targetKodeDc = await this._generalRepo.GetKodeDc(db);
+            EJenisDc targetJenisDc = await this._generalRepo.GetJenisDc(db);
+
+            if (string.IsNullOrEmpty(kodeDc) && targetJenisDc != EJenisDc.HO && targetJenisDc != EJenisDc.NONDC) {
+                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
+                    info = $"400 - {callerMemberName}",
+                    result = new ResponseJsonMessage() {
+                        message = "Data Tidak Lengkap!"
+                    }
+                };
+
+                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                await JsonSerializer.SerializeAsync(
+                    this._context.Response.Body,
+                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                    _context.RequestAborted
+                );
+
+                return false;
+            }
+            else {
+                string jenisDc = targetJenisDc.ToString();
+                if (kodeDc != targetKodeDc) {
+                    jenisDc = await this._generalRepo.GetJenisDc(db, kodeDc);
+                }
+
+                if (!Enum.TryParse(jenisDc, true, out EJenisDc eJenisDc)) {
+                    var response = new ResponseJsonSingle<ResponseJsonMessage>() {
+                        info = $"404 - {callerMemberName}",
+                        result = new ResponseJsonMessage() {
+                            message = $"Kode DC {kodeDc.ToUpper()} Tidak Tersedia"
+                        }
+                    };
+
+                    this._context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                    await JsonSerializer.SerializeAsync(
+                        this._context.Response.Body,
+                        response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                        _context.RequestAborted
+                    );
+
+                    return false;
+                }
+                else {
+                    targetKodeDc = kodeDc;
+                    targetJenisDc = eJenisDc;
+
+                    Endpoint endpoint = this._context.GetEndpoint();
+                    IEnumerable<object> attribs = endpoint?.Metadata
+                        .Where(t => typeof(DenyAccessAttribute).IsAssignableFrom(t.GetType()));
+
+                    bool isAllowed = true;
+                    foreach (DenyAccessAttribute attrib in attribs.Cast<DenyAccessAttribute>()) {
+                        isAllowed = this._gs.IsAllowedRoutingTarget(attrib.GetType(), targetKodeDc, targetJenisDc);
+
+                        if (!isAllowed) {
+                            break;
+                        }
+                    }
+
+                    if (!isAllowed) {
+                        var response = new ResponseJsonSingle<ResponseJsonMessage>() {
+                            info = $"403 - {callerMemberName}",
+                            result = new ResponseJsonMessage() {
+                                message = $"Tidak Dapat Menggunakan DC :: `{targetJenisDc}` :: Karena Masuk Dalam Daftar Pengecualian"
+                            }
+                        };
+
+                        this._context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+                        await JsonSerializer.SerializeAsync(
+                            this._context.Response.Body,
+                            response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                            _context.RequestAborted
+                        );
+
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
+                }
+            }
         }
 
         public IResult GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null) {
