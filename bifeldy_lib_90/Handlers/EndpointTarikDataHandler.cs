@@ -330,7 +330,7 @@ namespace bifeldy_lib_90.Handlers {
                                 }
                             }
                         }
-                        catch (Exception ___ex) {
+                        catch {
                             if (File.Exists(filePath)) {
                                 File.Delete(filePath);
                             }
