@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using bifeldy_lib_90.Abstractions;
+using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -20,7 +21,7 @@ namespace bifeldy_lib_90.Extensions {
             return type.IsPrimitive || type.IsEnum || ExtraSimpleTypes.Contains(type);
         }
 
-        public static Dictionary<string, object> ToDictionary<T>(this T instanceToConvert, JsonTypeInfo<T> jsonTypeInfo) {
+        public static Dictionary<string, object> ToDictionary<T>(this T instanceToConvert, JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
             if (instanceToConvert == null) {
                 return new Dictionary<string, object>();
             }

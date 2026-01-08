@@ -1,4 +1,5 @@
-﻿using bifeldy_lib_90.Libraries;
+﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Libraries;
 using System.Collections;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
@@ -21,8 +22,8 @@ namespace bifeldy_lib_90.Services {
         object JsonToObject(string json);
         string ObjectToJson(object value);
         string FormatByteSizeHumanReadable(long bytes, string forceUnit = null);
-        List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo);
-        List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo);
+        List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new();
+        List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new();
     }
 
     public sealed class CConverterService : IConverterService {
@@ -249,7 +250,7 @@ namespace bifeldy_lib_90.Services {
             return $"{(decimal) bytes / digit:0.00} {ext}";
         }
 
-        public List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) {
+        public List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
             var ls = new List<CDynamicClassProperty>();
 
             foreach (JsonPropertyInfo prop in jsonTypeInfo.Properties) {
@@ -283,7 +284,7 @@ namespace bifeldy_lib_90.Services {
             return ls;
         }
 
-        public List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) {
+        public List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
             var list = new List<CDynamicClassPropertyV2>();
 
             foreach (JsonPropertyInfo prop in jsonTypeInfo.Properties) {

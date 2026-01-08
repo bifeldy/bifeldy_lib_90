@@ -22,18 +22,18 @@ namespace bifeldy_lib_90.Abstractions {
         void TransactionCommitAndClose(DbTransaction useTrx = null, bool forceCloseConnection = false);
         void TransactionRollbackAndClose(DbTransaction useTrx = null, bool forceCloseConnection = false);
         IAsyncEnumerable<T> GetAsyncEnumerable<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
-        IAsyncEnumerable<T> GetAsyncEnumerable<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default);
+        IAsyncEnumerable<T> GetAsyncEnumerable<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : IConvertible;
         Task<IEnumerable<T>> GetEnumerableAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
-        Task<IEnumerable<T>> GetEnumerableAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default);
+        Task<IEnumerable<T>> GetEnumerableAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : IConvertible;
         Task<T> ExecScalarAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
-        Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600);
+        Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600) where T : IConvertible;
         Task<int> ExecQueryWithResultAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600);
         Task<bool> ExecQueryAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, int minRowsAffected = 1, bool shouldEqualMinRowsAffected = false);
         Task<DynamicParameters> ExecProcedureAsync(string procedureName, DynamicParameters procedureParameter = null, int commandTimeoutSeconds = 3600);
         Task<DbDataReader> ExecReaderAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CommandBehavior commandBehavior = CommandBehavior.Default, CancellationToken token = default);
         Task<List<string>> RetrieveBlob(string sqlQuery, string stringPathDownload, string stringFileName = null, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default);
         Task<string> BulkGetCsv(string sqlQuery, string delimiter, string filename, string outputFolderPath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default);
-        IAsyncEnumerable<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, JsonTypeInfo<T> jsonTypeInfo, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe;
+        IAsyncEnumerable<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, JsonTypeInfo<T> jsonTypeInfo, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
         Task<int> BulkInsertInto(string tableName, DataTable dataTable, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default);
     }
 
@@ -108,7 +108,7 @@ namespace bifeldy_lib_90.Abstractions {
         public virtual async IAsyncEnumerable<T> GetAsyncEnumerable<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) where T : JsonSerDe, new() {
             try {
                 await using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
-                    await foreach (T item in dr.ToAsyncEnumerable(typeInfo, token)) {
+                    await foreach (T item in dr.ToAsyncEnumerable(typeInfo, null, token)) {
                         yield return item;
                     }
                 }
@@ -118,10 +118,10 @@ namespace bifeldy_lib_90.Abstractions {
             }
         }
 
-        public virtual async IAsyncEnumerable<T> GetAsyncEnumerable<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) {
+        public virtual async IAsyncEnumerable<T> GetAsyncEnumerable<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) where T : IConvertible {
             try {
                 await using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
-                    await foreach (T item in dr.ToAsyncEnumerable<T>(token)) {
+                    await foreach (T item in dr.ToAsyncEnumerable<T>(null, token)) {
                         yield return item;
                     }
                 }
@@ -142,7 +142,7 @@ namespace bifeldy_lib_90.Abstractions {
             return ls;
         }
 
-        public virtual async Task<IEnumerable<T>> GetEnumerableAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
+        public virtual async Task<IEnumerable<T>> GetEnumerableAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : IConvertible {
             var ls = new List<T>();
 
             IAsyncEnumerable<T> iae = this.GetAsyncEnumerable<T>(sqlQuery, sqlParameter, commandTimeoutSeconds, token);
@@ -186,7 +186,7 @@ namespace bifeldy_lib_90.Abstractions {
             }
         }
 
-        public virtual async Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600) {
+        public virtual async Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600) where T : IConvertible {
             this.OpenConnection();
             T result = await this.DbConnection.ExecuteScalarAsync<T>(sqlQuery, sqlParameter, this.DbTransaction, commandTimeoutSeconds, CommandType.Text);
             this.TryCloseConnection();
@@ -235,7 +235,7 @@ namespace bifeldy_lib_90.Abstractions {
             Exception exception = null;
             try {
                 string _sqlQuery = $"SELECT COUNT(*) FROM ( {sqlQuery} ) RetrieveBlob_{DateTime.Now.Ticks}";
-                ulong _totalFiles = await this.ExecScalarAsync<ulong>(_sqlQuery, sqlParameter, commandTimeoutSeconds);
+                ulong? _totalFiles = await this.ExecScalarAsync<ulong>(_sqlQuery, sqlParameter, commandTimeoutSeconds);
                 if (_totalFiles <= 0) {
                     throw new Exception("File Tidak Ditemukan");
                 }
@@ -333,7 +333,7 @@ namespace bifeldy_lib_90.Abstractions {
             return (exception == null) ? result : throw exception;
         }
 
-        public virtual async IAsyncEnumerable<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, JsonTypeInfo<T> jsonTypeInfo, int chunkSize = 2048, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) where T : JsonSerDe {
+        public virtual async IAsyncEnumerable<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, JsonTypeInfo<T> jsonTypeInfo, int chunkSize = 2048, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) where T : JsonSerDe, new() {
             int batchNumber = 1;
             int totalInserted = 0;
 

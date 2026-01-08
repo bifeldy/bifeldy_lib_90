@@ -6,7 +6,7 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace bifeldy_lib_90.Libraries {
 
-    public sealed class AsyncEnumerableJsonContent<T> : HttpContent where T : JsonSerDe {
+    public sealed class AsyncEnumerableJsonContent<T> : HttpContent where T : JsonSerDe, new() {
 
         private readonly IAsyncEnumerable<T> _source;
         private readonly JsonTypeInfo<T> _typeInfo;

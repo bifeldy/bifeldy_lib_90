@@ -1,4 +1,5 @@
-﻿using bifeldy_lib_90.Models;
+﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Models;
 using ChoETL;
 using System.Data;
 using System.Text;
@@ -7,11 +8,11 @@ using System.Text.Json.Serialization.Metadata;
 namespace bifeldy_lib_90.Services {
 
     public interface ICsvService {
-        List<CCsvColumn> GetColumnFromClassType<T>(JsonTypeInfo<T> jsonTypeInfo);
+        List<CCsvColumn> GetColumnFromClassType<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new();
         DataTable Csv2DataTable(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string tableName = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
         string Csv2Json(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
         IDataReader Csv2DataReader(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
-        IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo,string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
+        IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo,string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) where T : JsonSerDe, new();
     }
 
     public sealed class CCsvService : ICsvService {
@@ -20,7 +21,7 @@ namespace bifeldy_lib_90.Services {
             //
         }
 
-        public List<CCsvColumn> GetColumnFromClassType<T>(JsonTypeInfo<T> jsonTypeInfo) {
+        public List<CCsvColumn> GetColumnFromClassType<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
             var csvColumn = new List<CCsvColumn>();
 
             foreach (JsonPropertyInfo prop in jsonTypeInfo.Properties) {
@@ -135,7 +136,7 @@ namespace bifeldy_lib_90.Services {
             return this.ChoEtlSetupCsv(new FileInfo(filePath).FullName, delimiter, csvColumn, nullValue, eolDelimiter, encoding ?? Encoding.UTF8).AsDataReader();
         }
 
-        public IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo, string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) {
+        public IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo, string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) where T : JsonSerDe, new() {
             using (IDataReader dr = this.Csv2DataReader(filePath, delimiter, csvColumn, nullValue, eolDelimiter, encoding ?? Encoding.UTF8)) {
                 var propMap = new List<(JsonPropertyInfo Prop, int Index, Type TargetType)>();
 

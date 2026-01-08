@@ -17,14 +17,14 @@ namespace bifeldy_lib_90.Services {
         IConsumer<T1, T2> CreateKafkaConsumerInstance<T1, T2>(string hostPort, string groupId);
         TopicPartition CreateKafkaConsumerTopicPartition(string topicName, int partition);
         TopicPartitionOffset CreateKafkaConsumerTopicPartitionOffset(TopicPartition topicPartition, long offset);
-        Task<List<Message<string, T>>> ConsumeSingleMultipleMessages<T>(JsonTypeInfo<T> typeInfo, string hostPort, string groupId, string topicName, int partition = 0, long offset = -1, ulong nMessagesBlock = 1) where T : JsonSerDe;
+        Task<List<Message<string, T>>> ConsumeSingleMultipleMessages<T>(JsonTypeInfo<T> typeInfo, string hostPort, string groupId, string topicName, int partition = 0, long offset = -1, ulong nMessagesBlock = 1) where T : JsonSerDe, new();
         string GetKeyProducerListener(string hostPort, string topicName, string pubSubName = null);
         string GetTopicNameProducerListener(string topicName, string suffixKodeDc = null);
         Task CreateKafkaProducerListener(string hostPort, string topicName, string suffixKodeDc = null, string pubSubName = null, CancellationToken stoppingToken = default);
         void DisposeAndRemoveKafkaProducerListener(string hostPort, string topicName, string suffixKodeDc = null, string pubSubName = null);
         string GetKeyConsumerListener(string hostPort, string topicName, string pubSubName = null);
         (string, string) GetTopicNameConsumerListener(string topicName, string groupId, string suffixKodeDc = null);
-        Task CreateKafkaConsumerListener<T>(JsonTypeInfo<T> typeInfo, string hostPort, string topicName, string groupId, string suffixKodeDc = null, Action<Message<string, T>> execLambda = null, string pubSubName = null, CancellationTokenSource cancellationTokenSource = default) where T : JsonSerDe;
+        Task CreateKafkaConsumerListener<T>(JsonTypeInfo<T> typeInfo, string hostPort, string topicName, string groupId, string suffixKodeDc = null, Action<Message<string, T>> execLambda = null, string pubSubName = null, CancellationTokenSource cancellationTokenSource = default) where T : JsonSerDe, new();
         void DisposeAndRemoveKafkaConsumerListener(string hostPort, string topicName, string groupId, string suffixKodeDc = null, string pubSubName = null);
     }
 
@@ -127,7 +127,7 @@ namespace bifeldy_lib_90.Services {
 
         public TopicPartitionOffset CreateKafkaConsumerTopicPartitionOffset(TopicPartition topicPartition, long offset) => new(topicPartition, new Offset(offset));
 
-        public async Task<List<Message<string, T>>> ConsumeSingleMultipleMessages<T>(JsonTypeInfo<T> typeInfo, string hostPort, string groupId, string topicName, int partition = 0, long offset = -1, ulong nMessagesBlock = 1) where T : JsonSerDe {
+        public async Task<List<Message<string, T>>> ConsumeSingleMultipleMessages<T>(JsonTypeInfo<T> typeInfo, string hostPort, string groupId, string topicName, int partition = 0, long offset = -1, ulong nMessagesBlock = 1) where T : JsonSerDe, new() {
             await this.CreateTopicIfNotExist(hostPort, topicName);
             using (IConsumer<string, string> consumer = this.CreateKafkaConsumerInstance<string, string>(hostPort, groupId)) {
                 TopicPartition topicPartition = this.CreateKafkaConsumerTopicPartition(topicName, partition);
@@ -234,7 +234,7 @@ namespace bifeldy_lib_90.Services {
             return (topicName, groupId);
         }
 
-        public async Task CreateKafkaConsumerListener<T>(JsonTypeInfo<T> typeInfo, string hostPort, string topicName, string groupId, string suffixKodeDc = null, Action<Message<string, T>> execLambda = null, string pubSubName = null, CancellationTokenSource cancellationTokenSource = default) where T : JsonSerDe {
+        public async Task CreateKafkaConsumerListener<T>(JsonTypeInfo<T> typeInfo, string hostPort, string topicName, string groupId, string suffixKodeDc = null, Action<Message<string, T>> execLambda = null, string pubSubName = null, CancellationTokenSource cancellationTokenSource = default) where T : JsonSerDe, new() {
             (topicName, groupId) = this.GetTopicNameConsumerListener(topicName, groupId, suffixKodeDc);
             await this.CreateTopicIfNotExist(hostPort, topicName);
 

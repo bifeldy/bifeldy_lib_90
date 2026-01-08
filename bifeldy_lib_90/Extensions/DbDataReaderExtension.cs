@@ -65,7 +65,7 @@ namespace bifeldy_lib_90.Extensions {
             return dr.GetValue(index);
         }
 
-        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this DbDataReader dr, JsonTypeInfo<T> jsonTypeInfo, [EnumeratorCancellation] CancellationToken token = default, Action<T> callback = null) where T : JsonSerDe, new() {
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this DbDataReader dr, JsonTypeInfo<T> jsonTypeInfo, Action<T> callback = null, [EnumeratorCancellation] CancellationToken token = default) where T : JsonSerDe, new() {
             if (dr == null) {
                 yield break;
             }
@@ -100,7 +100,7 @@ namespace bifeldy_lib_90.Extensions {
             }
         }
 
-        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this DbDataReader dr, [EnumeratorCancellation] CancellationToken token = default, Action<T> callback = null) {
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this DbDataReader dr, Action<T> callback = null, [EnumeratorCancellation] CancellationToken token = default) where T : IConvertible {
             if (dr == null) {
                 yield break;
             }

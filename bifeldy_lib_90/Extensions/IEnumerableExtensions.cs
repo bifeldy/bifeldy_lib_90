@@ -9,7 +9,7 @@ namespace bifeldy_lib_90.Extensions {
 
     public static class IEnumerableExtension {
 
-        public static DataTable ToDataTable<T>(this IEnumerable<T> items, JsonTypeInfo<T> jsonTypeInfo, string tableName) where T : JsonSerDe {
+        public static DataTable ToDataTable<T>(this IEnumerable<T> items, JsonTypeInfo<T> jsonTypeInfo, string tableName) where T : JsonSerDe, new() {
             if (string.IsNullOrEmpty(tableName)) {
                 tableName = typeof(T).Name;
             }
@@ -44,7 +44,7 @@ namespace bifeldy_lib_90.Extensions {
             return dt;
         }
 
-        public static async Task ToCsv<T>(this IEnumerable<T> arrayListData, JsonTypeInfo<T> jsonTypeInfo, string delimiter, string outputFilePath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, Encoding encoding = null, CancellationToken token = default) where T : JsonSerDe {
+        public static async Task ToCsv<T>(this IEnumerable<T> arrayListData, JsonTypeInfo<T> jsonTypeInfo, string delimiter, string outputFilePath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, Encoding encoding = null, CancellationToken token = default) where T : JsonSerDe, new() {
             using (var streamWriter = new StreamWriter(outputFilePath, false, encoding ?? Encoding.UTF8)) {
                 IList<JsonPropertyInfo> properties = jsonTypeInfo.Properties;
 

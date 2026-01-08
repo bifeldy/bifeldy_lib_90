@@ -11,7 +11,7 @@ using System.Text.Json.Serialization.Metadata;
 namespace bifeldy_lib_90.Handlers {
 
     public interface IServiceProsesDataHandler : IServiceBaseHandler {
-        Task<(int, ResponseJson, JsonTypeInfo)> Run<TFormDataStream>(HttpContext http, IDatabase db, object formDataStream, JsonTypeInfo<TFormDataStream> jsonTypeInfo, [CallerMemberName] string callerMemberName = null);
+        Task<(int, ResponseJson, JsonTypeInfo)> Run<TFormDataStream>(HttpContext http, IDatabase db, object formDataStream, JsonTypeInfo<TFormDataStream> jsonTypeInfo, [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new();
         Task<(int, ResponseJson, JsonTypeInfo)> ProsesData(HttpContext http, IDatabase db, InputJson fd, [CallerMemberName] string callerMemberName = null);
         Task<(int, ResponseJson, JsonTypeInfo)> StreamData(HttpContext http, IDatabase db, Stream stream, [CallerMemberName] string callerMemberName = null);
     }
@@ -27,7 +27,7 @@ namespace bifeldy_lib_90.Handlers {
             //
         }
 
-        public virtual async Task<(int, ResponseJson, JsonTypeInfo)> Run<TFormDataStream>(HttpContext http, IDatabase db, object formDataStream, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, [CallerMemberName] string callerMemberName = null) {
+        public virtual async Task<(int, ResponseJson, JsonTypeInfo)> Run<TFormDataStream>(HttpContext http, IDatabase db, object formDataStream, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new() {
             string statusErrMsg = null;
 
             try {

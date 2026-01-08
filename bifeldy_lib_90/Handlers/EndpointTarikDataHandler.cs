@@ -418,7 +418,7 @@ namespace bifeldy_lib_90.Handlers {
 
         /* ** */
 
-        private async Task DefaultHandlerDc<TInputJson, TOutputJson>(IDatabase db, TInputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, Func<Task> callback, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) {
+        private async Task DefaultHandlerDc<TInputJson, TOutputJson>(IDatabase db, TInputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, Func<Task> callback, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
             try {
                 customService ??= (IServiceTarikDataHandler)this._baseService;
 

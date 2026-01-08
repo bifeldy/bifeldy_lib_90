@@ -1,4 +1,5 @@
-﻿using bifeldy_lib_90.Models;
+﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Reporting.NETCore;
 using System.Data;
@@ -26,7 +27,7 @@ namespace bifeldy_lib_90.Services {
         RdlcInfoWrapper CreateInfoWrapper(IDictionary<string, string> dict);
         RdlcReport GeneratePdfWordExcelHtmlReport(string rdlcName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
         RdlcReport GeneratePdfWordExcelHtmlReport<T>(string rdlcName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
-        Task GeneratePdfWordExcelHtmlReportExternal<T>(CancellationToken ct, Stream streamDestination, IAsyncEnumerable<T> dataStream, JsonTypeInfo<T> typeInfo, RdlcInfoWrapper rdlcDataWithParam, string rdlcPath, string datasetName, string fileType = "PDF", string rdlcGeneratorExecutablePath = null);
+        Task GeneratePdfWordExcelHtmlReportExternal<T>(CancellationToken ct, Stream streamDestination, IAsyncEnumerable<T> dataStream, JsonTypeInfo<T> typeInfo, RdlcInfoWrapper rdlcDataWithParam, string rdlcPath, string datasetName, string fileType = "PDF", string rdlcGeneratorExecutablePath = null) where T : JsonSerDe, new();
     }
 
     public sealed class CRdlcService : IRdlcService {
@@ -347,7 +348,7 @@ namespace bifeldy_lib_90.Services {
             string datasetName,
             string fileType = "PDF",
             string rdlcGeneratorExecutablePath = null
-        ) {
+        ) where T : JsonSerDe, new() {
             try {
                 if (string.IsNullOrEmpty(rdlcDataWithParam.DataFilePath)) {
                     string dataFilePath = $"rdlc_data_{Guid.NewGuid()}.tmp";

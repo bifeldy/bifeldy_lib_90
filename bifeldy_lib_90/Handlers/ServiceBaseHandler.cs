@@ -40,7 +40,7 @@ namespace bifeldy_lib_90.Handlers {
             this._generalRepo = generalRepo;
         }
 
-        protected async Task CatatLogTfApi<TFormDataStream>(HttpContext http, IDatabase db, object formDataStream, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, string statusErrMsg = null, DateTime? dateTimeStart = null) {
+        protected async Task CatatLogTfApi<TFormDataStream>(HttpContext http, IDatabase db, object formDataStream, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, string statusErrMsg = null, DateTime? dateTimeStart = null) where TFormDataStream : JsonSerDe, new() {
             if (dateTimeStart == null) {
                 dateTimeStart = (DateTime)http.Request.HttpContext.Items["request_start_at"];
             }
@@ -127,7 +127,7 @@ namespace bifeldy_lib_90.Handlers {
             _ = await db.ExecQueryAsync(sqlQuery, sqlParam);
         }
 
-        protected async IAsyncEnumerable<T> GetRequestJsonStreamData<T>(HttpContext http, JsonTypeInfo<T> jsonTypeInfo) {
+        protected async IAsyncEnumerable<T> GetRequestJsonStreamData<T>(HttpContext http, JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
             string contentType = http.Request.ContentType;
 
             if (string.Equals(contentType, "application/json", StringComparison.OrdinalIgnoreCase)) {

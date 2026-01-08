@@ -1,4 +1,5 @@
-﻿using bifeldy_lib_90.Attributes;
+﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Attributes;
 using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Models;
 using Microsoft.AspNetCore.Http;
@@ -29,7 +30,7 @@ namespace bifeldy_lib_90.Services {
         string CleanIpOrigin(string ipOrigins);
         string GetTokenData(HttpRequest request, RequestJson reqBody);
         Task<(string, string)> ParseHttpRequestBodyJsonString(HttpRequest request);
-        Task<T> GetHttpRequestBody<T>(HttpRequest request, JsonTypeInfo<T> typeInfo);
+        Task<T> GetHttpRequestBody<T>(HttpRequest request, JsonTypeInfo<T> typeInfo) where T : JsonSerDe, new();
         Task CheckDownloadUpdate(string apiUpdaterUrl, Dictionary<string, object> HashFileFromServer);
         bool IsAllowedRoutingTarget(Type hideType, string kodeDc, EJenisDc jenisDc);
     }
@@ -230,7 +231,7 @@ namespace bifeldy_lib_90.Services {
             return (contentType, rbString);
         }
 
-        public async Task<T> GetHttpRequestBody<T>(HttpRequest request, JsonTypeInfo<T> typeInfo) {
+        public async Task<T> GetHttpRequestBody<T>(HttpRequest request, JsonTypeInfo<T> typeInfo) where T : JsonSerDe, new() {
             T reqBody = default;
 
             if (typeof(RequestJson).IsAssignableFrom(typeof(T))) {

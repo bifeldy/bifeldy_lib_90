@@ -16,11 +16,11 @@ using System.Web;
 namespace bifeldy_lib_90.Handlers {
 
     public interface IEndpointProsesDataHandler : IEndpointBaseHandler {
-        Task<IResult> HitDimanaSaja<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null);
-        Task<IResult> HitDc<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null);
-        Task<IResult> DirectDbDc<TFormDataStream>(IDatabase db, IServiceProvider sp, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = "(Mirror)", [CallerMemberName] string callerMemberName = null);
-        Task<IResult> HitHo<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null);
-        Task<IResult> HitNonDc<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null);
+        Task<IResult> HitDimanaSaja<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new();
+        Task<IResult> HitDc<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new();
+        Task<IResult> DirectDbDc<TFormDataStream>(IDatabase db, IServiceProvider sp, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = "(Mirror)", [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new();
+        Task<IResult> HitHo<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new();
+        Task<IResult> HitNonDc<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new();
     }
 
     public sealed class CEndpointProsesDataHandler : CEndpointBaseHandler, IEndpointProsesDataHandler {
@@ -40,7 +40,7 @@ namespace bifeldy_lib_90.Handlers {
             //
         }
 
-        public async Task<IResult> HitDimanaSaja<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) {
+        public async Task<IResult> HitDimanaSaja<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new() {
             customService ??= (IServiceProsesDataHandler)this._baseService;
 
             // formDataStream :: Boleh NULL
@@ -107,7 +107,7 @@ namespace bifeldy_lib_90.Handlers {
 
         /* ** *** ** */
 
-        public async Task<IResult> HitDc<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) {
+        public async Task<IResult> HitDc<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new() {
             try {
                 customService ??= (IServiceProsesDataHandler)this._baseService;
 
@@ -200,7 +200,7 @@ namespace bifeldy_lib_90.Handlers {
 
         /* ** ALTERNATIVE DC API ** */
 
-        public async Task<IResult> DirectDbDc<TFormDataStream>(IDatabase db, IServiceProvider sp, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = "(Mirror)", [CallerMemberName] string callerMemberName = null) {
+        public async Task<IResult> DirectDbDc<TFormDataStream>(IDatabase db, IServiceProvider sp, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = "(Mirror)", [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new() {
             try {
                 customService ??= (IServiceProsesDataHandler)this._baseService;
 
@@ -275,7 +275,7 @@ namespace bifeldy_lib_90.Handlers {
 
         /* ** *** ** */
 
-        public async Task<IResult> HitHo<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) {
+        public async Task<IResult> HitHo<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new() {
             try {
                 customService ??= (IServiceProsesDataHandler)this._baseService;
 
@@ -301,7 +301,7 @@ namespace bifeldy_lib_90.Handlers {
             }
         }
 
-        public async Task<IResult> HitNonDc<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) {
+        public async Task<IResult> HitNonDc<TFormDataStream>(IDatabase db, object formDataStream = null, JsonTypeInfo<TFormDataStream> jsonTypeInfo = null, IServiceProsesDataHandler customService = null, string customInfo = null, [CallerMemberName] string callerMemberName = null) where TFormDataStream : JsonSerDe, new() {
             try {
                 customService ??= (IServiceProsesDataHandler)this._baseService;
 

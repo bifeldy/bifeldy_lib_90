@@ -17,8 +17,8 @@ namespace bifeldy_lib_90.Handlers {
         CEndpointBaseHandler SetHttpContext(HttpContext context);
         CEndpointBaseHandler SetService(IServiceBaseHandler baseService);
         CEndpointBaseHandler Initialize(HttpContext context, IServiceBaseHandler baseService);
-        IResult GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null);
-        IResult GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null);
+        IResult GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null) where T : JsonSerDe, new();
+        IResult GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null) where T : JsonSerDe, new();
     }
 
     public abstract class CEndpointBaseHandler : IEndpointBaseHandler {
@@ -231,7 +231,7 @@ namespace bifeldy_lib_90.Handlers {
             }
         }
 
-        public IResult GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null) {
+        public IResult GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null) where T : JsonSerDe, new() {
             return Results.Ok(new ResponseJsonSingle<CTableClassModel>() {
                 info = $"200 - {callerMemberName}",
                 result = new CTableClassModel() {
@@ -241,7 +241,7 @@ namespace bifeldy_lib_90.Handlers {
             });
         }
 
-        public IResult GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null) {
+        public IResult GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null) where T : JsonSerDe, new() {
             return Results.Ok(new ResponseJsonSingle<CPocoModel>() {
                 info = $"200 - {callerMemberName}",
                 result = new CPocoModel() {
