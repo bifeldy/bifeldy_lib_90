@@ -239,14 +239,13 @@ namespace bifeldy_lib_90.Services {
 
                 if (!string.IsNullOrEmpty(rbString)) {
                     try {
-                        string json = null;
                         if (contentType == MediaTypeNames.Application.Xml) {
-                            json = this._cs.XmlToJson(rbString);
+                            rbString = this._cs.XmlToJson(rbString);
                             contentType = MediaTypeNames.Application.Json;
                         }
 
                         if (contentType == MediaTypeNames.Application.Json) {
-                            reqBody = this._cs.JsonToObject(json, typeInfo);
+                            reqBody = this._cs.JsonToObject(rbString, typeInfo);
                         }
                     }
                     catch (Exception ex) {
