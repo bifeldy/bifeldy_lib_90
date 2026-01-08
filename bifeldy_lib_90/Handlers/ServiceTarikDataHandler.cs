@@ -13,12 +13,12 @@ namespace bifeldy_lib_90.Handlers {
         string GetSqlQueryFrom();
         string GetAllColumnSelectAsString(IDictionary<string, string> jsonKeysTableCustomColumns = null);
         string GetFullQuery(string sqlCustomQuery = null, IDictionary<string, string> jsonKeysTableCustomColumns = null);
-        Task<(decimal, decimal, IAsyncEnumerable<T>)> TarikDataPaging<T>(JsonTypeInfo<T> jsonTypeInfo, HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order, string page, string row) where T : JsonSerDe, new();
-        IAsyncEnumerable<T> TarikDataFullStream<T>(JsonTypeInfo<T> jsonTypeInfo, HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order) where T : JsonSerDe, new();
-        Task<(IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParam(HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order, string page = null, string row = null);
-        Task<(string, string, string, IDictionary<string, string>, IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParamExportDocs(string rdlcPath, string dsName, string exportAs, HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order, string page = null, string row = null);
-        Task<bool> ExecuteSebelumTarik(HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order, string page = null, string row = null);
-        Task<bool> ExecuteSesudahTarik(HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order, string page = null, string row = null);
+        Task<(decimal, decimal, IAsyncEnumerable<TOutputJson>)> TarikDataPaging<TOutputJson, TInputJson>(JsonTypeInfo<TOutputJson> jsonTypeInfo, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page, string row) where TOutputJson : JsonSerDe, new();
+        IAsyncEnumerable<TOutputJson> TarikDataFullStream<TOutputJson, TInputJson>(JsonTypeInfo<TOutputJson> jsonTypeInfo, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order) where TOutputJson : JsonSerDe, new();
+        Task<(IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParam<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null);
+        Task<(string, string, string, IDictionary<string, string>, IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParamExportDocs<TInputJson>(string rdlcPath, string dsName, string exportAs, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null);
+        Task<bool> ExecuteSebelumTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null);
+        Task<bool> ExecuteSesudahTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null);
     }
 
     public abstract class CServiceTarikDataHandler : CServiceBaseHandler, IServiceTarikDataHandler {
@@ -148,36 +148,36 @@ namespace bifeldy_lib_90.Handlers {
             ";
         }
 
-        public async Task<(decimal, decimal, IAsyncEnumerable<T>)> TarikDataPaging<T>(JsonTypeInfo<T> jsonTypeInfo, HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order, string page, string row) where T : JsonSerDe, new() {
+        public async Task<(decimal, decimal, IAsyncEnumerable<TOutputJson>)> TarikDataPaging<TOutputJson, TInputJson>(JsonTypeInfo<TOutputJson> jsonTypeInfo, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page, string row) where TOutputJson : JsonSerDe, new() {
             (IDictionary<string, string> jsonKeysTableCustomColumns, string sqlCustomQuery, DynamicParameters sqlParam) = await this.GetCustomQueryParam(ht, db, fd, searchQuery, sort, order, page, row);
             return await this.GetDataPagingWithParam(jsonTypeInfo, db, sort, order, page, row, sqlParam, sqlCustomQuery, jsonKeysTableCustomColumns);
         }
 
-        public async IAsyncEnumerable<T> TarikDataFullStream<T>(JsonTypeInfo<T> jsonTypeInfo, HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order) where T : JsonSerDe, new() {
+        public async IAsyncEnumerable<TOutputJson> TarikDataFullStream<TOutputJson, TInputJson>(JsonTypeInfo<TOutputJson> jsonTypeInfo, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order) where TOutputJson : JsonSerDe, new() {
             (IDictionary<string, string> jsonKeysTableCustomColumns, string sqlCustomQuery, DynamicParameters sqlParam) = await this.GetCustomQueryParam(ht, db, fd, searchQuery, sort, order);
-            IAsyncEnumerable<T> iae = this.GetDataFullStreamWithParam(jsonTypeInfo, db, sqlParam, sqlCustomQuery, jsonKeysTableCustomColumns, ht.RequestAborted);
-            await foreach (T item in iae) {
+            IAsyncEnumerable<TOutputJson> iae = this.GetDataFullStreamWithParam(jsonTypeInfo, db, sqlParam, sqlCustomQuery, jsonKeysTableCustomColumns, ht.RequestAborted);
+            await foreach (TOutputJson item in iae) {
                 yield return item;
             }
         }
 
-        public virtual async Task<(IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParam(HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) {
+        public virtual async Task<(IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParam<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) {
             (IDictionary<string, string>, string, DynamicParameters) res = (this.jsonKeysTableColumns, this.sqlQuery, null);
             return await Task.FromResult(res);
         }
 
-        public virtual async Task<(string, string, string, IDictionary<string, string>, IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParamExportDocs(string rdlcPath, string dsName, string exportAs, HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) {
+        public virtual async Task<(string, string, string, IDictionary<string, string>, IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParamExportDocs<TInputJson>(string rdlcPath, string dsName, string exportAs, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) {
             (IDictionary<string, string> jsonKeysTableCustomColumns, string sqlCustomQuery, DynamicParameters sqlParam) = await this.GetCustomQueryParam(ht, db, fd, searchQuery, sort, order, page, row);
             (string, string, string, IDictionary<string, string>, IDictionary<string, string>, string, DynamicParameters) result = (rdlcPath, dsName, exportAs, null, jsonKeysTableCustomColumns, sqlCustomQuery, sqlParam);
             return await Task.FromResult(result);
         }
 
-        public virtual async Task<bool> ExecuteSebelumTarik(HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) {
+        public virtual async Task<bool> ExecuteSebelumTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) {
             return await Task.FromResult(false);
         }
 
         // Tidak Akan Di Panggil Jika Membuat Export File Di Background Job ~
-        public virtual async Task<bool> ExecuteSesudahTarik(HttpContext ht, IDatabase db, InputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) {
+        public virtual async Task<bool> ExecuteSesudahTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) {
             return await Task.FromResult(false);
         }
 
