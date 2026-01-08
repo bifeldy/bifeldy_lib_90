@@ -338,6 +338,10 @@ namespace bifeldy_lib_90.Repositories {
         }
 
         public async Task CheckKoordinatorHO(IDatabase db, string kodeDc) {
+            if (string.IsNullOrEmpty(kodeDc)) {
+                throw new TidakMemenuhiException("Data Tidak Lengkap");
+            }
+
             string targetJenisDc = await this.GetJenisDc(db, kodeDc.ToUpper());
 
             if (Enum.TryParse(targetJenisDc.ToUpper(), true, out EJenisDc _eJenisDc)) {
