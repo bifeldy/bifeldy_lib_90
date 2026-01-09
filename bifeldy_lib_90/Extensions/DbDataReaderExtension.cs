@@ -100,7 +100,7 @@ namespace bifeldy_lib_90.Extensions {
             }
         }
 
-        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this DbDataReader dr, Action<T> callback = null, [EnumeratorCancellation] CancellationToken token = default) where T : IConvertible {
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this DbDataReader dr, Action<T> callback = null, [EnumeratorCancellation] CancellationToken token = default) {
             if (dr == null) {
                 yield break;
             }
