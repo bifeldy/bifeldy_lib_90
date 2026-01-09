@@ -186,20 +186,24 @@ namespace bifeldy_lib_90.Abstractions {
             }
         }
 
-        public virtual Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600) {
+        // https://github.com/npgsql/npgsql/issues/1663
+        public virtual async Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600) {
             try {
                 this.OpenConnection();
-                return this.DbConnection.ExecuteScalarAsync<T>(sqlQuery, sqlParameter, this.DbTransaction, commandTimeoutSeconds, CommandType.Text);
+                // Harus di tahan pakai `async/await` biar tidak balapan dengan `finally`
+                return await this.DbConnection.ExecuteScalarAsync<T>(sqlQuery, sqlParameter, this.DbTransaction, commandTimeoutSeconds, CommandType.Text);
             }
             finally {
                 this.TryCloseConnection();
             }
         }
 
-        public virtual Task<int> ExecQueryWithResultAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600) {
+        // https://github.com/npgsql/npgsql/issues/1663
+        public virtual async Task<int> ExecQueryWithResultAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600) {
             try {
                 this.OpenConnection();
-                return this.DbConnection.ExecuteAsync(sqlQuery, sqlParameter, this.DbTransaction, commandTimeoutSeconds, CommandType.Text);
+                // Harus di tahan pakai `async/await` biar tidak balapan dengan `finally`
+                return await this.DbConnection.ExecuteAsync(sqlQuery, sqlParameter, this.DbTransaction, commandTimeoutSeconds, CommandType.Text);
             }
             finally {
                 this.TryCloseConnection();
