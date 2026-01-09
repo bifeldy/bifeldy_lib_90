@@ -21,6 +21,8 @@ namespace bifeldy_lib_90.Models {
             API_SD_1, API_SD_2, API_SD_3, API_SD_4, API_SD_5, API_SD_6, API_SD_7
         ];
 
+        public static readonly string _ALL_ = "_ALL_";
+
     }
 
 }

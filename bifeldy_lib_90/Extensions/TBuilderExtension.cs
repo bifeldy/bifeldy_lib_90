@@ -9,7 +9,7 @@ namespace bifeldy_lib_90.Extensions {
     public static class TBuilderExtensions {
 
         public static TBuilder WithApiDocumentNames<TBuilder>(this TBuilder builder, params string[] documents) where TBuilder : IEndpointConventionBuilder {
-            List<string> docs = [ApiDocumentName.DEFAULT];
+            List<string> docs = [ApiDocumentName._ALL_];
 
             if (documents != null) {
                 foreach (string document in documents) {

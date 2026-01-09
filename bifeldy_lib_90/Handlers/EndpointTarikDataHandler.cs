@@ -21,6 +21,7 @@ using System.Web;
 namespace bifeldy_lib_90.Handlers {
 
     public interface IEndpointTarikDataHandler : IEndpointBaseHandler {
+        Task CreateResponseMessage(int statusCode, string responseJsonMessage, string suffixInfo = null, [CallerMemberName] string callerMemberName = null);
         Task HitDimanaSaja<TInputJson, TOutputJson>(IDatabase db, TInputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, string suffixInfo = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
         Task HitDc<TInputJson, TOutputJson>(IDatabase db, TInputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string page, string row, string sort, string order, bool forceFullDataSkipPaging, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
         Task HitDcCsv<TInputJson, TOutputJson>(IDatabase db, TInputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, string prefixFileName = null, string delimiter = null, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
@@ -51,6 +52,28 @@ namespace bifeldy_lib_90.Handlers {
             IGeneralRepository generalRepo
         ) : base(scheduler, logger, sp, gs, app, http, cs, rs, generalRepo) {
             //
+        }
+
+        public async Task CreateResponseMessage(int statusCode, string responseJsonMessage, string suffixInfo = null, [CallerMemberName] string callerMemberName = null) {
+            var response = new ResponseJsonSingle<ResponseJsonMessage>() {
+                info = $"{statusCode} - {callerMemberName}",
+                result = new ResponseJsonMessage() {
+                    message = responseJsonMessage
+                }
+            };
+
+            if (!string.IsNullOrEmpty(suffixInfo)) {
+                response.info = $"{statusCode} - {callerMemberName} {suffixInfo}";
+            }
+
+            this._context.Response.StatusCode = statusCode;
+            this._context.Response.ContentType = MediaTypeNames.Application.Json;
+
+            await JsonSerializer.SerializeAsync(
+                this._context.Response.Body,
+                response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
+                _context.RequestAborted
+            );
         }
 
         /* ** *** ** */
@@ -128,25 +151,7 @@ namespace bifeldy_lib_90.Handlers {
                 }
             }
             catch (TidakMemenuhiException tm) {
-                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
-                    result = new ResponseJsonMessage() {
-                        message = tm.Message
-                    }
-                };
-
-                if (!string.IsNullOrEmpty(suffixInfo)) {
-                    response.info = $"400 - {callerMemberName} {suffixInfo}";
-                }
-
-                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                await JsonSerializer.SerializeAsync(
-                    this._context.Response.Body,
-                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                    _context.RequestAborted
-                );
+                await this.CreateResponseMessage(StatusCodes.Status400BadRequest, tm.Message, suffixInfo, callerMemberName);
             }
         }
 
@@ -247,25 +252,7 @@ namespace bifeldy_lib_90.Handlers {
                 );
             }
             catch (TidakMemenuhiException tm) {
-                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
-                    result = new ResponseJsonMessage() {
-                        message = tm.Message
-                    }
-                };
-
-                if (!string.IsNullOrEmpty(suffixInfo)) {
-                    response.info = $"400 - {callerMemberName} {suffixInfo}";
-                }
-
-                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                await JsonSerializer.SerializeAsync(
-                    this._context.Response.Body,
-                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                    _context.RequestAborted
-                );
+                await this.CreateResponseMessage(StatusCodes.Status400BadRequest, tm.Message, suffixInfo, callerMemberName);
             }
         }
 
@@ -394,25 +381,7 @@ namespace bifeldy_lib_90.Handlers {
                 );
             }
             catch (TidakMemenuhiException tm) {
-                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
-                    result = new ResponseJsonMessage() {
-                        message = tm.Message
-                    }
-                };
-
-                if (!string.IsNullOrEmpty(suffixInfo)) {
-                    response.info = $"400 - {callerMemberName} {suffixInfo}";
-                }
-
-                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                await JsonSerializer.SerializeAsync(
-                    this._context.Response.Body,
-                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                    _context.RequestAborted
-                );
+                await this.CreateResponseMessage(StatusCodes.Status400BadRequest, tm.Message, suffixInfo, callerMemberName);
             }
         }
 
@@ -424,21 +393,7 @@ namespace bifeldy_lib_90.Handlers {
 
                 bool isNonDc = await this._generalRepo.IsNonDc(db);
                 if (isNonDc) {
-                    var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName}",
-                        result = new ResponseJsonMessage() {
-                            message = "Endpoint ini hanya dapat diakses melalui HO / DC"
-                        }
-                    };
-
-                    this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                    await JsonSerializer.SerializeAsync(
-                        this._context.Response.Body,
-                        response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                        _context.RequestAborted
-                    );
+                    await this.CreateResponseMessage(StatusCodes.Status403Forbidden, "Endpoint ini hanya dapat diakses melalui HO / DC", null, callerMemberName);
                 }
                 else {
                     if (fd is not InputJsonDc f) {
@@ -462,21 +417,7 @@ namespace bifeldy_lib_90.Handlers {
                             });
 
                             if (u == null) {
-                                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                                    info = $"400 - {callerMemberName}",
-                                    result = new ResponseJsonMessage() {
-                                        message = e
-                                    }
-                                };
-
-                                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                                this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                                await JsonSerializer.SerializeAsync(
-                                    this._context.Response.Body,
-                                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                                    _context.RequestAborted
-                                );
+                                await this.CreateResponseMessage(StatusCodes.Status403Forbidden, e, null, callerMemberName);
                             }
                             else {
                                 NameValueCollection queryDictionary = HttpUtility.ParseQueryString(u.Query);
@@ -496,21 +437,7 @@ namespace bifeldy_lib_90.Handlers {
                 }
             }
             catch (TidakMemenuhiException tm) {
-                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
-                    result = new ResponseJsonMessage() {
-                        message = tm.Message
-                    }
-                };
-
-                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                await JsonSerializer.SerializeAsync(
-                    this._context.Response.Body,
-                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                    _context.RequestAborted
-                );
+                await this.CreateResponseMessage(StatusCodes.Status400BadRequest, tm.Message, null, callerMemberName);
             }
         }
 
@@ -542,21 +469,7 @@ namespace bifeldy_lib_90.Handlers {
                 bool isHo = await this._generalRepo.IsHo(db);
 
                 if (isNonDc || !isHo) {
-                    var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName} (Mirror)",
-                        result = new ResponseJsonMessage() {
-                            message = "Endpoint ini hanya dapat diakses melalui HO"
-                        }
-                    };
-
-                    this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                    await JsonSerializer.SerializeAsync(
-                        this._context.Response.Body,
-                        response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                        _context.RequestAborted
-                    );
+                    await this.CreateResponseMessage(StatusCodes.Status403Forbidden, "Endpoint ini hanya dapat diakses melalui HO", "(Mirror)", callerMemberName);
                 }
                 else {
                     if (fd is not InputJsonDc f) {
@@ -569,21 +482,7 @@ namespace bifeldy_lib_90.Handlers {
 
                         (IDatabase dbOraPg, IDatabase dbMsSql) = await this._generalRepo.OpenConnectionToDcFromHo(db, f.kode_dc, this._sp);
                         if (dbOraPg == null) {
-                            var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                                info = $"400 - {callerMemberName} (Mirror)",
-                                result = new ResponseJsonMessage() {
-                                    message = $"Kode DC {f.kode_dc} tidak tersedia!"
-                                }
-                            };
-
-                            this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                            this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                            await JsonSerializer.SerializeAsync(
-                                this._context.Response.Body,
-                                response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                                _context.RequestAborted
-                            );
+                            await this.CreateResponseMessage(StatusCodes.Status404NotFound, $"Kode DC {f.kode_dc} tidak tersedia!", null, callerMemberName);
                         }
                         else {
                             await callback(f, dbOraPg, dbMsSql);
@@ -593,21 +492,7 @@ namespace bifeldy_lib_90.Handlers {
                 }
             }
             catch (TidakMemenuhiException tm) {
-                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName} (Mirror)",
-                    result = new ResponseJsonMessage() {
-                        message = tm.Message
-                    }
-                };
-
-                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                await JsonSerializer.SerializeAsync(
-                    this._context.Response.Body,
-                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                    _context.RequestAborted
-                );
+                await this.CreateResponseMessage(StatusCodes.Status400BadRequest, tm.Message, "(Mirror)", callerMemberName);
             }
         }
 
@@ -637,42 +522,14 @@ namespace bifeldy_lib_90.Handlers {
 
                 bool isHo = await this._generalRepo.IsHo(db);
                 if (!isHo) {
-                    var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName}",
-                        result = new ResponseJsonMessage() {
-                            message = "Endpoint ini hanya dapat diakses melalui HO"
-                        }
-                    };
-
-                    this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                    await JsonSerializer.SerializeAsync(
-                        this._context.Response.Body,
-                        response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                        _context.RequestAborted
-                    );
+                    await this.CreateResponseMessage(StatusCodes.Status403Forbidden, "Endpoint ini hanya dapat diakses melalui HO", null, callerMemberName);
                 }
                 else {
                     await callback();
                 }
             }
             catch (TidakMemenuhiException tm) {
-                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
-                    result = new ResponseJsonMessage() {
-                        message = tm.Message
-                    }
-                };
-
-                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                await JsonSerializer.SerializeAsync(
-                    this._context.Response.Body,
-                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                    _context.RequestAborted
-                );
+                await this.CreateResponseMessage(StatusCodes.Status400BadRequest, tm.Message, null, callerMemberName);
             }
         }
 
@@ -702,42 +559,14 @@ namespace bifeldy_lib_90.Handlers {
 
                 bool isNonDc = await this._generalRepo.IsNonDc(db);
                 if (!isNonDc) {
-                    var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName}",
-                        result = new ResponseJsonMessage() {
-                            message = "Endpoint ini hanya dapat diakses melalui NON DC"
-                        }
-                    };
-
-                    this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                    await JsonSerializer.SerializeAsync(
-                        this._context.Response.Body,
-                        response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                        _context.RequestAborted
-                    );
+                    await this.CreateResponseMessage(StatusCodes.Status403Forbidden, "Endpoint ini hanya dapat diakses melalui NON DC", null, callerMemberName);
                 }
                 else {
                     await callback();
                 }
             }
             catch (TidakMemenuhiException tm) {
-                var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
-                    result = new ResponseJsonMessage() {
-                        message = tm.Message
-                    }
-                };
-
-                this._context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                this._context.Response.ContentType = MediaTypeNames.Application.Json;
-
-                await JsonSerializer.SerializeAsync(
-                    this._context.Response.Body,
-                    response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                    _context.RequestAborted
-                );
+                await this.CreateResponseMessage(StatusCodes.Status400BadRequest, tm.Message, null, callerMemberName);
             }
         }
 

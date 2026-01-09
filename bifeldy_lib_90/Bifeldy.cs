@@ -175,6 +175,10 @@ namespace bifeldy_lib_90 {
                         OPEN_API_DOCUMENTS.Add(doc);
                     }
                 }
+
+                if (!OPEN_API_DOCUMENTS.Contains(ApiDocumentName._ALL_)) {
+                    OPEN_API_DOCUMENTS.Add(ApiDocumentName._ALL_);
+                }
             }
 
             _ = Services.AddSingleton(new DocumentOptions(apiTitle, apiDescription, enableApiKey, enableJwt));
