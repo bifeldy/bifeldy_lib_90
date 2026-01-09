@@ -167,18 +167,17 @@ namespace bifeldy_lib_90 {
 
             API_PREFIX ??= apiPrefix;
 
-            if (documents != null) {
-                foreach (string document in documents) {
-                    string doc = Regex.Replace(document, "[^a-zA-Z0-9_-]+", string.Empty);
+            documents ??= [.. ApiDocumentName.ApiDefaultDocuments];
+            foreach (string document in documents) {
+                string doc = Regex.Replace(document, "[^a-zA-Z0-9_-]+", string.Empty);
 
-                    if (!OPEN_API_DOCUMENTS.Contains(doc)) {
-                        OPEN_API_DOCUMENTS.Add(doc);
-                    }
+                if (!OPEN_API_DOCUMENTS.Contains(doc)) {
+                    OPEN_API_DOCUMENTS.Add(doc);
                 }
+            }
 
-                if (!OPEN_API_DOCUMENTS.Contains(ApiDocumentName._ALL_)) {
-                    OPEN_API_DOCUMENTS.Add(ApiDocumentName._ALL_);
-                }
+            if (!OPEN_API_DOCUMENTS.Contains(ApiDocumentName._ALL_)) {
+                OPEN_API_DOCUMENTS.Add(ApiDocumentName._ALL_);
             }
 
             _ = Services.AddSingleton(new DocumentOptions(apiTitle, apiDescription, enableApiKey, enableJwt));
