@@ -42,7 +42,7 @@ namespace bifeldy_lib_90.Repositories {
             return res > 0;
         }
 
-        public async Task<IEnumerable<API_TOKEN_T>> GetAll(IDatabase db, string userName = null) {
+        public Task<IEnumerable<API_TOKEN_T>> GetAll(IDatabase db, string userName = null) {
             string sqlQuery = "SELECT * FROM api_token_t WHERE (app_name = '*' OR UPPER(app_name) = :app_name)";
 
             var sqlParam = new DynamicParameters();
@@ -53,15 +53,15 @@ namespace bifeldy_lib_90.Repositories {
                 sqlParam.Add("user_name", userName.ToUpper());
             }
 
-            return await db.GetEnumerableAsync(API_TOKEN_T_JsonSerializerContext.Default.API_TOKEN_T, sqlQuery, sqlParam);
+            return db.GetEnumerableAsync(API_TOKEN_T_JsonSerializerContext.Default.API_TOKEN_T, sqlQuery, sqlParam);
         }
 
-        public async Task<API_TOKEN_T> GetByUserName(IDatabase db, string userName) {
+        public Task<API_TOKEN_T> GetByUserName(IDatabase db, string userName) {
             var sqlParam = new DynamicParameters();
             sqlParam.Add("app_name", this._as.AppName.ToUpper());
             sqlParam.Add("user_name", userName.ToUpper());
 
-            return await db.ExecScalarAsync(
+            return db.ExecScalarAsync(
                 API_TOKEN_T_JsonSerializerContext.Default.API_TOKEN_T,
                 @"
                     SELECT * FROM api_token_t
@@ -71,13 +71,13 @@ namespace bifeldy_lib_90.Repositories {
             );
         }
 
-        public async Task<API_TOKEN_T> GetByUserNamePass(IDatabase db, string userName, string password) {
+        public Task<API_TOKEN_T> GetByUserNamePass(IDatabase db, string userName, string password) {
             var sqlParam = new DynamicParameters();
             sqlParam.Add("app_name", this._as.AppName.ToUpper());
             sqlParam.Add("user_name", userName.ToUpper());
             sqlParam.Add("password", password.ToUpper());
 
-            return await db.ExecScalarAsync(
+            return db.ExecScalarAsync(
                 API_TOKEN_T_JsonSerializerContext.Default.API_TOKEN_T,
                 @"
                     SELECT * FROM api_token_t

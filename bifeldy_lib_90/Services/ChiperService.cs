@@ -239,8 +239,8 @@ namespace bifeldy_lib_90.Services {
             }
         }
 
-        public async Task<string> SignFile(string filePath) {
-            return await this.RsaSign(async (alg, rsaFormatter) => {
+        public Task<string> SignFile(string filePath) {
+            return this.RsaSign(async (alg, rsaFormatter) => {
                 using (FileStream stream = File.OpenRead(filePath)) {
                     byte[] hash = await alg.ComputeHashAsync(stream);
                     byte[] signHash = rsaFormatter.CreateSignature(hash);
@@ -249,18 +249,18 @@ namespace bifeldy_lib_90.Services {
             });
         }
 
-        public async Task<string> SignByte(byte[] data) {
-            return await this.RsaSign(async (alg, rsaFormatter) => {
+        public Task<string> SignByte(byte[] data) {
+            return this.RsaSign((alg, rsaFormatter) => {
                 byte[] hash = alg.ComputeHash(data);
                 byte[] signHash = rsaFormatter.CreateSignature(hash);
                 string signedHash = signHash.ToStringHex();
-                return await Task.FromResult(signedHash);
+                return Task.FromResult(signedHash);
             });
         }
 
-        public async Task<string> SignText(string textMessage) {
+        public Task<string> SignText(string textMessage) {
             byte[] data = Encoding.UTF8.GetBytes(textMessage);
-            return await this.SignByte(data);
+            return this.SignByte(data);
         }
 
         private async Task<bool> RsaVerify(Func<SHA256, RSAPKCS1SignatureDeformatter, Task<bool>> callback) {
@@ -273,8 +273,8 @@ namespace bifeldy_lib_90.Services {
             }
         }
 
-        public async Task<bool> VerifyFile(string signature, string filePath) {
-            return await this.RsaVerify(async (alg, rsaDeformatter) => {
+        public Task<bool> VerifyFile(string signature, string filePath) {
+            return this.RsaVerify(async (alg, rsaDeformatter) => {
                 using (FileStream stream = File.OpenRead(filePath)) {
                     byte[] hash = await alg.ComputeHashAsync(stream);
                     byte[] signHash = signature.ParseHexTextToByte();
@@ -283,18 +283,18 @@ namespace bifeldy_lib_90.Services {
             });
         }
 
-        public async Task<bool> VerifyByte(string signature, byte[] data) {
-            return await this.RsaVerify(async (alg, rsaDeformatter) => {
+        public Task<bool> VerifyByte(string signature, byte[] data) {
+            return this.RsaVerify((alg, rsaDeformatter) => {
                 byte[] hash = alg.ComputeHash(data);
                 byte[] signHash = signature.ParseHexTextToByte();
                 bool isVerified = rsaDeformatter.VerifySignature(hash, signHash);
-                return await Task.FromResult(isVerified);
+                return Task.FromResult(isVerified);
             });
         }
 
-        public async Task<bool> VerifyText(string signature, string textMessage) {
+        public Task<bool> VerifyText(string signature, string textMessage) {
             byte[] data = Encoding.UTF8.GetBytes(textMessage);
-            return await this.VerifyByte(signature, data);
+            return this.VerifyByte(signature, data);
         }
 
     }

@@ -215,7 +215,7 @@ namespace bifeldy_lib_90.Abstractions {
         /// <summary> Jangan Lupa Di Close Koneksinya (Wajib) </summary>
         /// <summary> Saat Setelah Selesai Baca Dan Tidak Digunakan Lagi </summary>
         /// <summary> Bisa Pakai Manual Panggil Fungsi Close / Commit / Rollback Di Atas </summary>
-        public virtual async Task<DbDataReader> ExecReaderAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CommandBehavior commandBehavior = CommandBehavior.Default, CancellationToken token = default) {
+        public virtual Task<DbDataReader> ExecReaderAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CommandBehavior commandBehavior = CommandBehavior.Default, CancellationToken token = default) {
             this.OpenConnection();
 
             var commandDefinition = new CommandDefinition(
@@ -227,7 +227,7 @@ namespace bifeldy_lib_90.Abstractions {
                 cancellationToken: token
             );
 
-            return await this.DbConnection.ExecuteReaderAsync(commandDefinition, commandBehavior);
+            return this.DbConnection.ExecuteReaderAsync(commandDefinition, commandBehavior);
         }
 
         public virtual async Task<List<string>> RetrieveBlob(string sqlQuery, string stringPathDownload, string stringFileName = null, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default) {

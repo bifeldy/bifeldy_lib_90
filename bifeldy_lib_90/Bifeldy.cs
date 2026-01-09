@@ -496,27 +496,57 @@ namespace bifeldy_lib_90 {
             _ = App.Use(async (context, next) => {
                 await next();
 
-                if (context.Response.StatusCode == StatusCodes.Status404NotFound && !context.Response.HasStarted) {
-                    await context.Response.WriteAsJsonAsync(
-                        new ResponseJsonSingle<ResponseJsonMessage>() {
-                            info = $"{StatusCodes.Status404NotFound} - Whoops :: API Tidak Ditemukan",
-                            result = new ResponseJsonMessage() {
-                                message = $"Dokumentasi Lengkap API Ada Di `/docs`"
-                            }
-                        },
-                        ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage
-                    );
+                if (!context.Response.HasStarted) {
+                    string apiPathRequested = context.Request.Path.Value;
+                    if (!string.IsNullOrEmpty(apiPathRequested)) {
+                        bool is404 = context.Response.StatusCode == StatusCodes.Status404NotFound;
+                        bool isApi = apiPathRequested.StartsWith($"/{API_PREFIX}/", StringComparison.InvariantCultureIgnoreCase);
+
+                        if (is404 && isApi) {
+                            await context.Response.WriteAsJsonAsync(
+                                new ResponseJsonSingle<ResponseJsonMessage>() {
+                                    info = $"{StatusCodes.Status404NotFound} - Whoops :: API Tidak Ditemukan",
+                                    result = new ResponseJsonMessage() {
+                                        message = $"Dokumentasi Lengkap API Ada Di `/docs`"
+                                    }
+                                },
+                                ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage
+                            );
+                        }
+                    }
                 }
             });
 
+            RouteGroupBuilder routeGroup = App.MapGroup($"/{API_PREFIX}");
+
             if (redirectIndexToApi) {
-                _ = App.Map("/", async (context) => {
+                _ = App.Map("/", context => {
                     context.Response.Redirect($"/{API_PREFIX}", true, true);
-                    await Task.CompletedTask;
+                    return Task.CompletedTask;
+                });
+            }
+            else {
+                _ = App.Use(async (context, next) => {
+                    await next();
+
+                    if (!context.Response.HasStarted) {
+                        string apiPathRequested = context.Request.Path.Value;
+                        if (!string.IsNullOrEmpty(apiPathRequested)) {
+                            bool is404 = context.Response.StatusCode == StatusCodes.Status404NotFound;
+                            bool isStaticFile = Path.HasExtension(apiPathRequested);
+                            bool isApi = apiPathRequested.StartsWith($"/{API_PREFIX}/", StringComparison.InvariantCultureIgnoreCase);
+
+                            if (is404 && !isStaticFile && !isApi) {
+                                context.Request.Path = "/index.html";
+                                context.Response.StatusCode = 200;
+                                await next();
+                            }
+                        }
+                    }
                 });
             }
 
-            return App.MapGroup($"/{API_PREFIX}");
+            return routeGroup;
         }
 
         private static List<EJenisDc> CheckKafkaExcludeJenisDc(string excludeJenisDc) {

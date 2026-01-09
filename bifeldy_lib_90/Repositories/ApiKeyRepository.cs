@@ -41,7 +41,7 @@ namespace bifeldy_lib_90.Repositories {
             return res > 0;
         }
 
-        public async Task<IEnumerable<API_KEY_T>> GetAll(IDatabase db, string key = null) {
+        public Task<IEnumerable<API_KEY_T>> GetAll(IDatabase db, string key = null) {
             string sqlQuery = "SELECT * FROM api_key_t WHERE (app_name = '*' OR UPPER(app_name) = :app_name)";
 
             var sqlParam = new DynamicParameters();
@@ -52,15 +52,15 @@ namespace bifeldy_lib_90.Repositories {
                 sqlParam.Add("key", key.ToUpper());
             }
 
-            return await db.GetEnumerableAsync(API_KEY_T_JsonSerializerContext.Default.API_KEY_T, sqlQuery, sqlParam);
+            return db.GetEnumerableAsync(API_KEY_T_JsonSerializerContext.Default.API_KEY_T, sqlQuery, sqlParam);
         }
 
-        public async Task<API_KEY_T> GetByKey(IDatabase db, string key) {
+        public Task<API_KEY_T> GetByKey(IDatabase db, string key) {
             var sqlParam = new DynamicParameters();
             sqlParam.Add("app_name", this._as.AppName.ToUpper());
             sqlParam.Add("key", key.ToUpper());
 
-            return await db.ExecScalarAsync(
+            return db.ExecScalarAsync(
                 API_KEY_T_JsonSerializerContext.Default.API_KEY_T,
                 @"
                     SELECT * FROM api_key_t
@@ -88,11 +88,11 @@ namespace bifeldy_lib_90.Repositories {
 
         /* ** */
 
-        public async Task<API_KEY_T> SecretLogin(IDatabase db, string key) {
+        public Task<API_KEY_T> SecretLogin(IDatabase db, string key) {
             var sqlParam = new DynamicParameters();
             sqlParam.Add("key", key.ToUpper());
 
-            return await db.ExecScalarAsync(
+            return db.ExecScalarAsync(
                 API_KEY_T_JsonSerializerContext.Default.API_KEY_T,
                 @"
                     SELECT * FROM api_key_t

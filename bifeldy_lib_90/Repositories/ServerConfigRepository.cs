@@ -130,7 +130,7 @@ namespace bifeldy_lib_90.Repositories {
             return this.KunciGxxx;
         }
 
-        public async Task<bool> AddKodeServerKunciDc(string kodeDc, string kunciGxxx, string serverTarget) {
+        public Task<bool> AddKodeServerKunciDc(string kodeDc, string kunciGxxx, string serverTarget) {
             if (string.IsNullOrEmpty(kodeDc) || string.IsNullOrEmpty(kunciGxxx) || string.IsNullOrEmpty(serverTarget)) {
                 throw new TidakMemenuhiException("Kode DC / Kunci GXXX / Server Target Tidak Boleh Kosong");
             }
@@ -140,7 +140,7 @@ namespace bifeldy_lib_90.Repositories {
             sqlParam.Add("kunci_gxxx", kunciGxxx);
             sqlParam.Add("server_target", serverTarget);
 
-            return await this._sqlite.ExecQueryAsync(
+            return this._sqlite.ExecQueryAsync(
                 $@"
                     INSERT INTO server_kunci (kode_dc, kunci_gxxx, server_target)
                     VALUES (:kode_dc, :kunci_gxxx, :server_target)
@@ -149,7 +149,7 @@ namespace bifeldy_lib_90.Repositories {
             );
         }
 
-        public async Task<bool> EditKodeServerKunciDc(string kodeDc, string kunciGxxx, string serverTarget) {
+        public Task<bool> EditKodeServerKunciDc(string kodeDc, string kunciGxxx, string serverTarget) {
             if (string.IsNullOrEmpty(kodeDc) || string.IsNullOrEmpty(kunciGxxx) || string.IsNullOrEmpty(serverTarget)) {
                 throw new TidakMemenuhiException("Kode DC / Kunci GXXX / Server Target Tidak Boleh Kosong");
             }
@@ -159,7 +159,7 @@ namespace bifeldy_lib_90.Repositories {
             sqlParam.Add("kunci_gxxx", kunciGxxx);
             sqlParam.Add("server_target", serverTarget);
 
-            return await this._sqlite.ExecQueryAsync(
+            return this._sqlite.ExecQueryAsync(
                 $@"
                     UPDATE server_kunci
                     SET kunci_gxxx = :kunci_gxxx, server_target = :server_target
@@ -169,7 +169,7 @@ namespace bifeldy_lib_90.Repositories {
             );
         }
 
-        public async Task<bool> RemoveKodeServerKunciDc(string kodeDc) {
+        public Task<bool> RemoveKodeServerKunciDc(string kodeDc) {
             if (string.IsNullOrEmpty(kodeDc)) {
                 throw new TidakMemenuhiException("Kode DC Tidak Boleh Kosong");
             }
@@ -177,7 +177,7 @@ namespace bifeldy_lib_90.Repositories {
             var sqlParam = new DynamicParameters();
             sqlParam.Add("kode_dc", kodeDc.ToLower());
 
-            return await this._sqlite.ExecQueryAsync(
+            return this._sqlite.ExecQueryAsync(
                 $@"
                     DELETE FROM server_kunci
                     WHERE LOWER(kode_dc) = :kode_dc

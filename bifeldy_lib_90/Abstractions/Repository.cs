@@ -25,7 +25,7 @@ namespace bifeldy_lib_90.Abstractions {
             //
         }
 
-        public async Task<string> GetJenisDc(IDatabase db, string kodeDc) {
+        public Task<string> GetJenisDc(IDatabase db, string kodeDc) {
             string sqlQuery = "SELECT UPPER(tbl_jenis_dc) FROM dc_tabel_dc_t";
             var sqlParam = new DynamicParameters();
 
@@ -34,7 +34,7 @@ namespace bifeldy_lib_90.Abstractions {
                 sqlParam.Add("tbl_dc_kode", kodeDc.ToUpper());
             }
 
-            return await db.ExecScalarAsync<string>(sqlQuery, sqlParam);
+            return db.ExecScalarAsync<string>(sqlQuery, sqlParam);
         }
 
         public async Task<EJenisDc> GetJenisDc(IDatabase db) {

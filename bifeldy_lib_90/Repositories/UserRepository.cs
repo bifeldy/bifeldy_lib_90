@@ -60,7 +60,7 @@ namespace bifeldy_lib_90.Repositories {
             return res > 0;
         }
 
-        public async Task<IEnumerable<DC_USER_T>> GetAll(IDatabase db, string userNameNik = null) {
+        public Task<IEnumerable<DC_USER_T>> GetAll(IDatabase db, string userNameNik = null) {
             string sqlQuery = "SELECT * FROM dc_user_t";
 
             var sqlParam = new DynamicParameters();
@@ -69,14 +69,14 @@ namespace bifeldy_lib_90.Repositories {
                 sqlParam.Add("userNameNik", userNameNik.ToUpper());
             }
 
-            return await db.GetEnumerableAsync(DC_USER_T_JsonSerializerContext.Default.DC_USER_T, sqlQuery, sqlParam);
+            return db.GetEnumerableAsync(DC_USER_T_JsonSerializerContext.Default.DC_USER_T, sqlQuery, sqlParam);
         }
 
-        public async Task<DC_USER_T> GetByUserNik(IDatabase db, string userNik) {
+        public Task<DC_USER_T> GetByUserNik(IDatabase db, string userNik) {
             var sqlParam = new DynamicParameters();
             sqlParam.Add("user_nik", userNik.ToUpper());
 
-            return await db.ExecScalarAsync(
+            return db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
                 @"
                     SELECT * FROM dc_user_t
@@ -86,11 +86,11 @@ namespace bifeldy_lib_90.Repositories {
             );
         }
 
-        public async Task<DC_USER_T> GetByUserName(IDatabase db, string userName) {
+        public Task<DC_USER_T> GetByUserName(IDatabase db, string userName) {
             var sqlParam = new DynamicParameters();
             sqlParam.Add("user_name", userName.ToUpper());
 
-            return await db.ExecScalarAsync(
+            return db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
                 @"
                     SELECT * FROM dc_user_t
@@ -100,11 +100,11 @@ namespace bifeldy_lib_90.Repositories {
             );
         }
 
-        public async Task<DC_USER_T> GetByUserNameNik(IDatabase db, string userNameNik) {
+        public Task<DC_USER_T> GetByUserNameNik(IDatabase db, string userNameNik) {
             var sqlParam = new DynamicParameters();
             sqlParam.Add("userNameNik", userNameNik.ToUpper());
 
-            return await db.ExecScalarAsync(
+            return db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
                 @"
                     SELECT * FROM dc_user_t
@@ -115,12 +115,12 @@ namespace bifeldy_lib_90.Repositories {
             );
         }
 
-        public async Task<DC_USER_T> GetByUserNameNikPassword(IDatabase db, string userNameNik, string password) {
+        public Task<DC_USER_T> GetByUserNameNikPassword(IDatabase db, string userNameNik, string password) {
             var sqlParam = new DynamicParameters();
             sqlParam.Add("userNameNik", userNameNik.ToUpper());
             sqlParam.Add("password", password.ToUpper());
 
-            return await db.ExecScalarAsync(
+            return db.ExecScalarAsync(
                 DC_USER_T_JsonSerializerContext.Default.DC_USER_T,
                 @"
                     SELECT * FROM dc_user_t

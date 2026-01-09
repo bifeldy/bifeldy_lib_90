@@ -160,9 +160,9 @@ namespace bifeldy_lib_90.Handlers {
             }
         }
 
-        public virtual async Task<(IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParam<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new() {
+        public virtual Task<(IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParam<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new() {
             (IDictionary<string, string>, string, DynamicParameters) res = (this.jsonKeysTableColumns, this.sqlQuery, null);
-            return await Task.FromResult(res);
+            return Task.FromResult(res);
         }
 
         public virtual async Task<(string, string, string, IDictionary<string, string>, IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParamExportDocs<TInputJson>(string rdlcPath, string dsName, string exportAs, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new() {
@@ -171,13 +171,13 @@ namespace bifeldy_lib_90.Handlers {
             return await Task.FromResult(result);
         }
 
-        public virtual async Task<bool> ExecuteSebelumTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new() {
-            return await Task.FromResult(false);
+        public virtual Task<bool> ExecuteSebelumTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new() {
+            return Task.FromResult(false);
         }
 
         // Tidak Akan Di Panggil Jika Membuat Export File Di Background Job ~
-        public virtual async Task<bool> ExecuteSesudahTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new() {
-            return await Task.FromResult(false);
+        public virtual Task<bool> ExecuteSesudahTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new() {
+            return Task.FromResult(false);
         }
 
     }

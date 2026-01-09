@@ -57,16 +57,16 @@ namespace bifeldy_lib_90.Repositories {
 
         /** Custom Queries */
 
-        public async Task<string> GetURLWebService(IDatabase db, string webType) {
+        public Task<string> GetURLWebService(IDatabase db, string webType) {
             string sqlQuery = "SELECT web_url FROM dc_webservice_t WHERE UPPER(web_type) = :web_type";
 
             var sqlParam = new DynamicParameters();
             sqlParam.Add("web_type", webType.ToUpper());
 
-            return await db.ExecScalarAsync<string>(sqlQuery, sqlParam);
+            return db.ExecScalarAsync<string>(sqlQuery, sqlParam);
         }
 
-        public async Task<bool> SaveKafkaToTable(IDatabase db, string topic, decimal offset, decimal partition, Message<string, string> msg, string logTableName) {
+        public Task<bool> SaveKafkaToTable(IDatabase db, string topic, decimal offset, decimal partition, Message<string, string> msg, string logTableName) {
             string sqlQuery = $@"
                 INSERT INTO {logTableName} (TPC, OFFS, PARTT, KEY, VAL, TMSTAMP)
                 VALUES (:tpc, :offs, :partt, :key, :value, :tmstmp)
@@ -80,16 +80,16 @@ namespace bifeldy_lib_90.Repositories {
             sqlParam.Add("value", msg.Value);
             sqlParam.Add("tmstmp", msg.Timestamp.UtcDateTime);
 
-            return await db.ExecQueryAsync(sqlQuery, sqlParam);
+            return db.ExecQueryAsync(sqlQuery, sqlParam);
         }
 
-        public async Task<KAFKA_SERVER_T> GetKafkaServerInfo(IDatabase db, string topicName) {
+        public Task<KAFKA_SERVER_T> GetKafkaServerInfo(IDatabase db, string topicName) {
             string sqlQuery = "SELECT * FROM kafka_server_t WHERE UPPER(topic) = :topic_name";
 
             var sqlParam = new DynamicParameters();
             sqlParam.Add("topic_name", topicName.ToUpper());
 
-            return await db.ExecScalarAsync(
+            return db.ExecScalarAsync(
                 KAFKA_SERVER_T_JsonSerializerContext.Default.KAFKA_SERVER_T,
                 sqlQuery, sqlParam
             );
