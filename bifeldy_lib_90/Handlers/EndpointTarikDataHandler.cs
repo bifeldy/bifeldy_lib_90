@@ -128,7 +128,7 @@ namespace bifeldy_lib_90.Handlers {
                         hrbf.DisableBuffering();
                     }
 
-                    this._context.Response.StatusCode = 200;
+                    this._context.Response.StatusCode = StatusCodes.Status206PartialContent;
                     this._context.Response.ContentType = "application/x-ndjson";
 
                     this._context.Response.Headers.Append("X-Accel-Buffering", "no");
