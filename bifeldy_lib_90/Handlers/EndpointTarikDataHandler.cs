@@ -37,7 +37,7 @@ namespace bifeldy_lib_90.Handlers {
         Task HitNonDcDocs<TInputJson, TOutputJson>(string rdlcPath, string dsName, string fileType, IDatabase db, TInputJson fd, JsonTypeInfo<TInputJson> jsonTypeInfoInput, JsonTypeInfo<TOutputJson> jsonTypeInfoOutput, string searchQuery, string sort, string order, IServiceTarikDataHandler customService = null, [CallerMemberName] string callerMemberName = null) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
     }
 
-    public sealed class CEndpointTarikDataHandler : CEndpointBaseHandler, IEndpointTarikDataHandler {
+    public class CEndpointTarikDataHandler : CEndpointBaseHandler, IEndpointTarikDataHandler {
 
         public CEndpointTarikDataHandler(
             CronScheduler scheduler,

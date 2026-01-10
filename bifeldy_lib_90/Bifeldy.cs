@@ -206,6 +206,7 @@ namespace bifeldy_lib_90 {
             _ = App.MapScalarApiReference("/docs", opt => {
                 _ = opt.WithOpenApiRoutePattern(jsonFilePath);
                 _ = opt.WithTheme(ScalarTheme.DeepSpace);
+                _ = opt.WithClassicLayout();
                 _ = opt.HideModels();
                 _ = opt.ExpandAllTags();
                 _ = opt.AddDocuments(OPEN_API_DOCUMENTS);
@@ -426,7 +427,9 @@ namespace bifeldy_lib_90 {
                                 string proxyPath = pathBase.Last();
                                 if (!string.IsNullOrEmpty(proxyPath)) {
                                     xRequestTraceProxy = proxyPath;
-                                    response.Headers.Append("x-request-trace-proxy", xRequestTraceProxy);
+                                    if (!response.HasStarted) {
+                                        response.Headers.Append("x-request-trace-proxy", xRequestTraceProxy);
+                                    }
                                 }
                             }
                         }
@@ -437,7 +440,9 @@ namespace bifeldy_lib_90 {
                         }
                         else {
                             xRequestTraceActivity = Activity.Current?.Id;
-                            response.Headers.Append("x-request-trace-activity", xRequestTraceActivity);
+                            if (!response.HasStarted) {
+                                response.Headers.Append("x-request-trace-activity", xRequestTraceActivity);
+                            }
                         }
 
                         string xRequestTraceId = null;
@@ -446,7 +451,9 @@ namespace bifeldy_lib_90 {
                         }
                         else {
                             xRequestTraceId = context?.TraceIdentifier;
-                            response.Headers.Append("x-request-trace-id", xRequestTraceId);
+                            if (!response.HasStarted) {
+                                response.Headers.Append("x-request-trace-id", xRequestTraceId);
+                            }
                         }
 
                         string errMsg = ex.Message;
@@ -464,12 +471,12 @@ namespace bifeldy_lib_90 {
                             xRequestTraceActivity, xRequestTraceProxy, errDtl
                         );
 
+                        context.Items["error_detail"] = errDtl;
+
                         if (context.Response.HasStarted) {
                             context.Abort();
                             return;
                         }
-
-                        context.Items["error_detail"] = errDtl;
 
                         response.Clear();
                         response.StatusCode = StatusCodes.Status500InternalServerError;
