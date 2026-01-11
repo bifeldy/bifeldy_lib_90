@@ -42,7 +42,8 @@ namespace bifeldy_lib_90 {
         public const string DEFAULT_ASSETS_FOLDER = "_assets";
         public const string DEFAULT_DATA_FOLDER = "_data";
 
-        public static DateTime? LAST_GC_RUN = null;
+        public static DateTime? GC_RUN_LAST_DATE = null;
+        public static int GC_RUN_INTERVAL = 30;
 
         public static string API_PREFIX = null;
         public static string NGINX_PATH_NAME = "x-forwarded-prefix";
@@ -282,17 +283,18 @@ namespace bifeldy_lib_90 {
 
         public static void InitApp(WebApplication app, bool forceGcToCleanUpRamEveryRequest = false, int gcDelaySkipRunMinutes = 30) {
             App = app;
+            GC_RUN_INTERVAL = gcDelaySkipRunMinutes;
 
             if (forceGcToCleanUpRamEveryRequest) {
                 _ = App.Use(async (context, next) => {
                     context.Response.OnCompleted(() => {
-                        if (LAST_GC_RUN != null && (DateTime.Now - LAST_GC_RUN.Value).TotalMinutes < gcDelaySkipRunMinutes) {
+                        if (GC_RUN_LAST_DATE != null && (DateTime.Now - GC_RUN_LAST_DATE.Value).TotalMinutes < GC_RUN_INTERVAL) {
                             return Task.CompletedTask;
                         }
 
-                        LAST_GC_RUN = DateTime.Now;
+                        GC_RUN_LAST_DATE = DateTime.Now;
 
-                        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, false);
+                        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, false);
                         GC.WaitForPendingFinalizers();
                         GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, false, false);
 
