@@ -263,7 +263,7 @@ namespace bifeldy_lib_90.Abstractions {
                     throw new Exception("File Tidak Ditemukan");
                 }
 
-                using (DbDataReader rdrGetBlob = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, CommandBehavior.SequentialAccess, token)) {
+                await using (DbDataReader rdrGetBlob = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, CommandBehavior.SequentialAccess, token)) {
                     if (string.IsNullOrEmpty(stringFileName) && rdrGetBlob.FieldCount != 2) {
                         throw new Exception($"Jika Nama File Kosong Maka Harus Berjumlah 2 Kolom{Environment.NewLine}SELECT kolom_blob_data, kolom_nama_file FROM ...");
                     }
@@ -286,8 +286,8 @@ namespace bifeldy_lib_90.Abstractions {
                             filePath = Path.Combine(stringPathDownload, fileMultipleName);
                         }
 
-                        using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096)) {
-                            using (var bw = new BinaryWriter(fs, encoding ?? Encoding.UTF8)) {
+                        await using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096)) {
+                            await using (var bw = new BinaryWriter(fs, encoding ?? Encoding.UTF8)) {
                                 long startIndex = 0;
                                 long retval = rdrGetBlob.GetBytes(0, startIndex, outByte, 0, bufferSize);
 
@@ -332,7 +332,7 @@ namespace bifeldy_lib_90.Abstractions {
                 }
 
                 string _sqlQuery = $"SELECT * FROM ( {sqlQuery} ) alias_{DateTime.Now.Ticks}";
-                using (DbDataReader rdr = await this.ExecReaderAsync(_sqlQuery, sqlParameter, commandTimeoutSeconds, CommandBehavior.SequentialAccess, token)) {
+                await using (DbDataReader rdr = await this.ExecReaderAsync(_sqlQuery, sqlParameter, commandTimeoutSeconds, CommandBehavior.SequentialAccess, token)) {
                     await rdr.ToCsv(delimiter, tempPath, includeHeader, useDoubleQuote, allUppercase, encoding ?? Encoding.UTF8, token);
                 }
 

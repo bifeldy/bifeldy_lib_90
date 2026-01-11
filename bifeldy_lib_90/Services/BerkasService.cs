@@ -12,8 +12,8 @@ namespace bifeldy_lib_90.Services {
         void CleanUp(bool clearWorkingFileDirectories = true, int? maxOldHours = null);
         void CopyAllFilesAndDirectories(DirectoryInfo source, DirectoryInfo target, bool isInRecursive = false);
         void BackupAllFilesInFolder(string folderPath);
-        bool CheckSign(FileInfo fileInfo, string signFull, bool isRequired = true, Encoding encoding = null);
-        List<string> ReadFileTextGetLastLines(string filePath, int numberOfLines);
+        Task<bool> CheckSign(FileInfo fileInfo, string signFull, bool isRequired = true, Encoding encoding = null);
+        Task<List<string>> ReadFileTextGetLastLines(string filePath, int numberOfLines);
     }
 
     public sealed class CBerkasService : IBerkasService {
@@ -107,7 +107,7 @@ namespace bifeldy_lib_90.Services {
             this.CopyAllFilesAndDirectories(diSource, diTarget);
         }
 
-        public bool CheckSign(FileInfo fileInfo, string signFull, bool isRequired = true, Encoding encoding = null) {
+        public async Task<bool> CheckSign(FileInfo fileInfo, string signFull, bool isRequired = true, Encoding encoding = null) {
             if (isRequired && string.IsNullOrEmpty(signFull)) {
                 throw new Exception("Tidak Ada Tanda Tangan File");
             }
@@ -131,7 +131,7 @@ namespace bifeldy_lib_90.Services {
                 }
             }
 
-            using (var fs = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096)) {
+            await using (var fs = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096)) {
                 using (var reader = new BinaryReader(fs, encoding ?? Encoding.UTF8)) {
                     byte[] buff = new byte[minFileSize];
                     _ = reader.BaseStream.Seek(0, SeekOrigin.Begin);
@@ -149,10 +149,10 @@ namespace bifeldy_lib_90.Services {
             return true;
         }
 
-        public List<string> ReadFileTextGetLastLines(string filePath, int numberOfLines) {
+        public async Task<List<string>> ReadFileTextGetLastLines(string filePath, int numberOfLines) {
             var lastLines = new List<string>();
 
-            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096)) {
+            await using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096)) {
                 long position = fs.Length;
                 var currentLine = new StringBuilder();
 

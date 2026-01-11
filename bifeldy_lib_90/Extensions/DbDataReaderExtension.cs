@@ -124,7 +124,7 @@ namespace bifeldy_lib_90.Extensions {
         }
 
         public static async Task ToCsv(this DbDataReader dr, string delimiter, string outputFilePath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, Encoding encoding = null, CancellationToken token = default) {
-            using (var streamWriter = new StreamWriter(outputFilePath, false, encoding ?? Encoding.UTF8)) {
+            await using (var streamWriter = new StreamWriter(outputFilePath, false, encoding ?? Encoding.UTF8)) {
                 if (includeHeader) {
                     string header = string.Join(delimiter, Enumerable.Range(0, dr.FieldCount).Select(i => {
                         string text = dr.GetName(i);

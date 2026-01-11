@@ -308,7 +308,7 @@ namespace bifeldy_lib_90.Handlers {
                                     token: ___ctx
                                 );
 
-                                RdlcReport report = ___rdlc.GeneratePdfWordExcelHtmlReport(
+                                RdlcReport report = await ___rdlc.GeneratePdfWordExcelHtmlReport(
                                     rdlcPath,
                                     reportDataRowList,
                                     dsName,
@@ -336,7 +336,7 @@ namespace bifeldy_lib_90.Handlers {
                                     token: ___ctx
                                 );
 
-                                using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096)) {
+                                await using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096)) {
                                     await ___rdlc.GeneratePdfWordExcelHtmlReportExternal(
                                         ___ctx,
                                         fs,
@@ -427,7 +427,7 @@ namespace bifeldy_lib_90.Handlers {
                                 f.token = queryDictionary["token"];
 
                                 string jsonBody = this._cs.ObjectToJson((TInputJson)(object)f, jsonTypeInfoInput);
-                                using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
+                                await using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
                                     this._context.Request.Body = ms;
                                     _ = await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true);
                                 }

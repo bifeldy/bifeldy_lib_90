@@ -13,11 +13,11 @@ using System.Text;
 namespace bifeldy_lib_90.Services {
 
     public interface IChiperService {
-        string EncryptText(string plainText, string passPhrase = null);
-        string DecryptText(string cipherText, string passPhrase = null, Encoding encoding = null);
-        string CalculateMD5File(string filePath);
-        string CalculateCRC32File(string filePath);
-        string CalculateSHA1File(string filePath);
+        Task<string> EncryptText(string plainText, string passPhrase = null);
+        Task<string> DecryptText(string cipherText, string passPhrase = null, Encoding encoding = null);
+        Task<string> CalculateMD5File(string filePath);
+        Task<string> CalculateCRC32File(string filePath);
+        Task<string> CalculateSHA1File(string filePath);
         string GetMimeFile(string filePath);
         string HashByte(byte[] data);
         string HashText(string textMessage);
@@ -73,7 +73,7 @@ namespace bifeldy_lib_90.Services {
             return randomBytes;
         }
 
-        public string EncryptText(string plainText, string passPhrase = null) {
+        public async Task<string> EncryptText(string plainText, string passPhrase = null) {
             if (string.IsNullOrEmpty(passPhrase) || passPhrase?.Length < 8) {
                 passPhrase = this.HashText(this._app.AppName);
             }
@@ -89,8 +89,8 @@ namespace bifeldy_lib_90.Services {
                     symmetricKey.Mode = CipherMode.CBC;
                     symmetricKey.Padding = PaddingMode.PKCS7;
                     using (ICryptoTransform encryptor = symmetricKey.CreateEncryptor(keyBytes, ivStringBytes)) {
-                        using (var memoryStream = new MemoryStream()) {
-                            using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write)) {
+                        await using (var memoryStream = new MemoryStream()) {
+                            await using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write)) {
                                 cryptoStream.Write(plainTextBytes, 0, plainTextBytes.Length);
                                 cryptoStream.FlushFinalBlock();
                                 // Create the final bytes as a concatenation of the random salt bytes, the random iv bytes and the cipher bytes.
@@ -105,7 +105,7 @@ namespace bifeldy_lib_90.Services {
             }
         }
 
-        public string DecryptText(string cipherText, string passPhrase = null, Encoding encoding = null) {
+        public async Task<string> DecryptText(string cipherText, string passPhrase = null, Encoding encoding = null) {
             if (string.IsNullOrEmpty(passPhrase) || passPhrase?.Length < 8) {
                 passPhrase = this.HashText(this._app.AppName);
             }
@@ -125,8 +125,8 @@ namespace bifeldy_lib_90.Services {
                     symmetricKey.Mode = CipherMode.CBC;
                     symmetricKey.Padding = PaddingMode.PKCS7;
                     using (ICryptoTransform decryptor = symmetricKey.CreateDecryptor(keyBytes, ivStringBytes)) {
-                        using (var memoryStream = new MemoryStream(cipherTextBytes)) {
-                            using (var cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read)) {
+                        await using (var memoryStream = new MemoryStream(cipherTextBytes)) {
+                            await using (var cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read)) {
                                 using (var streamReader = new StreamReader(cryptoStream, encoding ?? Encoding.UTF8, encoding == null)) {
                                     return streamReader.ReadToEnd();
                                 }
@@ -137,23 +137,23 @@ namespace bifeldy_lib_90.Services {
             }
         }
 
-        public string CalculateMD5File(string filePath) {
+        public async Task<string> CalculateMD5File(string filePath) {
             using (var md5 = MD5.Create()) {
-                using (FileStream stream = File.OpenRead(filePath)) {
+                await using (FileStream stream = File.OpenRead(filePath)) {
                     return md5.ComputeHash(stream).ToStringHex();
                 }
             }
         }
 
-        public string CalculateCRC32File(string filePath) {
-            using (FileStream stream = File.OpenRead(filePath)) {
+        public async Task<string> CalculateCRC32File(string filePath) {
+            await using (FileStream stream = File.OpenRead(filePath)) {
                 return new Crc32().Compute(stream).ToString("x8");
             }
         }
 
-        public string CalculateSHA1File(string filePath) {
+        public async Task<string> CalculateSHA1File(string filePath) {
             using (var sha1 = SHA1.Create()) {
-                using (FileStream stream = File.OpenRead(filePath)) {
+                await using (FileStream stream = File.OpenRead(filePath)) {
                     return sha1.ComputeHash(stream).ToStringHex();
                 }
             }
@@ -241,7 +241,7 @@ namespace bifeldy_lib_90.Services {
 
         public Task<string> SignFile(string filePath) {
             return this.RsaSign(async (alg, rsaFormatter) => {
-                using (FileStream stream = File.OpenRead(filePath)) {
+                await using (FileStream stream = File.OpenRead(filePath)) {
                     byte[] hash = await alg.ComputeHashAsync(stream);
                     byte[] signHash = rsaFormatter.CreateSignature(hash);
                     return signHash.ToStringHex();
@@ -275,7 +275,7 @@ namespace bifeldy_lib_90.Services {
 
         public Task<bool> VerifyFile(string signature, string filePath) {
             return this.RsaVerify(async (alg, rsaDeformatter) => {
-                using (FileStream stream = File.OpenRead(filePath)) {
+                await using (FileStream stream = File.OpenRead(filePath)) {
                     byte[] hash = await alg.ComputeHashAsync(stream);
                     byte[] signHash = signature.ParseHexTextToByte();
                     return rsaDeformatter.VerifySignature(hash, signHash);

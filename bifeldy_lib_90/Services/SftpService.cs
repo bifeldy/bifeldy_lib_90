@@ -11,7 +11,7 @@ namespace bifeldy_lib_90.Services {
         bool WriteStringToFile(string hostname, int port, string username, string password, string remotePath, string textData);
         bool WriteByteToFile(string hostname, int port, string username, string password, string remotePath, byte[] byteData);
         bool GetFile(string hostname, int port, string username, string password, string remotePath, string localFile, Action<double> progress = null);
-        bool PutFile(string hostname, int port, string username, string password, string localFile, string remotePath, Action<double> progress = null);
+        Task<bool> PutFile(string hostname, int port, string username, string password, string localFile, string remotePath, Action<double> progress = null);
         string[] GetDirectoryList(string hostname, int port, string username, string password, string remotePath);
     }
 
@@ -102,12 +102,12 @@ namespace bifeldy_lib_90.Services {
             }
         }
 
-        public bool PutFile(string hostname, int port, string username, string password, string localFile, string remotePath, Action<double> progress = null) {
+        public async Task<bool> PutFile(string hostname, int port, string username, string password, string localFile, string remotePath, Action<double> progress = null) {
             try {
                 using (var sftp = new SftpClient(hostname, port, username, password)) {
                     sftp.Connect();
 
-                    using (var fs = new FileStream(localFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096)) {
+                    await using (var fs = new FileStream(localFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096)) {
                         sftp.UploadFile(fs, remotePath, uploaded => {
                             double percentage = (double)uploaded / fs.Length * 100;
                             progress?.Invoke(percentage);

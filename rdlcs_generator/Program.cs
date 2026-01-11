@@ -124,7 +124,7 @@ public static class Program {
             string? dataFilePath = null;
             JsonObject? parameters = null;
 
-            using (Stream stdin = Console.OpenStandardInput()) {
+            await using (Stream stdin = Console.OpenStandardInput()) {
                 JsonNode? root = await JsonNode.ParseAsync(stdin);
                 if (root == null) {
                     throw new Exception("Data JSON Wrapper Kosong");
@@ -139,7 +139,7 @@ public static class Program {
             }
 
             var dt = new DataTable(datasetName);
-            using (FileStream fs = File.OpenRead(dataFilePath)) {
+            await using (FileStream fs = File.OpenRead(dataFilePath)) {
                 IAsyncEnumerable<JsonElement> dataStream = JsonSerializer.DeserializeAsyncEnumerable<JsonElement>(fs);
 
                 bool columnsCreated = false;
@@ -173,7 +173,7 @@ public static class Program {
                 string? rightMargin = null;
 
                 byte[] rdlcBytes = await File.ReadAllBytesAsync(rdlcPath);
-                using (var ms = new MemoryStream(rdlcBytes)) {
+                await using (var ms = new MemoryStream(rdlcBytes)) {
                     var xdoc = XDocument.Load(ms);
                     XNamespace ns = xdoc.Root?.GetDefaultNamespace() ?? XNamespace.None;
 
@@ -198,7 +198,7 @@ public static class Program {
                 width = width.Trim().ToLower().Replace(",", ".");
                 height = height.Trim().ToLower().Replace(",", ".");
 
-                using (var rdlcStream = new MemoryStream(rdlcBytes)) {
+                await using (var rdlcStream = new MemoryStream(rdlcBytes)) {
                     report.LoadReportDefinition(rdlcStream);
 
                     var rds = new ReportDataSource(datasetName, dt);
@@ -320,7 +320,7 @@ public static class Program {
 
                     byte[] reportData = model.Report;
 
-                    using (Stream stdout = Console.OpenStandardOutput()) {
+                    await using (Stream stdout = Console.OpenStandardOutput()) {
                         await stdout.WriteAsync(reportData, 0, reportData.Length);
                         await stdout.FlushAsync();
                     }

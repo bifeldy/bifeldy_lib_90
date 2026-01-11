@@ -45,7 +45,7 @@ namespace bifeldy_lib_90.Extensions {
         }
 
         public static async Task ToCsv<T>(this IEnumerable<T> arrayListData, JsonTypeInfo<T> jsonTypeInfo, string delimiter, string outputFilePath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, Encoding encoding = null, CancellationToken token = default) where T : JsonSerDe, new() {
-            using (var streamWriter = new StreamWriter(outputFilePath, false, encoding ?? Encoding.UTF8)) {
+            await using (var streamWriter = new StreamWriter(outputFilePath, false, encoding ?? Encoding.UTF8)) {
                 IList<JsonPropertyInfo> properties = jsonTypeInfo.Properties;
 
                 if (includeHeader) {

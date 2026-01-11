@@ -51,7 +51,7 @@ namespace bifeldy_lib_90.Databases {
                 string[] fieldNames = new string[colCount];
 
                 string sqlQuery = $"SELECT * FROM {tableName} WHERE 1 = 0";
-                using (var rdr = (SqliteDataReader)await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.Default, token)) {
+                await using (var rdr = (SqliteDataReader)await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.Default, token)) {
                     if (rdr.FieldCount != colCount) {
                         throw new Exception("Jumlah Kolom Tabel Tidak Sama");
                     }
@@ -90,7 +90,7 @@ namespace bifeldy_lib_90.Databases {
 
                     sqlQuery = $"INSERT INTO {tableName} ({sbHeader}) VALUES ({sbColumn})";
 
-                    using (var cmd = (SqliteCommand)this.DbConnection.CreateCommand()) {
+                    await using (var cmd = (SqliteCommand)this.DbConnection.CreateCommand()) {
                         cmd.CommandText = sqlQuery;
                         cmd.CommandTimeout = commandTimeoutSeconds;
                         cmd.Parameters.AddRange([.. param]);

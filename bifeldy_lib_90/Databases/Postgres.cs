@@ -81,7 +81,7 @@ namespace bifeldy_lib_90.Databases {
                 if (includeHeader) {
                     sqlQuery = $"SELECT * FROM ({sqlQuery}) alias_{DateTime.Now.Ticks} WHERE 1 = 0";
 
-                    using (var rdr = (NpgsqlDataReader)await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, CommandBehavior.SequentialAccess, token)) {
+                    await using (var rdr = (NpgsqlDataReader)await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, CommandBehavior.SequentialAccess, token)) {
                         ReadOnlyCollection<NpgsqlDbColumn> columns = rdr.GetColumnSchema();
                         string header = string.Join(delimiter, columns.Select(c => {
                             string text = c.ColumnName;
@@ -97,7 +97,7 @@ namespace bifeldy_lib_90.Databases {
                             return text;
                         }));
 
-                        using (var writer = new StreamWriter(tempPath, false, encoding)) {
+                        await using (var writer = new StreamWriter(tempPath, false, encoding)) {
                             await writer.WriteLineAsync(header.AsMemory(), token);
                         }
                     }
@@ -109,7 +109,7 @@ namespace bifeldy_lib_90.Databases {
                 }
 
                 using (TextReader reader = await ((NpgsqlConnection)this.DbConnection).BeginTextExportAsync(sqlQuery, token)) {
-                    using (var writer = new StreamWriter(tempPath, true, encoding)) {
+                    await using (var writer = new StreamWriter(tempPath, true, encoding)) {
                         string line = string.Empty;
                         while ((line = await reader.ReadLineAsync()) != null && !token.IsCancellationRequested) {
                             if (allUppercase) {
@@ -169,7 +169,7 @@ namespace bifeldy_lib_90.Databases {
                 string[] fieldNames = new string[colCount];
 
                 string sqlQuery = $"SELECT * FROM {tableName} WHERE 1 = 0";
-                using (var rdr = (NpgsqlDataReader)await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.Default, token)) {
+                await using (var rdr = (NpgsqlDataReader)await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.Default, token)) {
                     ReadOnlyCollection<NpgsqlDbColumn> columns = rdr.GetColumnSchema();
 
                     for (int i = 0; i < colCount; i++) {
@@ -189,7 +189,7 @@ namespace bifeldy_lib_90.Databases {
                     _ = sB.Append(", " + fieldNames[p]);
                 }
 
-                using (NpgsqlBinaryImporter writer = await ((NpgsqlConnection)this.DbConnection).BeginBinaryImportAsync($"COPY {tableName} ({sB}) FROM STDIN (FORMAT BINARY)", token)) {
+                await using (NpgsqlBinaryImporter writer = await ((NpgsqlConnection)this.DbConnection).BeginBinaryImportAsync($"COPY {tableName} ({sB}) FROM STDIN (FORMAT BINARY)", token)) {
                     for (int j = 0; j < dataTable.Rows.Count; j++) {
                         DataRow dR = dataTable.Rows[j];
                         await writer.StartRowAsync(token);

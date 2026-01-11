@@ -271,7 +271,10 @@ namespace bifeldy_lib_90.Services {
                 string remoteFileHash = hashFile.Value.ToString();
 
                 string localFilePath = Path.Combine(this._as.AppLocation, remoteFileName);
-                string localFileHash = File.Exists(localFilePath) ? this._chiper.CalculateCRC32File(localFilePath) : null;
+                string localFileHash = null;
+                if (File.Exists(localFilePath)) {
+                    localFileHash = await this._chiper.CalculateCRC32File(localFilePath);
+                }
 
                 if (localFileHash != remoteFileHash) {
                     var uriBuilder = new UriBuilder(apiUpdaterUrl);

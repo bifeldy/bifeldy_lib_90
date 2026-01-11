@@ -19,14 +19,14 @@ namespace bifeldy_lib_90.Services {
 
     public interface IRdlcService {
         IDictionary<string, RdlcInfo> FileType { get; }
-        (LocalReport, string, string, string, string, string, string) CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null);
+        Task<(LocalReport, string, string, string, string, string, string)> CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null);
         ReportDataSource CreateReportDataSource(string name, DataTable dt);
         ReportDataSource CreateReportDataSource<T>(string name, IEnumerable<T> dt);
         HtmlToPdfDocument GenerateHtmlReport(RdlcReport reportModel, string width, string height, double top, double bottom, double left, double right);
         ReportParameter[] CreateReportParameter(IDictionary<string, string> dict);
         RdlcInfoWrapper CreateInfoWrapper(IDictionary<string, string> dict);
-        RdlcReport GeneratePdfWordExcelHtmlReport(string rdlcName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
-        RdlcReport GeneratePdfWordExcelHtmlReport<T>(string rdlcName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
+        Task<RdlcReport> GeneratePdfWordExcelHtmlReport(string rdlcName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
+        Task<RdlcReport> GeneratePdfWordExcelHtmlReport<T>(string rdlcName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
         Task GeneratePdfWordExcelHtmlReportExternal<T>(CancellationToken ct, Stream streamDestination, IAsyncEnumerable<T> dataStream, JsonTypeInfo<T> typeInfo, RdlcInfoWrapper rdlcDataWithParam, string rdlcPath, string datasetName, string fileType = "PDF", string rdlcGeneratorExecutablePath = null) where T : JsonSerDe, new();
     }
 
@@ -74,7 +74,7 @@ namespace bifeldy_lib_90.Services {
             this._converter = converter;
         }
 
-        public (LocalReport, string, string, string, string, string, string) CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null) {
+        public async Task<(LocalReport, string, string, string, string, string, string)> CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
@@ -93,7 +93,7 @@ namespace bifeldy_lib_90.Services {
             string rightMargin = null;
 
             byte[] rdlcBytes = File.ReadAllBytes(rdlcPath);
-            using (var ms = new MemoryStream(rdlcBytes)) {
+            await using (var ms = new MemoryStream(rdlcBytes)) {
                 var xdoc = XDocument.Load(ms);
                 XNamespace ns = xdoc.Root?.GetDefaultNamespace() ?? XNamespace.None;
 
@@ -225,7 +225,7 @@ namespace bifeldy_lib_90.Services {
             return null;
         }
 
-        private RdlcReport GenerateReport(
+        private async Task<RdlcReport> GenerateReport(
             string rdlcName,
             ReportDataSource rds,
             IEnumerable<ReportParameter> param = null,
@@ -243,7 +243,7 @@ namespace bifeldy_lib_90.Services {
                 string bottomMargin,
                 string leftMargin,
                 string rightMargin
-            ) = this.CreateLocalReport(rdlcName, rds, param);
+            ) = await this.CreateLocalReport(rdlcName, rds, param);
 
             var model = new RdlcReport() {
                 DisplayName = report.DisplayName,
@@ -308,7 +308,7 @@ namespace bifeldy_lib_90.Services {
             return model;
         }
 
-        public RdlcReport GeneratePdfWordExcelHtmlReport(
+        public Task<RdlcReport> GeneratePdfWordExcelHtmlReport(
             string rdlcName,
             DataTable dt,
             string dsName,
@@ -323,7 +323,7 @@ namespace bifeldy_lib_90.Services {
             return this.GenerateReport(rdlcName, rds, param, fileType);
         }
 
-        public RdlcReport GeneratePdfWordExcelHtmlReport<T>(
+        public Task<RdlcReport> GeneratePdfWordExcelHtmlReport<T>(
             string rdlcName,
             IEnumerable<T> ls,
             string dsName,
@@ -362,8 +362,8 @@ namespace bifeldy_lib_90.Services {
                     rdlcDataWithParam.DataFilePath = dataFilePath;
                 }
 
-                using (var fs = new FileStream(rdlcDataWithParam.DataFilePath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096)) {
-                    using (var writer = new Utf8JsonWriter(fs)) {
+                await using (var fs = new FileStream(rdlcDataWithParam.DataFilePath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096)) {
+                    await using (var writer = new Utf8JsonWriter(fs)) {
                         writer.WriteStartArray();
 
                         await foreach (T row in dataStream) {
@@ -412,7 +412,7 @@ namespace bifeldy_lib_90.Services {
 
                     var sendSerializedData = Task.Run(async () => {
                         try {
-                            using (StreamWriter writter = process.StandardInput) {
+                            await using (StreamWriter writter = process.StandardInput) {
                                 await JsonSerializer.SerializeAsync(
                                     writter.BaseStream,
                                     rdlcDataWithParam,

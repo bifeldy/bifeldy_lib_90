@@ -6,8 +6,8 @@ namespace bifeldy_lib_90.Services {
 
     public interface IStreamService {
         void CopyTo(Stream src, Stream dest);
-        string GZipDecompressString(byte[] byteData);
-        byte[] GZipCompressString(string text);
+        Task<string> GZipDecompressString(byte[] byteData);
+        Task<byte[]> GZipCompressString(string text);
         Task<List<byte[]>> ReadFileAsBinaryChunk(string filePath, int maxChunk = 1024, CancellationToken token = default);
         Task<MemoryStream> ReadFileAsBinaryStream(string filePath, int maxChunk = 1024, CancellationToken token = default);
     }
@@ -26,10 +26,10 @@ namespace bifeldy_lib_90.Services {
             }
         }
 
-        public string GZipDecompressString(byte[] byteData) {
-            using (var msi = new MemoryStream(byteData)) {
-                using (var mso = new MemoryStream()) {
-                    using (var gs = new GZipStream(msi, CompressionMode.Decompress)) {
+        public async Task<string> GZipDecompressString(byte[] byteData) {
+            await using (var msi = new MemoryStream(byteData)) {
+                await using (var mso = new MemoryStream()) {
+                    await using (var gs = new GZipStream(msi, CompressionMode.Decompress)) {
                         this.CopyTo(gs, mso);
                     }
 
@@ -38,11 +38,11 @@ namespace bifeldy_lib_90.Services {
             }
         }
 
-        public byte[] GZipCompressString(string text) {
+        public async Task<byte[]> GZipCompressString(string text) {
             byte[] bytes = Encoding.UTF8.GetBytes(text);
-            using (var msi = new MemoryStream(bytes)) {
-                using (var mso = new MemoryStream()) {
-                    using (var gs = new GZipStream(mso, CompressionMode.Compress)) {
+            await using (var msi = new MemoryStream(bytes)) {
+                await using (var mso = new MemoryStream()) {
+                    await using (var gs = new GZipStream(mso, CompressionMode.Compress)) {
                         this.CopyTo(msi, gs);
                     }
 
@@ -53,7 +53,7 @@ namespace bifeldy_lib_90.Services {
 
         public async Task<List<byte[]>> ReadFileAsBinaryChunk(string filePath, int maxChunk = 1024, CancellationToken token = default) {
             var res = new List<byte[]>();
-            using (MemoryStream ms = await this.ReadFileAsBinaryStream(filePath, maxChunk, token)) {
+            await using (MemoryStream ms = await this.ReadFileAsBinaryStream(filePath, maxChunk, token)) {
                 byte[] data = ms.ToArray();
                 foreach (byte[] d in data.Split(maxChunk)) {
                     res.Add(d);
@@ -65,7 +65,7 @@ namespace bifeldy_lib_90.Services {
 
         public async Task<MemoryStream> ReadFileAsBinaryStream(string filePath, int maxChunk = 1024, CancellationToken token = default) {
             var dest = new MemoryStream();
-            using (Stream source = File.OpenRead(filePath)) {
+            await using (Stream source = File.OpenRead(filePath)) {
                 byte[] buffer = new byte[maxChunk];
                 int bytesRead = 0;
                 while ((bytesRead = await source.ReadAsync(buffer, 0, buffer.Length, token)) > 0) {

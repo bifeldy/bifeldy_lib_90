@@ -83,7 +83,7 @@ namespace bifeldy_lib_90.Handlers {
                         bool isNotStream = typeof(InputJsonDc).IsAssignableFrom(formDataStream.GetType());
                         if (isNotStream) {
                             string jsonBody = this._cs.ObjectToJson((TFormDataStream)formDataStream, jsonTypeInfo);
-                            using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
+                            await using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
                                 this._context.Request.Body = ms;
                                 return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true);
                             }
@@ -179,7 +179,7 @@ namespace bifeldy_lib_90.Handlers {
                         f.token = queryDictionary["token"];
 
                         string jsonBody = this._cs.ObjectToJson((TFormDataStream)(object)f, jsonTypeInfo);
-                        using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
+                        await using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
                             this._context.Request.Body = ms;
                             return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true);
                         }

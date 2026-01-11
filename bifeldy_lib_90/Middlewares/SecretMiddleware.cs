@@ -91,7 +91,7 @@ namespace bifeldy_lib_90.Middlewares {
                     string addrIp = context.Items["address_ip"]?.ToString();
 
                     if (request.Query.ContainsKey("mask_ip")) {
-                        addrIp = this._chiper.DecryptText(request.Query["mask_ip"], hashText);
+                        addrIp = await this._chiper.DecryptText(request.Query["mask_ip"], hashText);
                     }
 
                     string addrOrigin = context.Items["address_origin"]?.ToString();

@@ -287,7 +287,7 @@ namespace bifeldy_lib_90.Repositories {
 
                 if (request.HttpContext.Items["address_ip"] != null) {
                     string addrIp = request.HttpContext.Items["address_ip"].ToString();
-                    queryApiDc.Set("mask_ip", this._chiper.EncryptText(addrIp));
+                    queryApiDc.Set("mask_ip", await this._chiper.EncryptText(addrIp));
                 }
 
                 var uriBuilder = new UriBuilder(urlApiDc) {

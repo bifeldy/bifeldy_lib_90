@@ -502,7 +502,7 @@ namespace bifeldy_lib_90.Services {
 
             await response.StartAsync();
 
-            using (Stream upstream = await res.Content.ReadAsStreamAsync()) {
+            await using (Stream upstream = await res.Content.ReadAsStreamAsync()) {
                 byte[] buffer = new byte[8192];
                 int bytesRead = 0;
 
