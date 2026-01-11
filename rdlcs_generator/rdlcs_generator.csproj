@@ -8,11 +8,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <InvariantGlobalization>true</InvariantGlobalization>
         <PublishSingleFile>false</PublishSingleFile>
+        <SelfContained>true</SelfContained>
         <PublishTrimmed>false</PublishTrimmed>
         <PublishReadyToRun>false</PublishReadyToRun>
-        <SelfContained>true</SelfContained>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <ServerGarbageCollection>false</ServerGarbageCollection>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
         <IlcMaxDegreeOfParallelism>1</IlcMaxDegreeOfParallelism>

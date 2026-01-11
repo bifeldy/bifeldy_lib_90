@@ -40,7 +40,7 @@ namespace bifeldy_lib_90.JobSchedulers {
 
                 Bifeldy.GC_RUN_LAST_DATE = DateTime.Now;
 
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, false);
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
                 GC.WaitForPendingFinalizers();
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, false, false);
             }
