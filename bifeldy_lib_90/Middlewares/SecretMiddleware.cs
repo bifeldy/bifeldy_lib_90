@@ -49,7 +49,7 @@ namespace bifeldy_lib_90.Middlewares {
             Endpoint endpoint = context.GetEndpoint();
             IAllowAnonymous allowAnonymous = endpoint?.Metadata.GetMetadata<IAllowAnonymous>();
 
-            bool isApi = apiPathRequested.StartsWith($"/{Bifeldy.API_PREFIX}/", StringComparison.InvariantCultureIgnoreCase);
+            bool isApi = apiPathRequested.StartsWith($"/{Bifeldy.API_PREFIX}/", StringComparison.OrdinalIgnoreCase);
 
             if (!isApi || allowAnonymous != null) {
                 await this._next(context);

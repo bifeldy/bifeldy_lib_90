@@ -37,7 +37,7 @@ namespace bifeldy_lib_90.Services {
         private readonly IApplicationService _app;
         private readonly IConverterService _converter;
 
-        public IDictionary<string, RdlcInfo> FileType { get; } = new Dictionary<string, RdlcInfo>(StringComparer.InvariantCultureIgnoreCase) {
+        public IDictionary<string, RdlcInfo> FileType { get; } = new Dictionary<string, RdlcInfo>(StringComparer.OrdinalIgnoreCase) {
             {
                 "PDF", new() {
                     contentType = MediaTypeNames.Application.Pdf,
@@ -376,7 +376,7 @@ namespace bifeldy_lib_90.Services {
                 }
 
                 rdlcGeneratorExecutablePath ??= Path.Combine(this._app.AppLocation, "sidecar", "rdlcs_generator");
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !rdlcGeneratorExecutablePath.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase)) {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !rdlcGeneratorExecutablePath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) {
                     rdlcGeneratorExecutablePath += ".exe";
                 }
 

@@ -147,10 +147,8 @@ namespace bifeldy_lib_90.Libraries {
             }
         }
 
-        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode",
-            Justification = "This is a best-effort fallback. The app should use Register<T> for safety.")]
-        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2057:UnrecognizedReflectionPattern",
-            Justification = "This is a best-effort fallback. The app should use Register<T> for safety.")]
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "This is a best-effort fallback. The app should use Register<T> for safety.")]
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2057:UnrecognizedReflectionPattern", Justification = "This is a best-effort fallback. The app should use Register<T> for safety.")]
         public static Type GetType(string typeName) {
             if (string.IsNullOrWhiteSpace(typeName)) {
                 return null;
@@ -203,7 +201,7 @@ namespace bifeldy_lib_90.Libraries {
         private readonly Dictionary<string, (Type Type, object Value)> _fields;
 
         public CDynamicClass(List<CDynamicClassProperty> fields) {
-            this._fields = new Dictionary<string, (Type, object)>(StringComparer.InvariantCultureIgnoreCase);
+            this._fields = new Dictionary<string, (Type, object)>(StringComparer.OrdinalIgnoreCase);
 
             foreach (CDynamicClassProperty f in fields) {
                 Type type = TypeRegistry.GetType(f.DataType);
@@ -293,7 +291,7 @@ namespace bifeldy_lib_90.Libraries {
         private readonly Dictionary<string, (Type Type, object Value, CDynamicClassPropertyV2 Meta)> _fields;
 
         public CDynamicClassV2(List<CDynamicClassPropertyV2> fields) {
-            this._fields = new Dictionary<string, (Type, object, CDynamicClassPropertyV2)>(StringComparer.InvariantCultureIgnoreCase);
+            this._fields = new Dictionary<string, (Type, object, CDynamicClassPropertyV2)>(StringComparer.OrdinalIgnoreCase);
 
             foreach (CDynamicClassPropertyV2 f in fields) {
                 Type type = TypeRegistry.GetType(f.TypeName);

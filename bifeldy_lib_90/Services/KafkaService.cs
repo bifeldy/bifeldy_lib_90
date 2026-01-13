@@ -36,8 +36,8 @@ namespace bifeldy_lib_90.Services {
 
         private readonly TimeSpan timeout = TimeSpan.FromSeconds(600); // 10 Minutes
 
-        private readonly IDictionary<string, IProducer<string, string>> producerListener = new Dictionary<string, IProducer<string, string>>();
-        private readonly IDictionary<string, CancellationTokenSource> consumerListener = new Dictionary<string, CancellationTokenSource>();
+        private readonly IDictionary<string, IProducer<string, string>> producerListener = new Dictionary<string, IProducer<string, string>>(StringComparer.OrdinalIgnoreCase);
+        private readonly IDictionary<string, CancellationTokenSource> consumerListener = new Dictionary<string, CancellationTokenSource>(StringComparer.OrdinalIgnoreCase);
 
         private const ulong COMMIT_AFTER_N_MESSAGES = 10;
 

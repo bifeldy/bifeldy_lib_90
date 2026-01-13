@@ -13,7 +13,7 @@ namespace bifeldy_lib_90.Services {
 
     public sealed class CPubSubService : IPubSubService {
 
-        private readonly IDictionary<string, object> keyValuePairs = new Dictionary<string, object>();
+        private readonly IDictionary<string, object> keyValuePairs = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
         public CPubSubService() {
             //

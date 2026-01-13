@@ -118,7 +118,7 @@ namespace bifeldy_lib_90.Services {
                             if (this._hca.HttpContext != null) {
                                 string reqPath = this._hca.HttpContext.Request.Path.Value;
                                 if (!string.IsNullOrEmpty(reqPath)) {
-                                    if (reqPath.StartsWith($"/{Bifeldy.API_PREFIX}/", StringComparison.InvariantCultureIgnoreCase)) {
+                                    if (reqPath.StartsWith($"/{Bifeldy.API_PREFIX}/", StringComparison.OrdinalIgnoreCase)) {
                                         return null;
                                     }
                                 }
@@ -128,7 +128,7 @@ namespace bifeldy_lib_90.Services {
                         }
                     }
                     else {
-                        var dictKunci = new Dictionary<string, object>();
+                        var dictKunci = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
                         if (File.Exists(jsonPathKunci)) {
                             string jsonContent = File.ReadAllText(jsonPathKunci);

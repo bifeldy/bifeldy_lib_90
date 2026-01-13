@@ -37,37 +37,37 @@ namespace bifeldy_lib_90.Middlewares {
             try {
                 string defaultAssetsFolder = Path.Combine(this._app.AppLocation, Bifeldy.DEFAULT_ASSETS_FOLDER);
 
-                if (context.Request.Path.Value.StartsWith("/server-config.html", StringComparison.InvariantCultureIgnoreCase)) {
+                if (context.Request.Path.Value.StartsWith("/server-config.html", StringComparison.OrdinalIgnoreCase)) {
                     context.Response.StatusCode = StatusCodes.Status200OK;
                     context.Response.ContentType = "text/html; charset=utf-8";
                     await context.Response.SendFileAsync(Path.Combine(defaultAssetsFolder, "html/server-config.html"));
                     return;
                 }
-                else if (context.Request.Path.Value.StartsWith("/css/bootstrap.min.css", StringComparison.InvariantCultureIgnoreCase)) {
+                else if (context.Request.Path.Value.StartsWith("/css/bootstrap.min.css", StringComparison.OrdinalIgnoreCase)) {
                     context.Response.StatusCode = StatusCodes.Status200OK;
                     context.Response.ContentType = "text/css";
                     await context.Response.SendFileAsync(Path.Combine(defaultAssetsFolder, "css/bootstrap.min.css"));
                     return;
                 }
-                else if (context.Request.Path.Value.StartsWith("/js/bootstrap.bundle.min.js", StringComparison.InvariantCultureIgnoreCase)) {
+                else if (context.Request.Path.Value.StartsWith("/js/bootstrap.bundle.min.js", StringComparison.OrdinalIgnoreCase)) {
                     context.Response.StatusCode = StatusCodes.Status200OK;
                     context.Response.ContentType = "application/javascript";
                     await context.Response.SendFileAsync(Path.Combine(defaultAssetsFolder, "js/bootstrap.bundle.min.js"));
                     return;
                 }
-                else if (context.Request.Path.Value.StartsWith("/img/domar.gif", StringComparison.InvariantCultureIgnoreCase)) {
+                else if (context.Request.Path.Value.StartsWith("/img/domar.gif", StringComparison.OrdinalIgnoreCase)) {
                     context.Response.StatusCode = StatusCodes.Status200OK;
                     context.Response.ContentType = "image/gif";
                     await context.Response.SendFileAsync(Path.Combine(defaultAssetsFolder, "img/domar.gif"));
                     return;
                 }
-                else if (context.Request.Path.Value.StartsWith("/img/domar.ico", StringComparison.InvariantCultureIgnoreCase) || context.Request.Path.Value.StartsWith("/favicon.ico", StringComparison.InvariantCultureIgnoreCase)) {
+                else if (context.Request.Path.Value.StartsWith("/img/domar.ico", StringComparison.OrdinalIgnoreCase) || context.Request.Path.Value.StartsWith("/favicon.ico", StringComparison.OrdinalIgnoreCase)) {
                     context.Response.StatusCode = StatusCodes.Status200OK;
                     context.Response.ContentType = "image/x-icon";
                     await context.Response.SendFileAsync(Path.Combine(defaultAssetsFolder, "img/domar.ico"));
                     return;
                 }
-                else if (context.Request.Path.Value.StartsWith("/img/indomaret.png", StringComparison.InvariantCultureIgnoreCase)) {
+                else if (context.Request.Path.Value.StartsWith("/img/indomaret.png", StringComparison.OrdinalIgnoreCase)) {
                     context.Response.StatusCode = StatusCodes.Status200OK;
                     context.Response.ContentType = "image/png";
                     await context.Response.SendFileAsync(Path.Combine(defaultAssetsFolder, "img/indomaret.png"));
@@ -77,7 +77,7 @@ namespace bifeldy_lib_90.Middlewares {
                 int shortCircuit = 0;
                 object res = null;
 
-                if (context.Request.Path.Value.Equals("/api/server-config", StringComparison.InvariantCultureIgnoreCase)) {
+                if (context.Request.Path.Value.Equals("/api/server-config", StringComparison.OrdinalIgnoreCase)) {
                     try {
                         if (context.Request.Method == "GET") {
                             IEnumerable<ServerConfigKunci> config = await scr.GetKodeServerKunciDc();
@@ -103,7 +103,7 @@ namespace bifeldy_lib_90.Middlewares {
                             string info = null;
                             string message = null;
 
-                            if (!reqBody.password.Equals("5p1nd0m@r3T", StringComparison.InvariantCultureIgnoreCase)) {
+                            if (!reqBody.password.Equals("5p1nd0m@r3T", StringComparison.OrdinalIgnoreCase)) {
                                 info = "Kunci Kode DC";
                                 message = "Password Salah";
                                 shortCircuit = StatusCodes.Status401Unauthorized;

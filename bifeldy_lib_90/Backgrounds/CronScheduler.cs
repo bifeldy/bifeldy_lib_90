@@ -12,7 +12,7 @@ namespace bifeldy_lib_90.Backgrounds {
         private readonly ILogger<CronScheduler> _logger;
 
         private readonly List<RuntimeJob> _cronJobs;
-        private readonly ConcurrentDictionary<string, (Task Task, CancellationTokenSource Cts)> _runningJobs = new(StringComparer.InvariantCultureIgnoreCase);
+        private readonly ConcurrentDictionary<string, (Task Task, CancellationTokenSource Cts)> _runningJobs = new(StringComparer.OrdinalIgnoreCase);
         private readonly ConcurrentQueue<CompletedJob> _completedJobs = new();
         private readonly ConcurrentQueue<DynamicJob> _dynamicJobs = new();
 

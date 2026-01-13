@@ -7,7 +7,7 @@
 
     public sealed class CLockerService : ILockerService {
 
-        private readonly IDictionary<string, SemaphoreSlim> semaphore_global_app = new Dictionary<string, SemaphoreSlim>(StringComparer.InvariantCultureIgnoreCase);
+        private readonly IDictionary<string, SemaphoreSlim> semaphore_global_app = new Dictionary<string, SemaphoreSlim>(StringComparer.OrdinalIgnoreCase);
 
         public CLockerService() {
             this.MutexGlobalApp = new SemaphoreSlim(1, 1);

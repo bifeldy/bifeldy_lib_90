@@ -74,7 +74,7 @@ namespace bifeldy_lib_90.Transformers {
             document.Info.Description = this._opt.Description;
             document.Tags ??= [];
 
-            var tagMap = new Dictionary<string, string>();
+            var tagMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (ApiDescription api in allApis) {
                 foreach (ApiTagDescription meta in api.ActionDescriptor.EndpointMetadata.OfType<ApiTagDescription>()) {
                     if (!string.IsNullOrEmpty(meta.Description)) {

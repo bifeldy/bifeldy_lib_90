@@ -405,7 +405,7 @@ namespace bifeldy_lib_90 {
                 // Selain Itu Atau Jika Masih Ada Error Lain
                 // Misal Di Catch Akan Terlempar Ke Halaman Error Bawaan UI
 
-                if (!context.Request.Path.Value.StartsWith($"/{API_PREFIX}/", StringComparison.InvariantCultureIgnoreCase)) {
+                if (!context.Request.Path.Value.StartsWith($"/{API_PREFIX}/", StringComparison.OrdinalIgnoreCase)) {
                     await next();
                 }
                 else {
@@ -512,7 +512,7 @@ namespace bifeldy_lib_90 {
                     string apiPathRequested = context.Request.Path.Value;
                     if (!string.IsNullOrEmpty(apiPathRequested)) {
                         bool is404 = context.Response.StatusCode == StatusCodes.Status404NotFound;
-                        bool isApi = apiPathRequested.StartsWith($"/{API_PREFIX}/", StringComparison.InvariantCultureIgnoreCase);
+                        bool isApi = apiPathRequested.StartsWith($"/{API_PREFIX}/", StringComparison.OrdinalIgnoreCase);
 
                         if (is404 && isApi) {
                             await context.Response.WriteAsJsonAsync(
@@ -546,7 +546,7 @@ namespace bifeldy_lib_90 {
                         if (!string.IsNullOrEmpty(apiPathRequested)) {
                             bool is404 = context.Response.StatusCode == StatusCodes.Status404NotFound;
                             bool isStaticFile = Path.HasExtension(apiPathRequested);
-                            bool isApi = apiPathRequested.StartsWith($"/{API_PREFIX}/", StringComparison.InvariantCultureIgnoreCase);
+                            bool isApi = apiPathRequested.StartsWith($"/{API_PREFIX}/", StringComparison.OrdinalIgnoreCase);
 
                             if (is404 && !isStaticFile && !isApi) {
                                 context.Request.Path = "/index.html";

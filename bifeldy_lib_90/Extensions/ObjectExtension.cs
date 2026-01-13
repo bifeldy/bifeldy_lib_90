@@ -23,11 +23,10 @@ namespace bifeldy_lib_90.Extensions {
 
         public static Dictionary<string, object> ToDictionary<T>(this T instanceToConvert, JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
             if (instanceToConvert == null) {
-                return new Dictionary<string, object>();
+                return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             }
 
-            return ConvertObject(instanceToConvert, jsonTypeInfo.Options) as Dictionary<string, object>
-                   ?? new Dictionary<string, object>();
+            return ConvertObject(instanceToConvert, jsonTypeInfo.Options) as Dictionary<string, object> ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         }
 
         private static object ConvertObject(object obj, JsonSerializerOptions options) {
@@ -61,7 +60,7 @@ namespace bifeldy_lib_90.Extensions {
         }
 
         private static Dictionary<string, object> ConvertDictionary(IDictionary dict, JsonSerializerOptions options) {
-            var result = new Dictionary<string, object>();
+            var result = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
             foreach (DictionaryEntry entry in dict) {
                 string key = entry.Key.ToString();
@@ -73,7 +72,7 @@ namespace bifeldy_lib_90.Extensions {
         }
 
         private static Dictionary<string, object> ConvertEnumerable(IEnumerable enumerable, JsonSerializerOptions options) {
-            var result = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
+            var result = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
             int index = 0;
             foreach (object item in enumerable) {
@@ -92,10 +91,10 @@ namespace bifeldy_lib_90.Extensions {
             JsonTypeInfo typeInfo = options.GetTypeInfo(type);
 
             if (typeInfo == null) {
-                return new Dictionary<string, object>();
+                return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             }
 
-            var result = new Dictionary<string, object>();
+            var result = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
             foreach (JsonPropertyInfo prop in typeInfo.Properties) {
                 if (prop.Get == null) {

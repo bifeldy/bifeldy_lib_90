@@ -70,7 +70,7 @@ namespace bifeldy_lib_90.Extensions {
                 yield break;
             }
 
-            var colIndexLookup = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
+            var colIndexLookup = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < dr.FieldCount; i++) {
                 colIndexLookup[dr.GetName(i)] = i;
             }

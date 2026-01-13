@@ -223,7 +223,7 @@ namespace bifeldy_lib_90.Services {
         }
 
         public string FormatByteSizeHumanReadable(long bytes, string forceUnit = null) {
-            IDictionary<string, long> dict = new Dictionary<string, long>(StringComparer.InvariantCultureIgnoreCase) {
+            IDictionary<string, long> dict = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase) {
                 { "TB", 1000000000000 },
                 { "GB", 1000000000 },
                 { "MB", 1000000 },
