@@ -303,7 +303,7 @@ namespace bifeldy_lib_90.Handlers {
                             }
 
                             if (RuntimeFeature.IsDynamicCodeSupported) {
-                                IEnumerable<TOutputJson> reportDataRowList = await ___pg.GetEnumerableAsync(
+                                IEnumerable<TOutputJson> reportDataRowList = await ___pg.GetListAsync(
                                     jsonTypeInfoOutput, sqlQuery, sqlParam,
                                     token: ___ctx
                                 );

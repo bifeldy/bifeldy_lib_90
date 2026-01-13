@@ -102,7 +102,7 @@ namespace bifeldy_lib_90.Handlers {
             }
             else {
                 foreach (string dsp in defaultSqlParam.ParameterNames) {
-                    if (!sqlParam.ParameterNames.Contains(dsp, StringComparer.InvariantCultureIgnoreCase)) {
+                    if (!sqlParam.ParameterNames.Contains(dsp, StringComparer.OrdinalIgnoreCase)) {
                         sqlParam.Add(dsp, defaultSqlParam.Get<object>(dsp));
                     }
                 }

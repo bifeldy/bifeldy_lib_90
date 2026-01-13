@@ -209,7 +209,7 @@ namespace bifeldy_lib_90.Repositories {
             }
 
             sqlQuery += " ORDER BY kode_dc ASC";
-            return await this._sqlite.GetEnumerableAsync(ServerConfigJsonSerializerContext.Default.ServerConfigKunci, sqlQuery, sqlParam);
+            return await this._sqlite.GetListAsync(ServerConfigJsonSerializerContext.Default.ServerConfigKunci, sqlQuery, sqlParam);
         }
 
         // Panggil Ini Dulu Sebelum Resolve Menggunakan Service Provider (_sp.GetService / _sp.GetRequiredService)

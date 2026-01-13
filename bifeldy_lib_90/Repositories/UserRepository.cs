@@ -69,7 +69,7 @@ namespace bifeldy_lib_90.Repositories {
                 sqlParam.Add("userNameNik", userNameNik.ToUpper());
             }
 
-            return db.GetEnumerableAsync(DC_USER_T_JsonSerializerContext.Default.DC_USER_T, sqlQuery, sqlParam);
+            return db.GetListAsync(DC_USER_T_JsonSerializerContext.Default.DC_USER_T, sqlQuery, sqlParam);
         }
 
         public Task<DC_USER_T> GetByUserNik(IDatabase db, string userNik) {

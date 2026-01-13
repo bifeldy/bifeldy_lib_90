@@ -52,7 +52,7 @@ namespace bifeldy_lib_90.Repositories {
                 sqlParam.Add("key", key.ToUpper());
             }
 
-            return db.GetEnumerableAsync(API_KEY_T_JsonSerializerContext.Default.API_KEY_T, sqlQuery, sqlParam);
+            return db.GetListAsync(API_KEY_T_JsonSerializerContext.Default.API_KEY_T, sqlQuery, sqlParam);
         }
 
         public Task<API_KEY_T> GetByKey(IDatabase db, string key) {
