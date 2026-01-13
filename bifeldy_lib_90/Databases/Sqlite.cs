@@ -1,11 +1,13 @@
 ﻿using bifeldy_lib_90.Abstractions;
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Services;
+using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Data;
+using System.Data.Common;
 
 namespace bifeldy_lib_90.Databases {
 
@@ -51,7 +53,17 @@ namespace bifeldy_lib_90.Databases {
                 string[] fieldNames = new string[colCount];
 
                 string sqlQuery = $"SELECT * FROM {tableName} WHERE 1 = 0";
-                await using (var rdr = (SqliteDataReader)await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.Default, token)) {
+                DbDataReader reader = await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.Default, token);
+
+                SqliteDataReader rdr = null;
+                if (reader is IWrappedDataReader dapperWrappedReader) {
+                    rdr = (SqliteDataReader)dapperWrappedReader.Reader;
+                }
+                else {
+                    rdr = (SqliteDataReader)reader;
+                }
+
+                await using (rdr) {
                     if (rdr.FieldCount != colCount) {
                         throw new Exception("Jumlah Kolom Tabel Tidak Sama");
                     }
@@ -105,7 +117,7 @@ namespace bifeldy_lib_90.Databases {
                 }
             }
             catch (Exception ex) {
-                this._logger.LogError("[PG_BULK_INSERT] {ex}", ex.Message);
+                this._logger.LogError("[SQLITE_BULK_INSERT] {ex}", ex.Message);
                 exception = ex;
             }
             finally {

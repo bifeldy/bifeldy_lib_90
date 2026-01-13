@@ -7,7 +7,7 @@ namespace bifeldy_lib_90.Repositories {
 
     public interface IApiKeyRepository {
         Task<bool> Create(IDatabase db, API_KEY_T apiKey);
-        Task<IEnumerable<API_KEY_T>> GetAll(IDatabase db, string key = null);
+        Task<List<API_KEY_T>> GetAll(IDatabase db, string key = null);
         Task<API_KEY_T> GetByKey(IDatabase db, string key);
         Task<bool> Delete(IDatabase db, string key);
         Task<API_KEY_T> SecretLogin(IDatabase db, string key);
@@ -41,7 +41,7 @@ namespace bifeldy_lib_90.Repositories {
             return res > 0;
         }
 
-        public Task<IEnumerable<API_KEY_T>> GetAll(IDatabase db, string key = null) {
+        public Task<List<API_KEY_T>> GetAll(IDatabase db, string key = null) {
             string sqlQuery = "SELECT * FROM api_key_t WHERE (app_name = '*' OR UPPER(app_name) = :app_name)";
 
             var sqlParam = new DynamicParameters();

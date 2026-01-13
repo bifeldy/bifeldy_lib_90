@@ -7,7 +7,7 @@ namespace bifeldy_lib_90.Repositories {
 
     public interface IApiTokenRepository {
         Task<bool> Create(IDatabase db, API_TOKEN_T apiToken);
-        Task<IEnumerable<API_TOKEN_T>> GetAll(IDatabase db, string userName = null);
+        Task<List<API_TOKEN_T>> GetAll(IDatabase db, string userName = null);
         Task<API_TOKEN_T> GetByUserName(IDatabase db, string userName);
         Task<API_TOKEN_T> GetByUserNamePass(IDatabase db, string userName, string password);
         Task<bool> Delete(IDatabase db, string userName);
@@ -42,7 +42,7 @@ namespace bifeldy_lib_90.Repositories {
             return res > 0;
         }
 
-        public Task<IEnumerable<API_TOKEN_T>> GetAll(IDatabase db, string userName = null) {
+        public Task<List<API_TOKEN_T>> GetAll(IDatabase db, string userName = null) {
             string sqlQuery = "SELECT * FROM api_token_t WHERE (app_name = '*' OR UPPER(app_name) = :app_name)";
 
             var sqlParam = new DynamicParameters();

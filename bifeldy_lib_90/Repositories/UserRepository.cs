@@ -6,7 +6,7 @@ namespace bifeldy_lib_90.Repositories {
 
     public interface IUserRepository {
         Task<bool> Create(IDatabase db, DC_USER_T user);
-        Task<IEnumerable<DC_USER_T>> GetAll(IDatabase db, string userNameNik = null);
+        Task<List<DC_USER_T>> GetAll(IDatabase db, string userNameNik = null);
         Task<DC_USER_T> GetByUserNik(IDatabase db, string userNik);
         Task<DC_USER_T> GetByUserName(IDatabase db, string userName);
         Task<DC_USER_T> GetByUserNameNik(IDatabase db, string userNameNik);
@@ -60,7 +60,7 @@ namespace bifeldy_lib_90.Repositories {
             return res > 0;
         }
 
-        public Task<IEnumerable<DC_USER_T>> GetAll(IDatabase db, string userNameNik = null) {
+        public Task<List<DC_USER_T>> GetAll(IDatabase db, string userNameNik = null) {
             string sqlQuery = "SELECT * FROM dc_user_t";
 
             var sqlParam = new DynamicParameters();

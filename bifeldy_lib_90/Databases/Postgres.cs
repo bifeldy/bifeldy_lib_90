@@ -12,6 +12,7 @@ using Npgsql.Schema;
 using NpgsqlTypes;
 using System.Collections.ObjectModel;
 using System.Data;
+using System.Data.Common;
 using System.Text;
 
 namespace bifeldy_lib_90.Databases {
@@ -169,7 +170,17 @@ namespace bifeldy_lib_90.Databases {
                 string[] fieldNames = new string[colCount];
 
                 string sqlQuery = $"SELECT * FROM {tableName} WHERE 1 = 0";
-                await using (var rdr = (NpgsqlDataReader)await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.Default, token)) {
+                DbDataReader reader = await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.Default, token);
+
+                NpgsqlDataReader rdr = null;
+                if (reader is IWrappedDataReader dapperWrappedReader) {
+                    rdr = (NpgsqlDataReader)dapperWrappedReader.Reader;
+                }
+                else {
+                    rdr = (NpgsqlDataReader)reader;
+                }
+
+                await using (rdr) {
                     ReadOnlyCollection<NpgsqlDbColumn> columns = rdr.GetColumnSchema();
 
                     for (int i = 0; i < colCount; i++) {
@@ -178,8 +189,8 @@ namespace bifeldy_lib_90.Databases {
                             throw new Exception($"Kolom {lsCol[i]} Tidak Tersedia Di Tabel Tujuan {tableName}");
                         }
 
-                        types[i] = (NpgsqlDbType) column.NpgsqlDbType;
-                        lengths[i] = column.ColumnSize == null ? 0 : (int) column.ColumnSize;
+                        types[i] = (NpgsqlDbType)column.NpgsqlDbType;
+                        lengths[i] = column.ColumnSize == null ? 0 : (int)column.ColumnSize;
                         fieldNames[i] = column.ColumnName;
                     }
                 }

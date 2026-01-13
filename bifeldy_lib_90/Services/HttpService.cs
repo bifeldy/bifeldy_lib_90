@@ -22,18 +22,18 @@ namespace bifeldy_lib_90.Services {
         HttpClient CreateHttpClient(uint timeoutSeconds = 60, string publicKeysBase64HashJsonFilePath = null);
         Task<IResult> ForwardRequest(string urlTarget, HttpRequest request, HttpResponse response, bool isApiEndpoint = false, uint timeoutSeconds = 300, string publicKeysBase64HashJsonFilePath = null);
         IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> jsonTypeInfo, CancellationToken cancellationToken = default) where T : JsonSerDe, new();
-        Task<HttpResponseMessage> HeadData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
+        Task<HttpResponseMessage> HeadData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
         Task<HttpResponseMessage> GetData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
-        Task<HttpResponseMessage> DeleteData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
-        Task<HttpResponseMessage> PostData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new();
-        Task<HttpResponseMessage> PostData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
-        Task<HttpResponseMessage> PutData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new();
-        Task<HttpResponseMessage> PutData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
-        Task<HttpResponseMessage> ConnectData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
-        Task<HttpResponseMessage> OptionsData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
-        Task<HttpResponseMessage> PatchData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new();
-        Task<HttpResponseMessage> PatchData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
-        Task<HttpResponseMessage> TraceData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
+        Task<HttpResponseMessage> DeleteData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
+        Task<HttpResponseMessage> PostData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new();
+        Task<HttpResponseMessage> PostData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
+        Task<HttpResponseMessage> PutData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new();
+        Task<HttpResponseMessage> PutData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
+        Task<HttpResponseMessage> ConnectData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
+        Task<HttpResponseMessage> OptionsData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
+        Task<HttpResponseMessage> PatchData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new();
+        Task<HttpResponseMessage> PatchData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
+        Task<HttpResponseMessage> TraceData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
     }
 
     public sealed class CHttpService : IHttpService {
@@ -129,8 +129,12 @@ namespace bifeldy_lib_90.Services {
                 throw new Exception($"Streaming Untuk Content-Type '{contentType}' Tidak Tersedia");
             }
 
-            string json = this._cs.ObjectToJson(payload, jsonTypeInfo);
-            return new StringContent(json, encoding, contentType);
+            if (payload is not string str) {
+                string json = this._cs.ObjectToJson(payload, jsonTypeInfo);
+                return new StringContent(json, encoding, MediaTypeNames.Application.Json);
+            }
+
+            return new StringContent(payload.ToString(), encoding, contentType);
         }
 
         private HttpContent GetHttpContent(object payload, string contentType, Encoding encoding = null) {
@@ -159,8 +163,12 @@ namespace bifeldy_lib_90.Services {
                 return streamContent;
             }
 
-            string json = this._cs.ObjectToJson(payload);
-            return new StringContent(json, encoding, contentType);
+            if (payload is not string str) {
+                string json = this._cs.ObjectToJson(payload);
+                return new StringContent(json, encoding, MediaTypeNames.Application.Json);
+            }
+
+            return new StringContent(payload.ToString(), encoding, contentType);
         }
 
         private HttpRequestMessage ParseApiDataJson<T>(
@@ -564,52 +572,52 @@ namespace bifeldy_lib_90.Services {
             throw new Exception($"Streaming Untuk Content-Type '{response.Content.Headers.ContentType?.MediaType}' Tidak Tersedia");
         }
 
-        public Task<HttpResponseMessage> HeadData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
-            return this.SendWithRetry(urlPath, HttpMethod.Head, null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> HeadData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
+            return this.SendWithRetry(urlPath, HttpMethod.Head, null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
         public Task<HttpResponseMessage> GetData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
             return this.SendWithRetry(urlPath, HttpMethod.Get, null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
-        public Task<HttpResponseMessage> DeleteData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
-            return this.SendWithRetry(urlPath, HttpMethod.Delete, null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> DeleteData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
+            return this.SendWithRetry(urlPath, HttpMethod.Delete, null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
-        public Task<HttpResponseMessage> PostData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new() {
-            return this.SendWithRetryJson(urlPath, HttpMethod.Post, objBody, jsonTypeInfo, multipart, headerOpts, contentKeyName, contentType, encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> PostData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new() {
+            return this.SendWithRetryJson(urlPath, HttpMethod.Post, objBody, jsonTypeInfo, multipart, headerOpts, contentKeyName, contentType, encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
-        public Task<HttpResponseMessage> PostData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
-            return this.SendWithRetry(urlPath, HttpMethod.Post, objBody, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> PostData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
+            return this.SendWithRetry(urlPath, HttpMethod.Post, objBody, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
-        public Task<HttpResponseMessage> PutData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new() {
-            return this.SendWithRetryJson(urlPath, HttpMethod.Put, objBody, jsonTypeInfo, multipart, headerOpts, contentKeyName, contentType, encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> PutData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new() {
+            return this.SendWithRetryJson(urlPath, HttpMethod.Put, objBody, jsonTypeInfo, multipart, headerOpts, contentKeyName, contentType, encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
-        public Task<HttpResponseMessage> PutData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
-            return this.SendWithRetry(urlPath, HttpMethod.Put, objBody, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> PutData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
+            return this.SendWithRetry(urlPath, HttpMethod.Put, objBody, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
-        public Task<HttpResponseMessage> ConnectData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
-            return this.SendWithRetry(urlPath, new HttpMethod("CONNECT"), null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> ConnectData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
+            return this.SendWithRetry(urlPath, new HttpMethod("CONNECT"), null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
-        public Task<HttpResponseMessage> OptionsData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
-            return this.SendWithRetry(urlPath, new HttpMethod("OPTIONS"), null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> OptionsData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
+            return this.SendWithRetry(urlPath, new HttpMethod("OPTIONS"), null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
-        public Task<HttpResponseMessage> PatchData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new() {
-            return this.SendWithRetryJson(urlPath, new HttpMethod("PATCH"), objBody, jsonTypeInfo, multipart, headerOpts, contentKeyName, contentType, encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> PatchData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) where T : JsonSerDe, new() {
+            return this.SendWithRetryJson(urlPath, new HttpMethod("PATCH"), objBody, jsonTypeInfo, multipart, headerOpts, contentKeyName, contentType, encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
-        public Task<HttpResponseMessage> PatchData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
-            return this.SendWithRetry(urlPath, new HttpMethod("PATCH"), objBody, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> PatchData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
+            return this.SendWithRetry(urlPath, new HttpMethod("PATCH"), objBody, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
-        public Task<HttpResponseMessage> TraceData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
-            return this.SendWithRetry(urlPath, HttpMethod.Trace, null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
+        public Task<HttpResponseMessage> TraceData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null) {
+            return this.SendWithRetry(urlPath, HttpMethod.Trace, null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath);
         }
 
     }
