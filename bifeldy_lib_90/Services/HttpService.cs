@@ -20,7 +20,7 @@ namespace bifeldy_lib_90.Services {
     public interface IHttpService {
         List<Tuple<string, string>> CleanHeader(IHeaderDictionary httpHeader);
         HttpClient CreateHttpClient(uint timeoutSeconds = 60, string publicKeysBase64HashJsonFilePath = null);
-        Task<IResult> ForwardRequest(string urlTarget, HttpRequest request, HttpResponse response, bool isApiEndpoint = false, uint timeoutSeconds = 300, string publicKeysBase64HashJsonFilePath = null);
+        Task<IResult> ForwardRequest(string urlTarget, HttpRequest request, HttpResponse response, bool isApiEndpoint = false, uint timeoutSeconds = 300, string publicKeysBase64HashJsonFilePath = null, CancellationToken cancellationToken = default);
         IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> jsonTypeInfo, CancellationToken cancellationToken = default) where T : JsonSerDe, new();
         Task<HttpResponseMessage> HeadData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
         Task<HttpResponseMessage> GetData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null);
@@ -104,14 +104,6 @@ namespace bifeldy_lib_90.Services {
             return list;
         }
 
-        private HttpContent CreateStreamingJsonContent<T>(IAsyncEnumerable<T> stream, JsonTypeInfo<T> typeInfo) where T : JsonSerDe, new() {
-            return new AsyncEnumerableJsonContent<T>(stream, MediaTypeNames.Application.Json, typeInfo, false);
-        }
-
-        private HttpContent CreateStreamingNdjsonContent<T>(IAsyncEnumerable<T> stream, JsonTypeInfo<T> typeInfo) where T : JsonSerDe, new() {
-            return new AsyncEnumerableJsonContent<T>(stream, "application/x-ndjson", typeInfo, true);
-        }
-
         private HttpContent GetHttpContentJson<T>(T payload, JsonTypeInfo<T> jsonTypeInfo, string contentType, Encoding encoding = null) where T : JsonSerDe, new() {
             encoding ??= Encoding.UTF8;
 
@@ -119,17 +111,27 @@ namespace bifeldy_lib_90.Services {
                 string ct = contentType?.ToLowerInvariant();
 
                 if (ct == MediaTypeNames.Application.Json) {
-                    return this.CreateStreamingJsonContent(asyncEnumerable, jsonTypeInfo);
+                    return new AsyncEnumerableJsonContent<T>(
+                        asyncEnumerable,
+                        MediaTypeNames.Application.Json,
+                        jsonTypeInfo,
+                        false
+                    );
                 }
 
                 if (ct == "application/x-ndjson") {
-                    return this.CreateStreamingNdjsonContent(asyncEnumerable, jsonTypeInfo);
+                    return new AsyncEnumerableJsonContent<T>(
+                        asyncEnumerable,
+                        "application/x-ndjson",
+                        jsonTypeInfo,
+                        true
+                    );
                 }
 
                 throw new Exception($"Streaming Untuk Content-Type '{contentType}' Tidak Tersedia");
             }
 
-            if (payload is not string str) {
+            if (payload is not string) {
                 string json = this._cs.ObjectToJson(payload, jsonTypeInfo);
                 return new StringContent(json, encoding, MediaTypeNames.Application.Json);
             }
@@ -142,6 +144,10 @@ namespace bifeldy_lib_90.Services {
 
             if (payload is byte[] b) {
                 return new ByteArrayContent(b);
+            }
+
+            if (payload is HttpRequestMessage reqMsg) {
+                return reqMsg.Content;
             }
 
             if (payload is HttpRequest req) {
@@ -163,7 +169,7 @@ namespace bifeldy_lib_90.Services {
                 return streamContent;
             }
 
-            if (payload is not string str) {
+            if (payload is not string) {
                 string json = this._cs.ObjectToJson(payload);
                 return new StringContent(json, encoding, MediaTypeNames.Application.Json);
             }
@@ -321,6 +327,10 @@ namespace bifeldy_lib_90.Services {
 
             HttpResponseMessage httpResponseMessage = null;
 
+            if (httpContent is Stream or HttpRequest or HttpRequestMessage) {
+                maxRetry = 1;
+            }
+
             for (int retry = 0; retry < maxRetry; retry++) {
                 using (HttpRequestMessage httpRequestMessage = this.ParseApiDataJson(
                     httpUri, httpMethod, httpContent, jsonTypeInfo,
@@ -341,7 +351,7 @@ namespace bifeldy_lib_90.Services {
                         this._logger.LogError("[HTTP_REQUEST_{method}] {ex}", httpRequestMessage.Method.Method, ex.Message);
                     }
                     finally {
-                        await Task.Delay(Math.Min((int)timeoutSeconds / (int)maxRetry * retry, 5 * retry) * 1000);
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Min(5 * retry, timeoutSeconds / maxRetry)));
                     }
                 }
             }
@@ -361,6 +371,10 @@ namespace bifeldy_lib_90.Services {
             HttpClient httpClient = this.CreateHttpClient(timeoutSeconds, publicKeysBase64HashJsonFilePath);
 
             HttpResponseMessage httpResponseMessage = null;
+
+            if (httpContent is Stream or HttpRequest or HttpRequestMessage) {
+                maxRetry = 1;
+            }
 
             for (int retry = 0; retry < maxRetry; retry++) {
                 using (HttpRequestMessage httpRequestMessage = this.ParseApiData(
@@ -382,7 +396,7 @@ namespace bifeldy_lib_90.Services {
                         this._logger.LogError("[HTTP_REQUEST_{method}] {ex}", httpRequestMessage.Method.Method, ex.Message);
                     }
                     finally {
-                        await Task.Delay(Math.Min((int)timeoutSeconds / (int)maxRetry * retry, 5 * retry) * 1000);
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Min(5 * retry, timeoutSeconds / maxRetry)));
                     }
                 }
             }
@@ -445,7 +459,7 @@ namespace bifeldy_lib_90.Services {
             pattern = pattern.ToLowerInvariant();
             header = header.ToLowerInvariant();
 
-            if (pattern.EndsWith("*")) {
+            if (pattern.EndsWith('*')) {
                 string prefix = pattern[..^1];
                 return header.StartsWith(prefix);
             }
@@ -453,7 +467,7 @@ namespace bifeldy_lib_90.Services {
             return header == pattern;
         }
 
-        public async Task<IResult> ForwardRequest(string urlTarget, HttpRequest request, HttpResponse response, bool isApiEndpoint = false, uint timeoutSeconds = 300, string publicKeysBase64HashJsonFilePath = null) {
+        public async Task<IResult> ForwardRequest(string urlTarget, HttpRequest request, HttpResponse response, bool isApiEndpoint = false, uint timeoutSeconds = 300, string publicKeysBase64HashJsonFilePath = null, CancellationToken cancellationToken = default) {
             List<Tuple<string, string>> lsHeader = this.CleanHeader(request.Headers);
 
             HttpRequestMessage forwardMsg = this.ParseApiData(
@@ -465,7 +479,7 @@ namespace bifeldy_lib_90.Services {
             );
 
             HttpResponseMessage res = await this.CreateHttpClient(timeoutSeconds, publicKeysBase64HashJsonFilePath)
-                .SendAsync(forwardMsg, HttpCompletionOption.ResponseHeadersRead);
+                .SendAsync(forwardMsg, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
             int statusCode = (int)res.StatusCode;
 
@@ -508,15 +522,15 @@ namespace bifeldy_lib_90.Services {
                 }
             }
 
-            await response.StartAsync();
+            await response.StartAsync(cancellationToken);
 
-            await using (Stream upstream = await res.Content.ReadAsStreamAsync()) {
+            await using (Stream upstream = await res.Content.ReadAsStreamAsync(cancellationToken)) {
                 byte[] buffer = new byte[8192];
                 int bytesRead = 0;
 
-                while ((bytesRead = await upstream.ReadAsync(buffer, 0, buffer.Length)) > 0) {
-                    await response.Body.WriteAsync(buffer, 0, bytesRead);
-                    await response.Body.FlushAsync();
+                while ((bytesRead = await upstream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0) {
+                    await response.Body.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
+                    await response.Body.FlushAsync(cancellationToken);
                 }
             }
 
@@ -532,9 +546,13 @@ namespace bifeldy_lib_90.Services {
                 throw new Exception($"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}");
             }
 
-            Stream stream = await response.Content.ReadAsStreamAsync();
+            Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
-            if (response.Content.Headers.ContentType?.MediaType == MediaTypeNames.Application.Json) {
+            if (string.Equals(
+                response.Content.Headers.ContentType?.MediaType,
+                MediaTypeNames.Application.Json,
+                StringComparison.OrdinalIgnoreCase
+            )) {
                 await foreach (T item in JsonSerializer.DeserializeAsyncEnumerable(stream, jsonTypeInfo, cancellationToken)) {
                     if (item != null) {
                         yield return item;
@@ -545,9 +563,14 @@ namespace bifeldy_lib_90.Services {
             }
 
             if (response.Content.Headers.ContentType?.MediaType == "application/x-ndjson") {
-                using (var reader = new StreamReader(stream)) {
+                using (var reader = new StreamReader(
+                    stream,
+                    Encoding.UTF8,
+                    detectEncodingFromByteOrderMarks: false,
+                    leaveOpen: true
+                )) {
                     while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested) {
-                        string line = await reader.ReadLineAsync();
+                        string line = await reader.ReadLineAsync(cancellationToken);
 
                         if (!string.IsNullOrWhiteSpace(line)) {
                             T item = default;

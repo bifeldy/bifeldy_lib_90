@@ -34,7 +34,9 @@ namespace bifeldy_lib_90.Libraries {
                 }
             }
             else {
-                await using (var writer = new Utf8JsonWriter(stream)) {
+                await using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions() {
+                    SkipValidation = true
+                })) {
                     writer.WriteStartArray();
 
                     await foreach (T item in this._source) {

@@ -12,8 +12,6 @@ namespace bifeldy_lib_90.Middlewares {
 
     public sealed class SecretMiddleware {
 
-        private readonly EnvVar _env;
-
         private readonly RequestDelegate _next;
         private readonly ILogger<SecretMiddleware> _logger;
         private readonly IApplicationService _app;
@@ -23,13 +21,11 @@ namespace bifeldy_lib_90.Middlewares {
 
         public SecretMiddleware(
             RequestDelegate next,
-            IOptions<EnvVar> env,
             ILogger<SecretMiddleware> logger,
             IApplicationService app,
             IChiperService chiper
         ) {
             this._next = next;
-            this._env = env.Value;
             this._logger = logger;
             this._app = app;
             this._chiper = chiper;

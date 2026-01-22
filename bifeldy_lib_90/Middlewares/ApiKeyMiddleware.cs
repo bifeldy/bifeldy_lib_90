@@ -11,8 +11,6 @@ namespace bifeldy_lib_90.Middlewares {
 
     public sealed class ApiKeyMiddleware {
 
-        private readonly EnvVar _env;
-
         private readonly RequestDelegate _next;
         private readonly ILogger<ApiKeyMiddleware> _logger;
         private readonly IApplicationService _app;
@@ -21,14 +19,12 @@ namespace bifeldy_lib_90.Middlewares {
 
         public ApiKeyMiddleware(
             RequestDelegate next,
-            IOptions<EnvVar> env,
             ILogger<ApiKeyMiddleware> logger,
             IApplicationService app,
             IGlobalService gs,
             IChiperService chiper
         ) {
             this._next = next;
-            this._env = env.Value;
             this._logger = logger;
             this._app = app;
             this._gs = gs;
