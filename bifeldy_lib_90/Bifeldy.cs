@@ -624,7 +624,6 @@ namespace bifeldy_lib_90 {
             _ = Services.AddSingleton<CronScheduler>();
 
             _ = Services.AddHostedService(sp => sp.GetRequiredService<CronScheduler>());
-
         }
 
     }
