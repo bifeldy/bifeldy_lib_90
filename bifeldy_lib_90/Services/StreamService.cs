@@ -69,7 +69,7 @@ namespace bifeldy_lib_90.Services {
                 byte[] buffer = new byte[maxChunk];
                 int bytesRead = 0;
                 while ((bytesRead = await source.ReadAsync(buffer, 0, buffer.Length, token)) > 0) {
-                    await dest.WriteAsync(buffer, 0, bytesRead);
+                    await dest.WriteAsync(buffer, 0, bytesRead, token);
                 }
             }
 

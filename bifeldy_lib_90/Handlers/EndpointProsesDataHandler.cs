@@ -85,11 +85,11 @@ namespace bifeldy_lib_90.Handlers {
                             string jsonBody = this._cs.ObjectToJson((TFormDataStream)formDataStream, jsonTypeInfo);
                             await using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
                                 this._context.Request.Body = ms;
-                                return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true);
+                                return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true, cancellationToken: this._context.RequestAborted);
                             }
                         }
 
-                        return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true);
+                        return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true, cancellationToken: this._context.RequestAborted);
                 }
             }
 
@@ -181,11 +181,11 @@ namespace bifeldy_lib_90.Handlers {
                         string jsonBody = this._cs.ObjectToJson((TFormDataStream)(object)f, jsonTypeInfo);
                         await using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
                             this._context.Request.Body = ms;
-                            return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true);
+                            return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true, cancellationToken: this._context.RequestAborted);
                         }
                     }
 
-                    return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true);
+                    return await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true, cancellationToken: this._context.RequestAborted);
                 }
             }
             catch (TidakMemenuhiException e) {

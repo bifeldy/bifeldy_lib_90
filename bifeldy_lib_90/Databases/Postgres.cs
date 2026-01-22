@@ -112,7 +112,7 @@ namespace bifeldy_lib_90.Databases {
                 using (TextReader reader = await ((NpgsqlConnection)this.DbConnection).BeginTextExportAsync(sqlQuery, token)) {
                     await using (var writer = new StreamWriter(tempPath, true, encoding)) {
                         string line = string.Empty;
-                        while ((line = await reader.ReadLineAsync()) != null && !token.IsCancellationRequested) {
+                        while ((line = await reader.ReadLineAsync(token)) != null && !token.IsCancellationRequested) {
                             if (allUppercase) {
                                 line = line.ToUpper();
                             }

@@ -195,7 +195,7 @@ namespace bifeldy_lib_90.Handlers {
                         CronScheduler ___sched = ___sp.GetRequiredService<CronScheduler>();
 
                         try {
-                            _ = await ___locker.SemaphoreGlobalApp(callerMemberName, MAX_CONN_SESS, MAX_CONN_SESS).WaitAsync(-1);
+                            _ = await ___locker.SemaphoreGlobalApp(callerMemberName, MAX_CONN_SESS, MAX_CONN_SESS).WaitAsync(-1, ___ctx);
 
                             if (___ctx.IsCancellationRequested) {
                                 throw new Exception("Job Dibatalkan");
@@ -296,7 +296,7 @@ namespace bifeldy_lib_90.Handlers {
                         CronScheduler ___sched = ___sp.GetRequiredService<CronScheduler>();
 
                         try {
-                            _ = await ___locker.SemaphoreGlobalApp(callerMemberName, MAX_CONN_SESS, MAX_CONN_SESS).WaitAsync(-1);
+                            _ = await ___locker.SemaphoreGlobalApp(callerMemberName, MAX_CONN_SESS, MAX_CONN_SESS).WaitAsync(-1, ___ctx);
 
                             if (___ctx.IsCancellationRequested) {
                                 throw new Exception("Job Dibatalkan");
@@ -429,7 +429,7 @@ namespace bifeldy_lib_90.Handlers {
                                 string jsonBody = this._cs.ObjectToJson((TInputJson)(object)f, jsonTypeInfoInput);
                                 await using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(jsonBody))) {
                                     this._context.Request.Body = ms;
-                                    _ = await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true);
+                                    _ = await this._http.ForwardRequest(u.ToString(), this._context.Request, this._context.Response, true, cancellationToken: this._context.RequestAborted);
                                 }
                             }
                         }
