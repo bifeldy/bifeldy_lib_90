@@ -4,6 +4,7 @@ using bifeldy_lib_90.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace bifeldy_lib_90.Middlewares {
@@ -71,7 +72,8 @@ namespace bifeldy_lib_90.Middlewares {
             JwtSession userInfo = null;
 
             try {
-                IEnumerable<Claim> userClaim = this._chiper.DecodeJWT(token);
+                JwtSecurityToken userToken = this._chiper.DecodeJWT(token);
+                IEnumerable<Claim> userClaim = userToken.Claims;
 
                 var userClaimIdentity = new ClaimsIdentity(userClaim, this.SessionKey);
                 context.User = new ClaimsPrincipal(userClaimIdentity);

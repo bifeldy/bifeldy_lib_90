@@ -22,7 +22,7 @@ namespace bifeldy_lib_90.Services {
         string HashByte(byte[] data);
         string HashText(string textMessage);
         string EncodeJWT(IEnumerable<Claim> claims, ulong expiredNextMilliSeconds = 60 * 60 * 1000 * 1);
-        IEnumerable<Claim> DecodeJWT(string token);
+        JwtSecurityToken DecodeJWT(string token);
         Task<string> SignFile(string filePath);
         Task<string> SignByte(byte[] data);
         Task<string> SignText(string textMessage);
@@ -192,7 +192,7 @@ namespace bifeldy_lib_90.Services {
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public IEnumerable<Claim> DecodeJWT(string token) {
+        public JwtSecurityToken DecodeJWT(string token) {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this.HashText(this._envVar.JWT_SECRET)));
             var tokenHandler = new JwtSecurityTokenHandler();
             _ = tokenHandler.ValidateToken(token, new TokenValidationParameters() {
@@ -205,8 +205,7 @@ namespace bifeldy_lib_90.Services {
                 ValidAudience = this._envVar.JWT_AUDIENCE
             }, out SecurityToken validateToken);
 
-            var jwtToken = (JwtSecurityToken) validateToken;
-            return jwtToken.Claims;
+            return (JwtSecurityToken)validateToken;
         }
 
         private async Task<RSA> GenerateAndLoadRsa() {

@@ -17,6 +17,7 @@ namespace bifeldy_lib_90.Extensions {
             CPocoModelJsonSerializerContext.Default,
             CTableClassModelJsonSerializerContext.Default,
             EnvVarJsonSerializerContext.Default,
+            InfoDcJsonSerializerContext.Default,
             JsonSerDeJsonSerializerContext.Default,
             KunciRequestJsonSerializerContext.Default,
             ListApiDcJsonSerializerContext.Default,
