@@ -169,6 +169,10 @@ namespace bifeldy_lib_90.Services {
                 return null;
             }
 
+            if (value.GetType().IsEnum) {
+                return JsonValue.Create(value.ToString());
+            }
+
             if (value is IDictionary<string, object> dict) {
                 var obj = new JsonObject();
                 foreach (KeyValuePair<string, object> kv in dict) {
