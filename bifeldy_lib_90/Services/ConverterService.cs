@@ -150,12 +150,12 @@ namespace bifeldy_lib_90.Services {
                     return m;
                 }
 
-                if (val.TryGetValue(out DateTime dt)) {
-                    return dt;
+                if (val.TryGetValue(out DateTime dateTime)) {
+                    return dateTime;
                 }
 
-                if (val.TryGetValue(out DateOnly dto)) {
-                    return dto;
+                if (val.TryGetValue(out DateOnly dateOnly)) {
+                    return dateOnly;
                 }
 
                 throw new NotSupportedException("Unsupported JSON Primitive");
@@ -195,8 +195,8 @@ namespace bifeldy_lib_90.Services {
                 float f => JsonValue.Create(f),
                 double d => JsonValue.Create(d),
                 decimal m => JsonValue.Create(m),
-                DateTime dt => JsonValue.Create(dt.ToString("O")),
-                DateOnly d => JsonValue.Create(d.ToString("O")),
+                DateTime dateTime => JsonValue.Create(dateTime.ToString("O")),
+                DateOnly dateOnly => JsonValue.Create(dateOnly.ToString("O")),
                 _ => throw new NotSupportedException($"Type '{value.GetType()}' is not supported in AOT-safe JSON serialization")
             };
         }
@@ -224,10 +224,10 @@ namespace bifeldy_lib_90.Services {
 
         public string FormatByteSizeHumanReadable(long bytes, string forceUnit = null) {
             IDictionary<string, long> dict = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase) {
-                { "TB", 1000000000000 },
-                { "GB", 1000000000 },
-                { "MB", 1000000 },
-                { "KB", 1000 },
+                { "TB", 1_000_000_000_000 },
+                { "GB", 1_000_000_000 },
+                { "MB", 1_000_000 },
+                { "KB", 1_000 },
                 { "B", 1 }
             };
 
