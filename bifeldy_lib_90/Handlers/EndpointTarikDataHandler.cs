@@ -98,9 +98,9 @@ namespace bifeldy_lib_90.Handlers {
 
                     writer.WriteStartObject();
 
-                    string info = $"200 - {callerMemberName}";
+                    string info = $"{StatusCodes.Status200OK} - {callerMemberName}";
                     if (!string.IsNullOrEmpty(suffixInfo)) {
-                        info = $"200 - {callerMemberName} {suffixInfo}";
+                        info = $"{StatusCodes.Status200OK} - {callerMemberName} {suffixInfo}";
                     }
 
                     writer.WriteString("info", info);
@@ -237,7 +237,7 @@ namespace bifeldy_lib_90.Handlers {
                 // _ = await customService.ExecuteSesudahTarik(this._context, db, fd, searchQuery, sort, order);
 
                 var response = new ResponseJsonSingle<string>() {
-                    info = $"202 - {callerMemberName}",
+                    info = $"{StatusCodes.Status202Accepted} - {callerMemberName}",
                     result = fileName
                 };
 
@@ -366,7 +366,7 @@ namespace bifeldy_lib_90.Handlers {
                 // _ = await customService.ExecuteSesudahTarik(this._context, db, fd, searchQuery, sort, order);
 
                 var response = new ResponseJsonSingle<string>() {
-                    info = $"202 - {callerMemberName}",
+                    info = $"{StatusCodes.Status202Accepted} - {callerMemberName}",
                     result = fileName
                 };
 

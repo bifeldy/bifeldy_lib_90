@@ -76,9 +76,6 @@ namespace bifeldy_lib_90.Handlers {
         }
 
         private async Task<(decimal, decimal, IAsyncEnumerable<T>)> GetDataPagingWithParam<T>(JsonTypeInfo<T> jsonTypeInfo, IDatabase db, string sort, string order, string page, string row, DynamicParameters sqlParam = null, string sqlCustomQuery = null, IDictionary<string, string> jsonKeysTableCustomColumns = null) where T : JsonSerDe, new() {
-            ulong queryPage = string.IsNullOrEmpty(page) ? 1 : ulong.Parse(page);
-            ulong queryRow = string.IsNullOrEmpty(row) ? 10 : ulong.Parse(row);
-
             string orderSort = string.Empty;
             if (!string.IsNullOrEmpty(sort) && !string.IsNullOrEmpty(order)) {
                 string qs = (jsonKeysTableCustomColumns == null) ? this.jsonKeysTableColumns[sort.ToLower()] : jsonKeysTableCustomColumns[sort.ToLower()];
@@ -90,11 +87,11 @@ namespace bifeldy_lib_90.Handlers {
                 ";
             }
 
-            ulong qp = 0;
-            ulong qr = 10;
+            ulong queryPage = string.IsNullOrEmpty(page) ? 1 : ulong.Parse(page);
+            ulong queryRow = string.IsNullOrEmpty(row) ? 10 : ulong.Parse(row);
 
-            qp = (queryRow > 0 && queryRow <= 500) ? queryRow : 10;
-            qr = queryPage > 0 ? (queryPage * queryRow) - queryRow : 0;
+            ulong qp = (queryRow > 0 && queryRow <= 500) ? queryRow : 10;
+            ulong qr = queryPage > 0 ? (queryPage * queryRow) - queryRow : 0;
 
             DynamicParameters defaultSqlParam = this.GetPageRowParamList(qp, qr);
             if (sqlParam == null) {

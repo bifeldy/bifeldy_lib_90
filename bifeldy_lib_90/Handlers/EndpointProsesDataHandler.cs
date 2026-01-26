@@ -114,7 +114,7 @@ namespace bifeldy_lib_90.Handlers {
                 bool isNonDc = await this._generalRepo.IsNonDc(db);
                 if (isNonDc) {
                     return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName}",
+                        info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = "Endpoint ini hanya dapat diakses melalui HO / DC"
                         }
@@ -136,7 +136,7 @@ namespace bifeldy_lib_90.Handlers {
 
                 if (formDataStream == null || string.IsNullOrEmpty(f.kode_dc)) {
                     return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName}",
+                        info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = "Data Tidak Lengkap!"
                         }
@@ -164,7 +164,7 @@ namespace bifeldy_lib_90.Handlers {
 
                     if (u == null) {
                         return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                            info = $"400 - {callerMemberName}",
+                            info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                             result = new ResponseJsonMessage() {
                                 message = e
                             }
@@ -190,7 +190,7 @@ namespace bifeldy_lib_90.Handlers {
             }
             catch (TidakMemenuhiException e) {
                 return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
+                    info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = e.Message
                     }
@@ -209,7 +209,7 @@ namespace bifeldy_lib_90.Handlers {
 
                 if (isNonDc || !isHo) {
                     return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName} (Mirror)",
+                        info = $"{StatusCodes.Status400BadRequest} -  {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = "Endpoint ini hanya dapat diakses melalui HO"
                         }
@@ -231,7 +231,7 @@ namespace bifeldy_lib_90.Handlers {
 
                 if (formDataStream == null || string.IsNullOrEmpty(f.kode_dc)) {
                     return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName} (Mirror)",
+                        info = $"{StatusCodes.Status400BadRequest} -  {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = "Data Tidak Lengkap!"
                         }
@@ -248,7 +248,7 @@ namespace bifeldy_lib_90.Handlers {
                 (IDatabase dbPg, IDatabase dbMsSql) = await this._generalRepo.OpenConnectionToDcFromHo(db, f.kode_dc, sp);
                 if (dbPg == null) {
                     return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName} (Mirror)",
+                        info = $"{StatusCodes.Status400BadRequest} -  {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = $"Kode gudang ({f.kode_dc}) tidak tersedia!"
                         }
@@ -259,7 +259,7 @@ namespace bifeldy_lib_90.Handlers {
             }
             catch (TidakMemenuhiException e) {
                 var res = new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
+                    info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = e.Message
                     }
@@ -282,7 +282,7 @@ namespace bifeldy_lib_90.Handlers {
                 bool isHo = await this._generalRepo.IsHo(db);
                 if (!isHo) {
                     return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName}",
+                        info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = "Endpoint ini hanya dapat diakses melalui HO"
                         }
@@ -293,7 +293,7 @@ namespace bifeldy_lib_90.Handlers {
             }
             catch (TidakMemenuhiException e) {
                 return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
+                    info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = e.Message
                     }
@@ -308,7 +308,7 @@ namespace bifeldy_lib_90.Handlers {
                 bool isNonDc = await this._generalRepo.IsNonDc(db);
                 if (!isNonDc) {
                     return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"400 - {callerMemberName}",
+                        info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = "Endpoint ini hanya dapat diakses melalui NON DC"
                         }
@@ -319,7 +319,7 @@ namespace bifeldy_lib_90.Handlers {
             }
             catch (TidakMemenuhiException e) {
                 return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
+                    info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = e.Message
                     }

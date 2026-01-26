@@ -85,7 +85,7 @@ namespace bifeldy_lib_90.Handlers {
 
             if (string.IsNullOrEmpty(kodeDc) && targetJenisDc != EJenisDc.HO && targetJenisDc != EJenisDc.NONDC) {
                 return Results.BadRequest(new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
+                    info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = "Data Tidak Lengkap!"
                     }
@@ -103,7 +103,7 @@ namespace bifeldy_lib_90.Handlers {
             }
             else {
                 return Results.NotFound(new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"404 - {callerMemberName}",
+                    info = $"{StatusCodes.Status404NotFound} - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = $"Kode DC {kodeDc.ToUpper()} Tidak Tersedia"
                     }
@@ -126,7 +126,7 @@ namespace bifeldy_lib_90.Handlers {
             if (!isAllowed) {
                 return Results.Json(
                     new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"403 - {callerMemberName}",
+                        info = $"{StatusCodes.Status403Forbidden} - {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = $"Tidak Dapat Menggunakan DC :: `{targetJenisDc}` :: Karena Masuk Dalam Daftar Pengecualian"
                         }
@@ -146,7 +146,7 @@ namespace bifeldy_lib_90.Handlers {
 
             if (string.IsNullOrEmpty(kodeDc) && targetJenisDc != EJenisDc.HO && targetJenisDc != EJenisDc.NONDC) {
                 var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                    info = $"400 - {callerMemberName}",
+                    info = $"{StatusCodes.Status400BadRequest} - {callerMemberName}",
                     result = new ResponseJsonMessage() {
                         message = "Data Tidak Lengkap!"
                     }
@@ -171,7 +171,7 @@ namespace bifeldy_lib_90.Handlers {
 
                 if (!Enum.TryParse(jenisDc, true, out EJenisDc eJenisDc)) {
                     var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                        info = $"404 - {callerMemberName}",
+                        info = $"{StatusCodes.Status404NotFound} - {callerMemberName}",
                         result = new ResponseJsonMessage() {
                             message = $"Kode DC {kodeDc.ToUpper()} Tidak Tersedia"
                         }
@@ -207,7 +207,7 @@ namespace bifeldy_lib_90.Handlers {
 
                     if (!isAllowed) {
                         var response = new ResponseJsonSingle<ResponseJsonMessage>() {
-                            info = $"403 - {callerMemberName}",
+                            info = $"{StatusCodes.Status403Forbidden} - {callerMemberName}",
                             result = new ResponseJsonMessage() {
                                 message = $"Tidak Dapat Menggunakan DC :: `{targetJenisDc}` :: Karena Masuk Dalam Daftar Pengecualian"
                             }
@@ -233,7 +233,7 @@ namespace bifeldy_lib_90.Handlers {
 
         public IResult GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null) where T : JsonSerDe, new() {
             return Results.Ok(new ResponseJsonSingle<CTableClassModel>() {
-                info = $"200 - {callerMemberName}",
+                info = $"{StatusCodes.Status200OK} - {callerMemberName}",
                 result = new CTableClassModel() {
                     table_name = typeof(T).Name,
                     properties = this._cs.GetTableClassStructureModel(jsonTypeInfo)
@@ -243,7 +243,7 @@ namespace bifeldy_lib_90.Handlers {
 
         public IResult GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo, [CallerMemberName] string callerMemberName = null) where T : JsonSerDe, new() {
             return Results.Ok(new ResponseJsonSingle<CPocoModel>() {
-                info = $"200 - {callerMemberName}",
+                info = $"{StatusCodes.Status200OK} - {callerMemberName}",
                 result = new CPocoModel() {
                     poco_name = typeof(T).Name,
                     properties = this._cs.GetPocoStructureModel(jsonTypeInfo)
