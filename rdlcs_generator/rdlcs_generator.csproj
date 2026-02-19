@@ -28,4 +28,21 @@
         <ProjectReference Include="..\bifeldy_lib_90\bifeldy_lib_90.csproj" />
     </ItemGroup>
 
+    <Target Name="FormatOnBuild" BeforeTargets="BeforeBuild">
+        <Message Text="Running dotnet format on $(ProjectFileName)..." Importance="high" />
+        <Exec Command="dotnet format &quot;$(ProjectPath)&quot; --no-restore" ContinueOnError="false" />
+    </Target>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS1998;CS8600;CS8603;CS8618;IDE0002;IDE0005;IDE0007;IDE0009;IDE0011;IDE0008;IDE0058;IDE2003;IDE0301</WarningsAsErrors>
+        <NoWarn>1701;1702;PBN0013;PBN0014;IDE0022;IDE0046;IDE0078;IDE0059;IDE0060;IDE0270</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS1998;CS8600;CS8603;CS8618;IDE0002;IDE0005;IDE0007;IDE0009;IDE0011;IDE0008;IDE0058;IDE2003;IDE0301</WarningsAsErrors>
+        <NoWarn>1701;1702;PBN0013;PBN0014;IDE0022;IDE0046;IDE0078;IDE0059;IDE0060;IDE0270</NoWarn>
+        <DebugType>none</DebugType>
+        <StripSymbols>true</StripSymbols>
+    </PropertyGroup>
+
 </Project>
