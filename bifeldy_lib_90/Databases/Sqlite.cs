@@ -20,7 +20,7 @@ namespace bifeldy_lib_90.Databases {
 
         private string DbName { get; set; }
 
-        public CSqlite (
+        public CSqlite(
             IOptions<EnvVar> envVar,
             ILogger<CSqlite> logger,
             IApplicationService @as,

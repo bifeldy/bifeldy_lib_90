@@ -128,7 +128,7 @@ namespace bifeldy_lib_90.Services {
         }
 
         public string[] GetDirectoryList(string hostname, int port, string username, string password, string remotePath) {
-            IEnumerable<ISftpFile> response = Enumerable.Empty<ISftpFile>();
+            IEnumerable<ISftpFile> response = [];
             try {
                 using (var sftp = new SftpClient(hostname, port, username, password)) {
                     sftp.Connect();

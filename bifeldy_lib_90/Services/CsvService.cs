@@ -3,23 +3,43 @@ using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Models;
 using ChoETL;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization.Metadata;
 
 namespace bifeldy_lib_90.Services {
 
     public interface ICsvService {
+        List<CCsvColumn> GetColumnFromClassType<T>();
         List<CCsvColumn> GetColumnFromClassType<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new();
         DataTable Csv2DataTable(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string tableName = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
         string Csv2Json(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
         IDataReader Csv2DataReader(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
-        IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo,string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) where T : JsonSerDe, new();
+        IEnumerable<T> Csv2Enumerable<T>(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
+        IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo, string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) where T : JsonSerDe, new();
     }
 
     public sealed class CCsvService : ICsvService {
 
         public CCsvService() {
             //
+        }
+
+        public List<CCsvColumn> GetColumnFromClassType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            PropertyInfo[] properties = typeof(T).GetProperties();
+
+            var csvColumn = new List<CCsvColumn>();
+            foreach (PropertyInfo prop in properties) {
+                csvColumn.Add(new() { ColumnName = prop.Name, Position = 0, FieldType = prop.PropertyType, FieldName = prop.Name });
+            }
+
+            return csvColumn;
         }
 
         public List<CCsvColumn> GetColumnFromClassType<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
@@ -39,7 +59,7 @@ namespace bifeldy_lib_90.Services {
             return csvColumn;
         }
 
-        // Posisi Kolom CSV Start Dari 1 Bukan 0
+        // Posisi Kolom CSV StartLibrary Dari 1 Bukan 0
         private ChoCSVReader<object> ChoEtlSetupCsv(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) {
             if (string.IsNullOrEmpty(eolDelimiter)) {
                 LineEndingType lineEnding = CsvLineEndingChecker.DetectLineEndings(filePath);
@@ -136,6 +156,51 @@ namespace bifeldy_lib_90.Services {
 
         public IDataReader Csv2DataReader(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) {
             return this.ChoEtlSetupCsv(new FileInfo(filePath).FullName, delimiter, csvColumn, nullValue, eolDelimiter, encoding ?? Encoding.UTF8).AsDataReader();
+        }
+
+        public IEnumerable<T> Csv2Enumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            using (IDataReader dr = this.Csv2DataReader(filePath, delimiter, csvColumn, nullValue, eolDelimiter, encoding ?? Encoding.UTF8)) {
+                var propMap = new List<(PropertyInfo Prop, int Index, Type TargetType)>();
+
+                var readerColumns = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < dr.FieldCount; i++) {
+                    readerColumns[dr.GetName(i)] = i;
+                }
+
+                foreach (PropertyInfo prop in typeof(T).GetProperties()) {
+                    if (!prop.CanWrite) {
+                        continue; // Skip read-only
+                    }
+
+                    if (readerColumns.TryGetValue(prop.Name, out int index)) {
+                        Type targetType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+                        propMap.Add((prop, index, targetType));
+                    }
+                }
+
+                while (dr.Read()) {
+                    T objT = Activator.CreateInstance<T>();
+
+                    foreach ((PropertyInfo Prop, int Index, Type TargetType) map in propMap) {
+                        if (!dr.IsDBNull(map.Index)) {
+                            object val = dr.GetValue(map.Index);
+
+                            if (val is string s && s.Contains("\"\"")) {
+                                val = s.Replace("\"\"", "\"");
+                            }
+
+                            val = Convert.ChangeType(val, map.TargetType);
+                            map.Prop.SetValue(objT, val);
+                        }
+                    }
+
+                    yield return objT;
+                }
+            }
         }
 
         public IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo, string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) where T : JsonSerDe, new() {

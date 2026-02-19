@@ -19,14 +19,18 @@ namespace bifeldy_lib_90.Services {
 
     public interface IRdlcService {
         IDictionary<string, RdlcInfo> FileType { get; }
-        Task<(LocalReport, string, string, string, string, string, string)> CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null);
+        Task<(LocalReport, string, string, string, string, string, string)> CreateLocalReport(string reportDisplayName, string rdlcPathName, IEnumerable<ReportDataSource> ds, IEnumerable<ReportParameter> param = null);
+        Task<(LocalReport, string, string, string, string, string, string)> CreateLocalReport(string rdlcPathName, ReportDataSource ds, IEnumerable<ReportParameter> param = null);
         ReportDataSource CreateReportDataSource(string name, DataTable dt);
-        ReportDataSource CreateReportDataSource<T>(string name, IEnumerable<T> dt);
+        IEnumerable<ReportDataSource> CreateReportDataSource(IDictionary<string, DataTable> dt);
+        ReportDataSource CreateReportDataSource<T>(string name, IEnumerable<T> ls);
+        IEnumerable<ReportDataSource> CreateReportDataSource<T>(IDictionary<string, IEnumerable<T>> ls);
         HtmlToPdfDocument GenerateHtmlReport(RdlcReport reportModel, string width, string height, double top, double bottom, double left, double right);
-        ReportParameter[] CreateReportParameter(IDictionary<string, string> dict);
+        IEnumerable<ReportParameter> CreateReportParameter(IDictionary<string, string> dict);
         RdlcInfoWrapper CreateInfoWrapper(IDictionary<string, string> dict);
-        Task<RdlcReport> GeneratePdfWordExcelHtmlReport(string rdlcName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
-        Task<RdlcReport> GeneratePdfWordExcelHtmlReport<T>(string rdlcName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "HTML5");
+        Task<RdlcReport> GeneratePdfWordExcelHtmlReport(string rdlcPathName, DataTable dt, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "PDF");
+        Task<RdlcReport> GeneratePdfWordExcelHtmlReport(string reportDisplayName, string rdlcPathName, IEnumerable<ReportDataSource> rds, IEnumerable<ReportParameter> param = null, string fileType = "PDF");
+        Task<RdlcReport> GeneratePdfWordExcelHtmlReport<T>(string rdlcPathName, IEnumerable<T> ls, string dsName, IEnumerable<ReportParameter> param = null, string fileType = "PDF");
         Task GeneratePdfWordExcelHtmlReportExternal<T>(CancellationToken ct, Stream streamDestination, IAsyncEnumerable<T> dataStream, JsonTypeInfo<T> typeInfo, RdlcInfoWrapper rdlcDataWithParam, string rdlcPath, string datasetName, string fileType = "PDF", string rdlcGeneratorExecutablePath = null) where T : JsonSerDe, new();
     }
 
@@ -74,15 +78,15 @@ namespace bifeldy_lib_90.Services {
             this._converter = converter;
         }
 
-        public async Task<(LocalReport, string, string, string, string, string, string)> CreateLocalReport(string rdlcName, ReportDataSource ds = null, IEnumerable<ReportParameter> param = null) {
+        public async Task<(LocalReport, string, string, string, string, string, string)> CreateLocalReport(string reportDisplayName, string rdlcPathName, IEnumerable<ReportDataSource> ds, IEnumerable<ReportParameter> param = null) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
-            string rdlcPath = Path.Combine(this._app.AppLocation, "Rdlcs", rdlcName);
+            string rdlcPath = File.Exists(rdlcPathName) ? rdlcPathName : Path.Combine(this._app.AppLocation, "Rdlcs", rdlcPathName);
 
             if (!File.Exists(rdlcPath)) {
-                throw new FileNotFoundException($"File RDLC {rdlcName} Tidak Ditemukan!", rdlcPath);
+                throw new FileNotFoundException($"File RDLC {rdlcPathName} Tidak Ditemukan!", rdlcPath);
             }
 
             string width = null;
@@ -92,7 +96,7 @@ namespace bifeldy_lib_90.Services {
             string leftMargin = null;
             string rightMargin = null;
 
-            byte[] rdlcBytes = File.ReadAllBytes(rdlcPath);
+            byte[] rdlcBytes = await File.ReadAllBytesAsync(rdlcPath);
             await using (var ms = new MemoryStream(rdlcBytes)) {
                 var xdoc = XDocument.Load(ms);
                 XNamespace ns = xdoc.Root?.GetDefaultNamespace() ?? XNamespace.None;
@@ -119,12 +123,12 @@ namespace bifeldy_lib_90.Services {
             height = height.Trim().ToLower().Replace(",", ".");
 
             var report = new LocalReport() {
-                ReportPath = rdlcPath
+                ReportPath = rdlcPath,
+                DisplayName = reportDisplayName
             };
 
-            if (ds != null) {
-                report.DisplayName = ds.Name;
-                report.DataSources.Add(ds);
+            foreach (ReportDataSource d in ds) {
+                report.DataSources.Add(d);
             }
 
             if (param != null) {
@@ -132,6 +136,14 @@ namespace bifeldy_lib_90.Services {
             }
 
             return (report, width, height, topMargin, bottomMargin, leftMargin, rightMargin);
+        }
+
+        public Task<(LocalReport, string, string, string, string, string, string)> CreateLocalReport(string rdlcPathName, ReportDataSource ds, IEnumerable<ReportParameter> param = null) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            return this.CreateLocalReport(ds.Name, rdlcPathName, [ds], param);
         }
 
         public ReportDataSource CreateReportDataSource(string name, DataTable dt) {
@@ -142,12 +154,38 @@ namespace bifeldy_lib_90.Services {
             return new(name, dt);
         }
 
+        public IEnumerable<ReportDataSource> CreateReportDataSource(IDictionary<string, DataTable> dt) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            var rds = new List<ReportDataSource>();
+            foreach (KeyValuePair<string, DataTable> d in dt) {
+                rds.Add(this.CreateReportDataSource(d.Key, d.Value));
+            }
+
+            return rds;
+        }
+
         public ReportDataSource CreateReportDataSource<T>(string name, IEnumerable<T> ls) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             return new(name, ls);
+        }
+
+        public IEnumerable<ReportDataSource> CreateReportDataSource<T>(IDictionary<string, IEnumerable<T>> ls) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            var rds = new List<ReportDataSource>();
+            foreach (KeyValuePair<string, IEnumerable<T>> l in ls) {
+                rds.Add(this.CreateReportDataSource(l.Key, l.Value));
+            }
+
+            return rds;
         }
 
         public HtmlToPdfDocument GenerateHtmlReport(RdlcReport model, string width, string height, double top, double bottom, double left, double right) {
@@ -182,7 +220,7 @@ namespace bifeldy_lib_90.Services {
             return htmlToPdfDocument;
         }
 
-        public ReportParameter[] CreateReportParameter(IDictionary<string, string> dict) {
+        public IEnumerable<ReportParameter> CreateReportParameter(IDictionary<string, string> dict) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
@@ -225,25 +263,19 @@ namespace bifeldy_lib_90.Services {
             return null;
         }
 
-        private async Task<RdlcReport> GenerateReport(
-            string rdlcName,
-            ReportDataSource rds,
-            IEnumerable<ReportParameter> param = null,
-            string fileType = "HTML"
+        private RdlcReport GenerateReport(
+            LocalReport report,
+            string width,
+            string height,
+            string topMargin,
+            string bottomMargin,
+            string leftMargin,
+            string rightMargin,
+            string fileType
         ) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
-
-            (
-                LocalReport report,
-                string width,
-                string height,
-                string topMargin,
-                string bottomMargin,
-                string leftMargin,
-                string rightMargin
-            ) = await this.CreateLocalReport(rdlcName, rds, param);
 
             var model = new RdlcReport() {
                 DisplayName = report.DisplayName,
@@ -308,19 +340,80 @@ namespace bifeldy_lib_90.Services {
             return model;
         }
 
+        private async Task<RdlcReport> GenerateReport(
+            string rdlcPathName,
+            ReportDataSource rds,
+            IEnumerable<ReportParameter> param = null,
+            string fileType = "PDF"
+        ) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            (
+                LocalReport report,
+                string width,
+                string height,
+                string topMargin,
+                string bottomMargin,
+                string leftMargin,
+                string rightMargin
+            ) = await this.CreateLocalReport(rdlcPathName, rds, param);
+
+            return this.GenerateReport(report, width, height, topMargin, bottomMargin, leftMargin, rightMargin, fileType);
+        }
+
+        private async Task<RdlcReport> GenerateReport(
+            string reportDisplayName,
+            string rdlcPathName,
+            IEnumerable<ReportDataSource> rds,
+            IEnumerable<ReportParameter> param = null,
+            string fileType = "PDF"
+        ) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            (
+                LocalReport report,
+                string width,
+                string height,
+                string topMargin,
+                string bottomMargin,
+                string leftMargin,
+                string rightMargin
+            ) = await this.CreateLocalReport(reportDisplayName, rdlcPathName, rds, param);
+
+            return this.GenerateReport(report, width, height, topMargin, bottomMargin, leftMargin, rightMargin, fileType);
+        }
+
         public Task<RdlcReport> GeneratePdfWordExcelHtmlReport(
-            string rdlcName,
+            string rdlcPathName,
             DataTable dt,
             string dsName,
             IEnumerable<ReportParameter> param = null,
-            string fileType = "HTML"
+            string fileType = "PDF"
         ) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             ReportDataSource rds = this.CreateReportDataSource(dsName, dt);
-            return this.GenerateReport(rdlcName, rds, param, fileType);
+            return this.GenerateReport(rdlcPathName, rds, param, fileType);
+        }
+
+        public Task<RdlcReport> GeneratePdfWordExcelHtmlReport(
+            string reportDisplayName,
+            string rdlcPathName,
+            IEnumerable<ReportDataSource> rds,
+            IEnumerable<ReportParameter> param = null,
+            string fileType = "PDF"
+        ) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            return this.GenerateReport(reportDisplayName, rdlcPathName, rds, param, fileType);
         }
 
         public Task<RdlcReport> GeneratePdfWordExcelHtmlReport<T>(
@@ -328,7 +421,7 @@ namespace bifeldy_lib_90.Services {
             IEnumerable<T> ls,
             string dsName,
             IEnumerable<ReportParameter> param = null,
-            string fileType = "HTML"
+            string fileType = "PDF"
         ) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");

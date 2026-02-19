@@ -30,19 +30,17 @@ namespace bifeldy_lib_90.Services {
         private readonly IConverterService _converter;
 
         private readonly Assembly _prgAsm = Assembly.GetEntryAssembly();
-        private readonly Assembly _libAsm = Assembly.GetExecutingAssembly();
+        // private readonly Assembly _libAsm = Assembly.GetExecutingAssembly();
 
         private readonly SettingLibb _SettingLibb;
 
-        public bool DebugMode {
-            get {
-                #if DEBUG
-                    return true;
-                #else
+        public bool DebugMode =>
+#if DEBUG
+                true;
+#else
                     return false;
-                #endif
-            }
-        }
+#endif
+
 
         public string AppName => Bifeldy.App.Environment.ApplicationName;
         public string AppLocation => AppDomain.CurrentDomain.BaseDirectory;

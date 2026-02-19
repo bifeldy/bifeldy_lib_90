@@ -47,8 +47,7 @@ namespace bifeldy_lib_90.Libraries {
             Register<Dictionary<int, object>>();
         }
 
-        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:RequiresDynamicCode",
-            Justification = "We are explicitly registering types to ensure AOT generation.")]
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:RequiresDynamicCode", Justification = "We are explicitly registering types to ensure AOT generation.")]
         private static void RegisterReferenceType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>() where T : class {
             Register<T>();
             Register<T[]>();
@@ -56,8 +55,7 @@ namespace bifeldy_lib_90.Libraries {
             Register<Dictionary<string, T>>();
         }
 
-        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:RequiresDynamicCode",
-            Justification = "We are explicitly registering types to ensure AOT generation.")]
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:RequiresDynamicCode", Justification = "We are explicitly registering types to ensure AOT generation.")]
         private static void RegisterValueType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>() where T : struct {
             // Standard
             Register<T>();
@@ -150,7 +148,7 @@ namespace bifeldy_lib_90.Libraries {
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "This is a best-effort fallback. The app should use Register<T> for safety.")]
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2057:UnrecognizedReflectionPattern", Justification = "This is a best-effort fallback. The app should use Register<T> for safety.")]
         public static Type GetType(string typeName) {
-            if (string.IsNullOrWhiteSpace(typeName)) {
+            if (string.IsNullOrEmpty(typeName)) {
                 return null;
             }
 
@@ -326,7 +324,7 @@ namespace bifeldy_lib_90.Libraries {
                 }
 
                 try {
-                    object converted = this.ConvertValue(field.Meta, field.Type, value);
+                    object converted = ConvertValue(field.Meta, field.Type, value);
                     this._fields[key] = (field.Type, converted, field.Meta);
                 }
                 catch (Exception ex) {
@@ -342,7 +340,7 @@ namespace bifeldy_lib_90.Libraries {
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:RequiresDynamicCode", Justification = "Safe via TypeRegistry")]
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2067:UnrecognizedReflectionPattern", Justification = "Safe via TypeRegistry")]
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2072:UnrecognizedReflectionPattern", Justification = "Safe via TypeRegistry")]
-        private object ConvertValue(CDynamicClassPropertyV2 meta, Type type, object value) {
+        private static object ConvertValue(CDynamicClassPropertyV2 meta, Type type, object value) {
             if (value == null) {
                 return null;
             }
@@ -365,8 +363,8 @@ namespace bifeldy_lib_90.Libraries {
                 if (value is IEnumerable source) {
                     foreach (object item in source) {
                         // FIX: Gunakan Helper CreateNestedMeta
-                        object converted = this.ConvertValue(
-                            this.CreateNestedMeta(innerType),
+                        object converted = ConvertValue(
+                            CreateNestedMeta(innerType),
                             innerType,
                             item
                         );
@@ -385,8 +383,8 @@ namespace bifeldy_lib_90.Libraries {
                 var array = Array.CreateInstance(innerType, sourceList.Count);
 
                 for (int i = 0; i < sourceList.Count; i++) {
-                    object converted = this.ConvertValue(
-                        this.CreateNestedMeta(innerType),
+                    object converted = ConvertValue(
+                        CreateNestedMeta(innerType),
                         innerType,
                         sourceList[i]
                     );
@@ -408,8 +406,8 @@ namespace bifeldy_lib_90.Libraries {
                 Type valType = type.GetGenericArguments()[1];
 
                 foreach (DictionaryEntry entry in (IDictionary)value) {
-                    object k = this.ConvertValue(this.CreateNestedMeta(keyType), keyType, entry.Key);
-                    object v = this.ConvertValue(this.CreateNestedMeta(valType), valType, entry.Value);
+                    object k = ConvertValue(CreateNestedMeta(keyType), keyType, entry.Key);
+                    object v = ConvertValue(CreateNestedMeta(valType), valType, entry.Value);
 
                     if (k != null) {
                         dict.Add(k, v);
@@ -424,7 +422,7 @@ namespace bifeldy_lib_90.Libraries {
                 if (value is IDictionary<string, object> dict) {
                     var nestedMeta = dict.Select(x => {
                         Type t = x.Value?.GetType() ?? typeof(object);
-                        CDynamicClassPropertyV2 m = this.CreateNestedMeta(t);
+                        CDynamicClassPropertyV2 m = CreateNestedMeta(t);
                         m.ColumnName = x.Key;
                         return m;
                     }).ToList();
@@ -451,7 +449,7 @@ namespace bifeldy_lib_90.Libraries {
 
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
-        private CDynamicClassPropertyV2 CreateNestedMeta(Type type) {
+        private static CDynamicClassPropertyV2 CreateNestedMeta(Type type) {
             Type core = Nullable.GetUnderlyingType(type) ?? type;
 
             bool isList = core.IsGenericType && core.GetGenericTypeDefinition() == typeof(List<>);

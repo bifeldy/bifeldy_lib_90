@@ -1,15 +1,24 @@
 ﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Libraries;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
+using static bifeldy_lib_90.Libraries.ToCsv;
 
 namespace bifeldy_lib_90.Extensions {
 
     public static class IEnumerableExtension {
 
-        public static DataTable ToDataTable<T>(this IEnumerable<T> items, JsonTypeInfo<T> jsonTypeInfo, string tableName) where T : JsonSerDe, new() {
+        private static DataTable ToDataTableInternal<T>(
+            this IEnumerable<T> items,
+            Func<T, JsonNode> callbackT,
+            string tableName
+        ) {
             if (string.IsNullOrEmpty(tableName)) {
                 tableName = typeof(T).Name;
             }
@@ -18,7 +27,7 @@ namespace bifeldy_lib_90.Extensions {
             bool columnsInitialized = false;
 
             foreach (T item in items) {
-                JsonObject node = JsonSerializer.SerializeToNode(item, jsonTypeInfo)?.AsObject();
+                JsonObject node = callbackT(item)?.AsObject();
                 if (node == null) {
                     continue;
                 }
@@ -44,55 +53,91 @@ namespace bifeldy_lib_90.Extensions {
             return dt;
         }
 
-        public static async Task ToCsv<T>(this IEnumerable<T> arrayListData, JsonTypeInfo<T> jsonTypeInfo, string delimiter, string outputFilePath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, Encoding encoding = null, CancellationToken token = default) where T : JsonSerDe, new() {
-            await using (var streamWriter = new StreamWriter(outputFilePath, false, encoding ?? Encoding.UTF8)) {
-                IList<JsonPropertyInfo> properties = jsonTypeInfo.Properties;
+        public static DataTable ToDataTable<T>(this IEnumerable<T> items, string tableName = null) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            var jsonSerializerOptions = new JsonSerializerOptions();
+            jsonSerializerOptions.Converters.Add(new DecimalConverter());
+            jsonSerializerOptions.Converters.Add(new NullableDecimalConverter());
+
+            return items.ToDataTableInternal(
+                (t) => JsonSerializer.SerializeToNode(t, jsonSerializerOptions),
+                tableName
+            );
+        }
+
+        public static DataTable ToDataTable<T>(this IEnumerable<T> items, JsonTypeInfo<T> jsonTypeInfo, string tableName = null) where T : JsonSerDe, new() {
+            return items.ToDataTableInternal(
+                (t) => JsonSerializer.SerializeToNode(t, jsonTypeInfo),
+                tableName
+            );
+        }
+
+        private static async Task WriteCsvInternal<T>(
+            IEnumerable<T> data,
+            IEnumerable<CsvColumnMapping> columns,
+            string delimiter,
+            string path,
+            bool includeHeader,
+            bool useDoubleQuote,
+            bool allUppercase,
+            Encoding encoding,
+            CancellationToken token
+        ) {
+            var cols = columns.ToList();
+
+            await using (var streamWriter = new StreamWriter(path, false, encoding ?? Encoding.UTF8, 65536)) {
+                var sb = new StringBuilder();
 
                 if (includeHeader) {
-                    string headerLine = string.Join(delimiter, properties.Select(prop => {
-                        string name = prop.Name;
-
-                        if (allUppercase) {
-                            name = name.ToUpper();
+                    for (int i = 0; i < cols.Count; i++) {
+                        _ = sb.Append(CheckHeaderLineCsv(cols[i].Name, useDoubleQuote, allUppercase));
+                        if (i < cols.Count - 1) {
+                            _ = sb.Append(delimiter);
                         }
+                    }
 
-                        if (useDoubleQuote) {
-                            name = $"\"{name.Replace("\"", "\"\"")}\"";
-                        }
-
-                        return name;
-                    }));
-
-                    await streamWriter.WriteLineAsync(headerLine.AsMemory(), token);
+                    await streamWriter.WriteLineAsync(sb, token);
+                    _ = sb.Clear();
                 }
 
-                foreach (T item in arrayListData) {
-                    string line = string.Join(delimiter, properties.Select(prop => {
-                        object value = prop.Get(item);
-                        if (value == null) {
-                            return "";
+                foreach (T item in data) {
+                    for (int i = 0; i < cols.Count; i++) {
+                        object value = cols[i].GetValue(item);
+                        _ = sb.Append(CheckRowLineCsv(value, delimiter, useDoubleQuote, allUppercase));
+                        if (i < cols.Count - 1) {
+                            _ = sb.Append(delimiter);
                         }
+                    }
 
-                        string text = value.ToString();
-                        if (value is DateTime dt) {
-                            text = dt.ToString("O");
-                        }
-
-                        if (allUppercase) {
-                            text = text.ToUpper();
-                        }
-
-                        bool mustQuote = text.Contains(delimiter) || text.Contains('"') || text.Contains('\n') || text.Contains('\r');
-                        if (useDoubleQuote || mustQuote) {
-                            text = $"\"{text.Replace("\"", "\"\"")}\"";
-                        }
-
-                        return text;
-                    }));
-
-                    await streamWriter.WriteLineAsync(line.AsMemory(), token);
+                    await streamWriter.WriteLineAsync(sb, token);
+                    _ = sb.Clear();
                 }
             }
+        }
+
+        public static Task ToCsv<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(this IEnumerable<T> arrayListData, string delimiter, string outputFilePath, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, Encoding encoding = null, CancellationToken token = default) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            PropertyInfo[] properties = typeof(T).GetProperties();
+
+            return WriteCsvInternal(
+                arrayListData,
+                properties.Select(p => new CsvColumnMapping(p.Name, obj => p.GetValue(obj))),
+                delimiter, outputFilePath, includeHeader, useDoubleQuote, allUppercase, encoding, token
+            );
+        }
+
+        public static Task ToCsv<T>(this IEnumerable<T> arrayListData, JsonTypeInfo<T> jsonTypeInfo, string delimiter, string outputFilePath, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, Encoding encoding = null, CancellationToken token = default) where T : JsonSerDe, new() {
+            return WriteCsvInternal(
+                arrayListData,
+                jsonTypeInfo.Properties.Where(p => p.Get != null).Select(p => new CsvColumnMapping(p.Name, obj => p.Get(obj))),
+                delimiter, outputFilePath, includeHeader, useDoubleQuote, allUppercase, encoding, token
+            );
         }
 
         public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IEnumerable<T> items) {

@@ -28,11 +28,11 @@ namespace bifeldy_lib_90.Services {
                 throw new Exception("Nama Key Wajib Diisi");
             }
 
-            if (!this.keyValuePairs.ContainsKey(key)) {
+            if (!this.keyValuePairs.TryGetValue(key, out object value)) {
                 return this.CreateGlobalAppBehaviorSubject(key, default(T));
             }
 
-            return (BehaviorSubject<T>)this.keyValuePairs[key];
+            return (BehaviorSubject<T>)value;
         }
 
         public BehaviorSubject<T> CreateGlobalAppBehaviorSubject<T>(string key, T initialValue) {
@@ -40,11 +40,12 @@ namespace bifeldy_lib_90.Services {
                 throw new Exception("Nama Key Wajib Diisi");
             }
 
-            if (!this.keyValuePairs.ContainsKey(key)) {
-                this.keyValuePairs.Add(key, this.CreateNewBehaviorSubject(initialValue));
+            if (!this.keyValuePairs.TryGetValue(key, out object value)) {
+                value = this.CreateNewBehaviorSubject(initialValue);
+                this.keyValuePairs.Add(key, value);
             }
 
-            return (BehaviorSubject<T>)this.keyValuePairs[key];
+            return (BehaviorSubject<T>)value;
         }
 
         public void DisposeAndRemoveSubscriber(string key) {

@@ -5,7 +5,6 @@ using bifeldy_lib_90.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace bifeldy_lib_90.Middlewares {
 

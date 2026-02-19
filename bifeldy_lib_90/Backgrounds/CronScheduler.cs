@@ -34,7 +34,7 @@ namespace bifeldy_lib_90.Backgrounds {
             if (string.IsNullOrEmpty(name)) {
                 name = Guid.NewGuid().ToString();
             }
-            
+
             var dj = new DynamicJob() {
                 Name = name,
                 ExecuteAsync = execute,

@@ -80,7 +80,7 @@ namespace bifeldy_lib_90.Abstractions {
                     else if (_dbConStr.Contains("RLTM") || _dbConStr.Contains("REALTIME") || _dbConStr.Contains("TIMESCALE")) {
                         this.KodeDc = "RLTM";
                     }
-                    else if(_dbConStr.Contains("DCHO")) {
+                    else if (_dbConStr.Contains("DCHO")) {
                         this.KodeDc = "DCHO";
                     }
                     else if (_dbConStr.Contains("WHHO")) {

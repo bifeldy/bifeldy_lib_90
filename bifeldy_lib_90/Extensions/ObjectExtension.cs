@@ -1,5 +1,7 @@
 ﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Libraries;
 using System.Collections;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -19,6 +21,22 @@ namespace bifeldy_lib_90.Extensions {
         public static bool IsSimpleType(Type type) {
             type = Nullable.GetUnderlyingType(type) ?? type;
             return type.IsPrimitive || type.IsEnum || ExtraSimpleTypes.Contains(type);
+        }
+
+        public static Dictionary<string, object> ToDictionary<T>(this T instanceToConvert) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            var jsonSerializerOptions = new JsonSerializerOptions();
+            jsonSerializerOptions.Converters.Add(new DecimalConverter());
+            jsonSerializerOptions.Converters.Add(new NullableDecimalConverter());
+
+            if (instanceToConvert == null) {
+                return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            return ConvertObject(instanceToConvert, jsonSerializerOptions) as Dictionary<string, object> ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         }
 
         public static Dictionary<string, object> ToDictionary<T>(this T instanceToConvert, JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {

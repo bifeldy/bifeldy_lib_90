@@ -17,7 +17,7 @@ namespace bifeldy_lib_90.Handlers {
         Task<(IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParam<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new();
         Task<(string, string, string, IDictionary<string, string>, IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParamExportDocs<TInputJson>(string rdlcPath, string dsName, string exportAs, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new();
         Task<bool> ExecuteSebelumTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new();
-        Task<bool> ExecuteSesudahTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null)where TInputJson : JsonSerDe, new();
+        Task<bool> ExecuteSesudahTarik<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new();
     }
 
     public abstract class CServiceTarikDataHandler : CServiceBaseHandler, IServiceTarikDataHandler {

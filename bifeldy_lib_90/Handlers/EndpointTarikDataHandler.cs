@@ -72,7 +72,7 @@ namespace bifeldy_lib_90.Handlers {
             return JsonSerializer.SerializeAsync(
                 this._context.Response.Body,
                 response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                _context.RequestAborted
+                this._context.RequestAborted
             );
         }
 
@@ -124,9 +124,7 @@ namespace bifeldy_lib_90.Handlers {
                 }
                 else {
                     IHttpResponseBodyFeature hrbf = this._context.Features.Get<IHttpResponseBodyFeature>();
-                    if (hrbf != null) {
-                        hrbf.DisableBuffering();
-                    }
+                    hrbf?.DisableBuffering();
 
                     this._context.Response.StatusCode = StatusCodes.Status206PartialContent;
                     this._context.Response.ContentType = "application/x-ndjson";
@@ -143,8 +141,8 @@ namespace bifeldy_lib_90.Handlers {
                     await foreach (TOutputJson item in iae.WithCancellation(this._context.RequestAborted)) {
                         string json = JsonSerializer.Serialize(item, jsonTypeInfoOutput);
                         await this._context.Response.WriteAsync(json, this._context.RequestAborted);
-                        await _context.Response.Body.WriteAsync("\n"u8.ToArray(), this._context.RequestAborted);
-                        await _context.Response.Body.FlushAsync(this._context.RequestAborted);
+                        await this._context.Response.Body.WriteAsync("\n"u8.ToArray(), this._context.RequestAborted);
+                        await this._context.Response.Body.FlushAsync(this._context.RequestAborted);
                     }
 
                     _ = await customService.ExecuteSesudahTarik(this._context, db, fd, searchQuery, sort, order);
@@ -248,7 +246,7 @@ namespace bifeldy_lib_90.Handlers {
                 await JsonSerializer.SerializeAsync(
                     this._context.Response.Body,
                     response, ResponseJsonSerializerContext.Default.ResponseJsonSingleString,
-                    _context.RequestAborted
+                    this._context.RequestAborted
                 );
             }
             catch (TidakMemenuhiException tm) {
@@ -377,7 +375,7 @@ namespace bifeldy_lib_90.Handlers {
                 await JsonSerializer.SerializeAsync(
                     this._context.Response.Body,
                     response, ResponseJsonSerializerContext.Default.ResponseJsonSingleString,
-                    _context.RequestAborted
+                    this._context.RequestAborted
                 );
             }
             catch (TidakMemenuhiException tm) {

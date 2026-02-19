@@ -34,6 +34,7 @@
                             if (wasCrLast) {
                                 crlfCount++;
                             }
+
                             wasCrLast = false;
                         }
                         else {
@@ -55,7 +56,7 @@
                     return LineEndingType.Mixed;
                 }
             }
-            catch (IOException e) {
+            catch {
                 return LineEndingType.Unknown;
             }
         }

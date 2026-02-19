@@ -1,9 +1,12 @@
 ﻿using bifeldy_lib_90.Abstractions;
-using bifeldy_lib_90.Models;
+using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization.Metadata;
+using static bifeldy_lib_90.Libraries.ToCsv;
 
 namespace bifeldy_lib_90.Extensions {
 
@@ -65,7 +68,84 @@ namespace bifeldy_lib_90.Extensions {
             return dr.GetValue(index);
         }
 
-        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this DbDataReader dr, JsonTypeInfo<T> jsonTypeInfo, Action<T> callback = null, [EnumeratorCancellation] CancellationToken token = default) where T : JsonSerDe, new() {
+        private static async IAsyncEnumerable<T> ToAsyncInternal<T>(
+            DbDataReader dr,
+            List<DataReaderMapping> mappings,
+            Func<T> factory,
+            Action<T> callback,
+            [EnumeratorCancellation] CancellationToken token
+        ) {
+            while (await dr.ReadAsync(token)) {
+                T obj = factory();
+
+                foreach (DataReaderMapping m in mappings) {
+                    if (!await dr.IsDBNullAsync(m.Index, token)) {
+                        object value = ReadValue(dr, m.Index, m.TargetType);
+                        m.Setter(obj, value);
+                    }
+                }
+
+                callback?.Invoke(obj);
+                yield return obj;
+            }
+        }
+
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(
+            this DbDataReader dr,
+            Action<T> callback = null,
+            [EnumeratorCancellation] CancellationToken token = default
+        ) {
+            if (dr == null) {
+                yield break;
+            }
+
+            Type t = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+
+            if (ObjectExtension.IsSimpleType(t)) {
+                while (await dr.ReadAsync(token)) {
+                    T objT = default;
+
+                    if (!await dr.IsDBNullAsync(0, token)) {
+                        object val = dr.GetValue(0);
+                        objT = (T)Convert.ChangeType(val, typeof(T));
+                    }
+
+                    callback?.Invoke(objT);
+                    yield return objT;
+                }
+
+                yield break;
+            }
+
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            var colIndexLookup = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < dr.FieldCount; i++) {
+                colIndexLookup[dr.GetName(i)] = i;
+            }
+
+            var mappings = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.CanWrite && colIndexLookup.ContainsKey(p.Name))
+                .Select(p => new DataReaderMapping(
+                    p.PropertyType,
+                    (obj, val) => p.SetValue(obj, val),
+                    colIndexLookup[p.Name]
+                ))
+                .ToList();
+
+            await foreach (T item in ToAsyncInternal(dr, mappings, Activator.CreateInstance<T>, callback, token)) {
+                yield return item;
+            }
+        }
+
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
+            this DbDataReader dr,
+            JsonTypeInfo<T> jsonTypeInfo,
+            Action<T> callback = null,
+            [EnumeratorCancellation] CancellationToken token = default
+        ) where T : JsonSerDe, new() {
             if (dr == null) {
                 yield break;
             }
@@ -75,102 +155,57 @@ namespace bifeldy_lib_90.Extensions {
                 colIndexLookup[dr.GetName(i)] = i;
             }
 
-            var maps = new List<JsonKeyMap>(jsonTypeInfo.Properties.Count);
+            var mappings = jsonTypeInfo.Properties
+                .Where(p => p.Set != null && colIndexLookup.ContainsKey(p.Name))
+                .Select(p => new DataReaderMapping(
+                    p.PropertyType,
+                    (obj, val) => p.Set(obj, val),
+                    colIndexLookup[p.Name]
+                ))
+                .ToList();
 
-            foreach (JsonPropertyInfo p in jsonTypeInfo.Properties) {
-                if (colIndexLookup.TryGetValue(p.Name, out int idx)) {
-                    maps.Add(new JsonKeyMap(p, idx));
-                }
-            }
+            Func<T> factory = jsonTypeInfo.CreateObject != null
+                ? () => jsonTypeInfo.CreateObject()
+                : () => new T();
 
-            JsonKeyMap[] mappings = [.. maps];
-
-            while (await dr.ReadAsync(token)) {
-                var obj = new T();
-
-                foreach (JsonKeyMap m in mappings) {
-                    if (!await dr.IsDBNullAsync(m.Index, token)) {
-                        object value = ReadValue(dr, m.Index, m.Property.PropertyType);
-                        m.Property.Set(obj, value);
-                    }
-                }
-
-                callback?.Invoke(obj);
-                yield return obj;
+            await foreach (T item in ToAsyncInternal(dr, mappings, factory, callback, token)) {
+                yield return item;
             }
         }
 
-        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this DbDataReader dr, Action<T> callback = null, [EnumeratorCancellation] CancellationToken token = default) {
-            if (dr == null) {
-                yield break;
-            }
+        public static async Task ToCsv(this DbDataReader dr, string delimiter, string outputFilePath, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, Encoding encoding = null, CancellationToken token = default) {
+            await using (var streamWriter = new StreamWriter(outputFilePath, false, encoding ?? Encoding.UTF8, 65536)) {
+                int fieldCount = dr.FieldCount;
+                var sb = new StringBuilder();
 
-            while (await dr.ReadAsync(token)) {
-                T objT = default;
-
-                Type t = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-                if (!ObjectExtension.IsSimpleType(t)) {
-                    throw new Exception("Only `string` or ValueType allowed");
-                }
-
-                if (!await dr.IsDBNullAsync(0, token)) {
-                    object val = dr.GetValue(0);
-                    objT = (T)Convert.ChangeType(val, typeof(T));
-                }
-
-                callback?.Invoke(objT);
-                yield return objT;
-            }
-        }
-
-        public static async Task ToCsv(this DbDataReader dr, string delimiter, string outputFilePath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, Encoding encoding = null, CancellationToken token = default) {
-            await using (var streamWriter = new StreamWriter(outputFilePath, false, encoding ?? Encoding.UTF8)) {
                 if (includeHeader) {
-                    string header = string.Join(delimiter, Enumerable.Range(0, dr.FieldCount).Select(i => {
-                        string text = dr.GetName(i);
-
-                        if (allUppercase) {
-                            text = text.ToUpper();
+                    for (int i = 0; i < fieldCount; i++) {
+                        _ = sb.Append(CheckHeaderLineCsv(dr.GetName(i), useDoubleQuote, allUppercase));
+                        if (i < fieldCount - 1) {
+                            _ = sb.Append(delimiter);
                         }
+                    }
 
-                        if (useDoubleQuote) {
-                            text = $"\"{text.Replace("\"", "\"\"")}\"";
-                        }
-
-                        return text;
-                    }));
-
-                    await streamWriter.WriteLineAsync(header.AsMemory(), token);
+                    await streamWriter.WriteLineAsync(sb, token);
+                    _ = sb.Clear();
                 }
 
                 while (await dr.ReadAsync(token)) {
-                    string line = string.Join(delimiter, Enumerable.Range(0, dr.FieldCount).Select(i => {
-                        if (dr.IsDBNull(i)) {
-                            return "";
+                    for (int i = 0; i < fieldCount; i++) {
+                        object val = await dr.IsDBNullAsync(i, token) ? null : dr.GetValue(i);
+                        _ = sb.Append(CheckRowLineCsv(val, delimiter, useDoubleQuote, allUppercase));
+                        if (i < fieldCount - 1) {
+                            _ = sb.Append(delimiter);
                         }
+                    }
 
-                        object value = dr.GetValue(i);
-                        string text = value.ToString();
-                        if (value is DateTime dt) {
-                            text = dt.ToString("O");
-                        }
-
-                        if (allUppercase) {
-                            text = text.ToUpper();
-                        }
-
-                        bool mustQuote = text.Contains(delimiter) || text.Contains('"') || text.Contains('\n') || text.Contains('\r');
-                        if (useDoubleQuote || mustQuote) {
-                            text = $"\"{text.Replace("\"", "\"\"")}\"";
-                        }
-
-                        return text;
-                    }));
-
-                    await streamWriter.WriteLineAsync(line.AsMemory(), token);
+                    await streamWriter.WriteLineAsync(sb, token);
+                    _ = sb.Clear();
                 }
             }
         }
+
+        private record DataReaderMapping(Type TargetType, Action<object, object> Setter, int Index);
 
     }
 

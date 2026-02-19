@@ -4,6 +4,7 @@ using bifeldy_lib_90.Models;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using MimeKit;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Mime;
 using System.Security.Claims;
@@ -49,8 +50,8 @@ namespace bifeldy_lib_90.Services {
         // Mobile / low CPU         50,000 – 100,000
         private const int DERIVATION_ITERATIONS = 1000;
 
-        private string pubKeyPath { get; }
-        private string privKeyPath { get; }
+        private string PubKeyPath { get; }
+        private string PrivKeyPath { get; }
 
         public CChiperService(
             IOptions<EnvVar> envVar,
@@ -59,11 +60,11 @@ namespace bifeldy_lib_90.Services {
             this._envVar = envVar.Value;
             this._app = app;
             //
-            this.pubKeyPath = Path.Combine(this._app.AppLocation, Bifeldy.DEFAULT_DATA_FOLDER, "public.key");
-            this.privKeyPath = Path.Combine(this._app.AppLocation, Bifeldy.DEFAULT_DATA_FOLDER, "private.key");
+            this.PubKeyPath = Path.Combine(this._app.AppLocation, Bifeldy.DEFAULT_DATA_FOLDER, "public.key");
+            this.PrivKeyPath = Path.Combine(this._app.AppLocation, Bifeldy.DEFAULT_DATA_FOLDER, "private.key");
         }
 
-        private byte[] Generate128BitsOfRandomEntropy() {
+        private static byte[] Generate128BitsOfRandomEntropy() {
             byte[] randomBytes = new byte[16]; // 16 Bytes will give us 128 bits.
             using (var rngCsp = RandomNumberGenerator.Create()) {
                 // Fill the array with cryptographically secure random bytes.
@@ -77,17 +78,21 @@ namespace bifeldy_lib_90.Services {
             if (string.IsNullOrEmpty(passPhrase) || passPhrase?.Length < 8) {
                 passPhrase = this.HashText(this._app.AppName);
             }
+
             // Salt and IV is randomly generated each time, but is preprended to encrypted cipher text
             // so that the same Salt and IV values can be used when decrypting.  
-            byte[] saltStringBytes = this.Generate128BitsOfRandomEntropy();
-            byte[] ivStringBytes = this.Generate128BitsOfRandomEntropy();
+            byte[] saltStringBytes = Generate128BitsOfRandomEntropy();
+            byte[] ivStringBytes = Generate128BitsOfRandomEntropy();
             byte[] plainTextBytes = Encoding.UTF8.GetBytes(plainText);
+
             using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, DERIVATION_ITERATIONS, HashAlgorithmName.SHA256)) {
                 byte[] keyBytes = password.GetBytes(KEY_SIZE / 8);
+
                 using (var symmetricKey = Aes.Create()) {
                     symmetricKey.BlockSize = BLOCK_SIZE;
                     symmetricKey.Mode = CipherMode.CBC;
                     symmetricKey.Padding = PaddingMode.PKCS7;
+
                     using (ICryptoTransform encryptor = symmetricKey.CreateEncryptor(keyBytes, ivStringBytes)) {
                         await using (var memoryStream = new MemoryStream()) {
                             await using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write)) {
@@ -109,15 +114,20 @@ namespace bifeldy_lib_90.Services {
             if (string.IsNullOrEmpty(passPhrase) || passPhrase?.Length < 8) {
                 passPhrase = this.HashText(this._app.AppName);
             }
+
             // Get the complete stream of bytes that represent:
             // [32 bytes of Salt] + [32 bytes of IV] + [n bytes of CipherText]
             byte[] cipherTextBytesWithSaltAndIv = Convert.FromBase64String(cipherText);
+
             // Get the saltbytes by extracting the first 32 bytes from the supplied cipherText bytes.
             byte[] saltStringBytes = [.. cipherTextBytesWithSaltAndIv.Take(KEY_SIZE / 8)];
+
             // Get the IV bytes by extracting the next 32 bytes from the supplied cipherText bytes.
             byte[] ivStringBytes = [.. cipherTextBytesWithSaltAndIv.Skip(KEY_SIZE / 8).Take(KEY_SIZE / 8)];
+
             // Get the actual cipher text bytes by removing the first 64 bytes from the cipherText string.
             byte[] cipherTextBytes = [.. cipherTextBytesWithSaltAndIv.Skip(KEY_SIZE / 8 * 2).Take(cipherTextBytesWithSaltAndIv.Length - (KEY_SIZE / 8 * 2))];
+
             using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, DERIVATION_ITERATIONS, HashAlgorithmName.SHA256)) {
                 byte[] keyBytes = password.GetBytes(KEY_SIZE / 8);
                 using (var symmetricKey = Aes.Create()) {
@@ -164,14 +174,20 @@ namespace bifeldy_lib_90.Services {
                 return mime;
             }
 
-            return MediaTypeNames.Application.Octet;
+            if (string.IsNullOrEmpty(mime)) {
+                mime = MimeTypes.GetMimeType(filePath);
+            }
+
+            if (string.IsNullOrEmpty(mime)) {
+                mime = MediaTypeNames.Application.Octet;
+            }
+
+            return mime;
         }
 
         public string HashByte(byte[] data) {
-            using (var sha1 = SHA1.Create()) {
-                byte[] hash = sha1.ComputeHash(data);
-                return hash.ToStringHex();
-            }
+            byte[] hash = SHA1.HashData(data);
+            return hash.ToStringHex();
         }
 
         public string HashText(string textMessage) {
@@ -212,17 +228,17 @@ namespace bifeldy_lib_90.Services {
             var rsa = RSA.Create();
             rsa.KeySize = 4096;
 
-            if (!File.Exists(this.privKeyPath)) {
+            if (!File.Exists(this.PrivKeyPath)) {
                 string privateKey = rsa.ToXmlString(true);
-                await File.WriteAllTextAsync(this.privKeyPath, privateKey);
+                await File.WriteAllTextAsync(this.PrivKeyPath, privateKey);
 
                 string publicKey = rsa.ToXmlString(false);
-                await File.WriteAllTextAsync(this.pubKeyPath, publicKey);
+                await File.WriteAllTextAsync(this.PubKeyPath, publicKey);
 
                 return rsa;
             }
 
-            string privateKeyString = await File.ReadAllTextAsync(this.privKeyPath);
+            string privateKeyString = await File.ReadAllTextAsync(this.PrivKeyPath);
             rsa.FromXmlString(privateKeyString);
 
             return rsa;

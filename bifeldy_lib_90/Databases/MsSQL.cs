@@ -24,7 +24,7 @@ namespace bifeldy_lib_90.Databases {
         private string DbUsername { get; set; }
         private string DbPassword { get; set; }
 
-        public CMsSQL (
+        public CMsSQL(
             IOptions<EnvVar> envVar,
             ILogger<CMsSQL> logger,
             IApplicationService @as,

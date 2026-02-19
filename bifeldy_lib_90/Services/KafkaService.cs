@@ -2,6 +2,7 @@
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization.Metadata;
 
 namespace bifeldy_lib_90.Services {
@@ -17,6 +18,7 @@ namespace bifeldy_lib_90.Services {
         IConsumer<T1, T2> CreateKafkaConsumerInstance<T1, T2>(string hostPort, string groupId);
         TopicPartition CreateKafkaConsumerTopicPartition(string topicName, int partition);
         TopicPartitionOffset CreateKafkaConsumerTopicPartitionOffset(TopicPartition topicPartition, long offset);
+        Task<List<Message<string, T>>> ConsumeSingleMultipleMessages<T>(string hostPort, string groupId, string topicName, int partition = 0, long offset = -1, ulong nMessagesBlock = 1);
         Task<List<Message<string, T>>> ConsumeSingleMultipleMessages<T>(JsonTypeInfo<T> typeInfo, string hostPort, string groupId, string topicName, int partition = 0, long offset = -1, ulong nMessagesBlock = 1) where T : JsonSerDe, new();
         string GetKeyProducerListener(string hostPort, string topicName, string pubSubName = null);
         string GetTopicNameProducerListener(string topicName, string suffixKodeDc = null);
@@ -24,6 +26,7 @@ namespace bifeldy_lib_90.Services {
         void DisposeAndRemoveKafkaProducerListener(string hostPort, string topicName, string suffixKodeDc = null, string pubSubName = null);
         string GetKeyConsumerListener(string hostPort, string topicName, string pubSubName = null);
         (string, string) GetTopicNameConsumerListener(string topicName, string groupId, string suffixKodeDc = null);
+        Task CreateKafkaConsumerListener<T>(string hostPort, string topicName, string groupId, string suffixKodeDc = null, Action<Message<string, T>> execLambda = null, string pubSubName = null, CancellationTokenSource cancellationTokenSource = default);
         Task CreateKafkaConsumerListener<T>(JsonTypeInfo<T> typeInfo, string hostPort, string topicName, string groupId, string suffixKodeDc = null, Action<Message<string, T>> execLambda = null, string pubSubName = null, CancellationTokenSource cancellationTokenSource = default) where T : JsonSerDe, new();
         void DisposeAndRemoveKafkaConsumerListener(string hostPort, string topicName, string groupId, string suffixKodeDc = null, string pubSubName = null);
     }
@@ -127,7 +130,19 @@ namespace bifeldy_lib_90.Services {
 
         public TopicPartitionOffset CreateKafkaConsumerTopicPartitionOffset(TopicPartition topicPartition, long offset) => new(topicPartition, new Offset(offset));
 
-        public async Task<List<Message<string, T>>> ConsumeSingleMultipleMessages<T>(JsonTypeInfo<T> typeInfo, string hostPort, string groupId, string topicName, int partition = 0, long offset = -1, ulong nMessagesBlock = 1) where T : JsonSerDe, new() {
+        private async Task<List<Message<string, T>>> ConsumeSingleMultipleMessages<T>(
+            Func<string, T> callbackJson,
+            string hostPort,
+            string groupId,
+            string topicName,
+            int partition = 0,
+            long offset = -1,
+            ulong nMessagesBlock = 1
+        ) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
             await this.CreateTopicIfNotExist(hostPort, topicName);
             using (IConsumer<string, string> consumer = this.CreateKafkaConsumerInstance<string, string>(hostPort, groupId)) {
                 TopicPartition topicPartition = this.CreateKafkaConsumerTopicPartition(topicName, partition);
@@ -149,7 +164,7 @@ namespace bifeldy_lib_90.Services {
                         Headers = result.Message.Headers,
                         Key = result.Message.Key,
                         Timestamp = result.Message.Timestamp,
-                        Value = typeof(T) == typeof(string) ? (T)(object)result.Message.Value : this._converter.JsonToObject(result.Message.Value, typeInfo)
+                        Value = typeof(T) == typeof(string) ? (T)(object)result.Message.Value : callbackJson(result.Message.Value)
                     };
 
                     results.Add(message);
@@ -157,6 +172,34 @@ namespace bifeldy_lib_90.Services {
 
                 return results;
             }
+        }
+
+        public Task<List<Message<string, T>>> ConsumeSingleMultipleMessages<T>(string hostPort, string groupId, string topicName, int partition = 0, long offset = -1, ulong nMessagesBlock = 1) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            return this.ConsumeSingleMultipleMessages(
+                this._converter.JsonToObject<T>,
+                hostPort,
+                groupId,
+                topicName,
+                partition,
+                offset,
+                nMessagesBlock
+            );
+        }
+
+        public Task<List<Message<string, T>>> ConsumeSingleMultipleMessages<T>(JsonTypeInfo<T> typeInfo, string hostPort, string groupId, string topicName, int partition = 0, long offset = -1, ulong nMessagesBlock = 1) where T : JsonSerDe, new() {
+            return this.ConsumeSingleMultipleMessages(
+                (json) => this._converter.JsonToObject(json, typeInfo),
+                hostPort,
+                groupId,
+                topicName,
+                partition,
+                offset,
+                nMessagesBlock
+            );
         }
 
         public string GetKeyProducerListener(string hostPort, string topicName, string pubSubName = null) {
@@ -234,7 +277,16 @@ namespace bifeldy_lib_90.Services {
             return (topicName, groupId);
         }
 
-        public async Task CreateKafkaConsumerListener<T>(JsonTypeInfo<T> typeInfo, string hostPort, string topicName, string groupId, string suffixKodeDc = null, Action<Message<string, T>> execLambda = null, string pubSubName = null, CancellationTokenSource cancellationTokenSource = default) where T : JsonSerDe, new() {
+        private async Task CreateKafkaConsumerListener<T>(
+            Func<string, T> callbackJson,
+            string hostPort,
+            string topicName,
+            string groupId,
+            string suffixKodeDc = null,
+            Action<Message<string, T>> execLambda = null,
+            string pubSubName = null,
+            CancellationTokenSource cancellationTokenSource = default
+        ) {
             (topicName, groupId) = this.GetTopicNameConsumerListener(topicName, groupId, suffixKodeDc);
             await this.CreateTopicIfNotExist(hostPort, topicName);
 
@@ -259,7 +311,7 @@ namespace bifeldy_lib_90.Services {
                                     Headers = result.Message.Headers,
                                     Key = result.Message.Key,
                                     Timestamp = result.Message.Timestamp,
-                                    Value = typeof(T) == typeof(string) ? (T)(object)result.Message.Value : this._converter.JsonToObject(result.Message.Value, typeInfo)
+                                    Value = typeof(T) == typeof(string) ? (T)(object)result.Message.Value : callbackJson(result.Message.Value)
                                 };
 
                                 execLambda?.Invoke(message);
@@ -278,6 +330,36 @@ namespace bifeldy_lib_90.Services {
                     TaskScheduler.Default
                 );
             }
+        }
+
+        public Task CreateKafkaConsumerListener<T>(string hostPort, string topicName, string groupId, string suffixKodeDc = null, Action<Message<string, T>> execLambda = null, string pubSubName = null, CancellationTokenSource cancellationTokenSource = default) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            return this.CreateKafkaConsumerListener(
+                this._converter.JsonToObject<T>,
+                hostPort,
+                topicName,
+                groupId,
+                suffixKodeDc,
+                execLambda,
+                pubSubName,
+                cancellationTokenSource
+            );
+        }
+
+        public Task CreateKafkaConsumerListener<T>(JsonTypeInfo<T> typeInfo, string hostPort, string topicName, string groupId, string suffixKodeDc = null, Action<Message<string, T>> execLambda = null, string pubSubName = null, CancellationTokenSource cancellationTokenSource = default) where T : JsonSerDe, new() {
+            return this.CreateKafkaConsumerListener(
+                (json) => this._converter.JsonToObject(json, typeInfo),
+                hostPort,
+                topicName,
+                groupId,
+                suffixKodeDc,
+                execLambda,
+                pubSubName,
+                cancellationTokenSource
+            );
         }
 
         public void DisposeAndRemoveKafkaConsumerListener(string hostPort, string topicName, string groupId, string suffixKodeDc = null, string pubSubName = null) {

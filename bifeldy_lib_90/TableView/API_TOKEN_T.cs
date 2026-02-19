@@ -13,7 +13,6 @@ namespace bifeldy_lib_90.TableView {
         public string TOKEN_SEKALI_PAKAI { set; get; }
 
         public override string[] HiddenProperties() => [
-            nameof(this.PASSWORD),
             nameof(this.TOKEN_SEKALI_PAKAI)
         ];
     }

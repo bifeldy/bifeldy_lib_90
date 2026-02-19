@@ -184,7 +184,7 @@ namespace bifeldy_lib_90.Databases {
                     ReadOnlyCollection<NpgsqlDbColumn> columns = rdr.GetColumnSchema();
 
                     for (int i = 0; i < colCount; i++) {
-                        NpgsqlDbColumn column = columns.FirstOrDefault(c => c.ColumnName.ToUpper() == lsCol[i]);
+                        NpgsqlDbColumn column = columns.FirstOrDefault(c => c.ColumnName.Equals(lsCol[i], StringComparison.OrdinalIgnoreCase));
                         if (column == null) {
                             throw new Exception($"Kolom {lsCol[i]} Tidak Tersedia Di Tabel Tujuan {tableName}");
                         }
@@ -261,15 +261,15 @@ namespace bifeldy_lib_90.Databases {
                                         await writer.WriteAsync(Convert.ToDateTime(_obj), types[i], token);
                                         break;
                                     case NpgsqlDbType.Bytea:
-                                        await writer.WriteAsync((byte[]) _obj, types[i], token);
+                                        await writer.WriteAsync((byte[])_obj, types[i], token);
                                         break;
                                     default:
                                         await writer.WriteAsync(_obj, types[i], token);
                                         break;
 
-                                    //
-                                    // TODO :: Add More Handles While Free Time ~
-                                    //
+                                        //
+                                        // TODO :: Add More Handles While Free Time ~
+                                        //
                                 }
                             }
                         }
@@ -292,13 +292,13 @@ namespace bifeldy_lib_90.Databases {
         }
 
         public CPostgres NewExternalConnection(string dbIpAddrss, string dbPort, string dbUsername, string dbPassword, string dbName) {
-            var postgres = (CPostgres) this.Clone();
+            var postgres = (CPostgres)this.Clone();
             postgres.InitializeConnection(dbIpAddrss, dbPort, dbUsername, dbPassword, dbName);
             return postgres;
         }
 
         public CPostgres CloneConnection() {
-            var postgres = (CPostgres) this.Clone();
+            var postgres = (CPostgres)this.Clone();
             postgres.InitializeConnection(this.DbIpAddrss, this.DbPort, this.DbUsername, this.DbPassword, this.DbName);
             return postgres;
         }

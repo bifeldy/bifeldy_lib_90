@@ -21,6 +21,11 @@ namespace bifeldy_lib_90.Models {
         public decimal? PORT_GRPC { get; set; }
         public string DEFAULT_API_PATH { get; set; }
         public decimal? PING_PONG { get; set; }
+
+        public override string[] HiddenProperties() => [
+            nameof(this.USER_NGINX),
+            nameof(this.PASS_NGINX),
+        ];
     }
 
     [JsonSerializable(typeof(ListApiDc))]

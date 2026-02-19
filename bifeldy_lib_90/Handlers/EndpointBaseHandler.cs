@@ -158,7 +158,7 @@ namespace bifeldy_lib_90.Handlers {
                 await JsonSerializer.SerializeAsync(
                     this._context.Response.Body,
                     response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                    _context.RequestAborted
+                    this._context.RequestAborted
                 );
 
                 return false;
@@ -183,7 +183,7 @@ namespace bifeldy_lib_90.Handlers {
                     await JsonSerializer.SerializeAsync(
                         this._context.Response.Body,
                         response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                        _context.RequestAborted
+                        this._context.RequestAborted
                     );
 
                     return false;
@@ -219,7 +219,7 @@ namespace bifeldy_lib_90.Handlers {
                         await JsonSerializer.SerializeAsync(
                             this._context.Response.Body,
                             response, ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage,
-                            _context.RequestAborted
+                            this._context.RequestAborted
                         );
 
                         return false;

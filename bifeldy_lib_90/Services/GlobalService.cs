@@ -204,7 +204,10 @@ namespace bifeldy_lib_90.Services {
 
         public string GetTokenData(HttpRequest request, RequestJson reqBody) {
             string token = string.Empty;
-            if (!string.IsNullOrEmpty(request.Headers.Authorization)) {
+            if (!string.IsNullOrEmpty(request.Cookies["user-session"])) {
+                token = request.Cookies["user-session"];
+            }
+            else if (!string.IsNullOrEmpty(request.Headers.Authorization)) {
                 token = request.Headers.Authorization;
             }
             else if (!string.IsNullOrEmpty(request.Headers["x-access-token"])) {

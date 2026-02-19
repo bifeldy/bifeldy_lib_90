@@ -271,12 +271,14 @@ namespace bifeldy_lib_90 {
             // --
             // Setiap Request Cycle 1 Scope 1x New Object 1x Sesion Saja
             // --
+            _ = Services.AddScoped<IApiDcListRepository, CApiDcListRepository>();
             _ = Services.AddScoped<IApiKeyRepository, CApiKeyRepository>();
             _ = Services.AddScoped<IApiTokenRepository, CApiTokenRepository>();
             _ = Services.AddScoped<IGeneralRepository, CGeneralRepository>();
             _ = Services.AddScoped<IServerConfigRepository, CServerConfigRepository>();
             _ = Services.AddScoped<IUserRepository, CUserRepository>();
             // --
+            _ = Services.AddScoped<IDefaultHandler, CDefaultHandler>();
             _ = Services.AddScoped<IEndpointProsesDataHandler, CEndpointProsesDataHandler>();
             _ = Services.AddScoped<IEndpointTarikDataHandler, CEndpointTarikDataHandler>();
         }
