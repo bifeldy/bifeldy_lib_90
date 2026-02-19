@@ -1,5 +1,5 @@
-﻿using bifeldy_lib_90.Libraries;
-using ChoETL;
+﻿using bifeldy_lib_90.Extensions;
+using bifeldy_lib_90.Libraries;
 using System.Collections;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
@@ -32,7 +32,6 @@ namespace bifeldy_lib_90.Services {
         object JsonNodeToObject(JsonNode node);
         JsonNode ObjectToJsonNode(object value);
         object JsonToObject(string json);
-        string ObjectToJson(object value);
         string FormatByteSizeHumanReadable(long bytes, string forceUnit = null);
         List<CDynamicClassProperty> GetTableClassStructureModel<T>();
         List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) /* where T : JsonSerDe, new() */;
@@ -95,7 +94,7 @@ namespace bifeldy_lib_90.Services {
         [UnconditionalSuppressMessage("Trimming", "IL2072:Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute'", Justification = "Safe primitive types from JsonTypeInfo.")]
         public string ObjectToJson<T>(T value) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+                return this.ObjectToJsonNode(value)?.ToJsonString(JSON_SERIALIZER_OPTIONS);
             }
 
             return value == null ? null : JsonSerializer.Serialize(value, JSON_SERIALIZER_OPTIONS);
@@ -286,14 +285,6 @@ namespace bifeldy_lib_90.Services {
 
             var node = JsonNode.Parse(json);
             return this.JsonNodeToObject(node);
-        }
-
-        public string ObjectToJson(object value) {
-            if (value == null) {
-                return null;
-            }
-
-            return this.ObjectToJsonNode(value)?.ToJsonString(JSON_SERIALIZER_OPTIONS);
         }
 
         public string FormatByteSizeHumanReadable(long bytes, string forceUnit = null) {

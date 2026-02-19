@@ -94,31 +94,31 @@ namespace bifeldy_lib_90.Handlers {
 
                     await this._context.Response.StartAsync();
 
-                    var writer = new Utf8JsonWriter(this._context.Response.BodyWriter);
+                    await using (var writer = new Utf8JsonWriter(this._context.Response.BodyWriter)) {
+                        writer.WriteStartObject();
 
-                    writer.WriteStartObject();
+                        string info = $"{StatusCodes.Status200OK} - {callerMemberName}";
+                        if (!string.IsNullOrEmpty(suffixInfo)) {
+                            info = $"{StatusCodes.Status200OK} - {callerMemberName} {suffixInfo}";
+                        }
 
-                    string info = $"{StatusCodes.Status200OK} - {callerMemberName}";
-                    if (!string.IsNullOrEmpty(suffixInfo)) {
-                        info = $"{StatusCodes.Status200OK} - {callerMemberName} {suffixInfo}";
+                        writer.WriteString("info", info);
+                        writer.WritePropertyName("results");
+                        writer.WriteStartArray();
+
+                        await writer.FlushAsync(this._context.RequestAborted);
+
+                        await foreach (TOutputJson item in ls) {
+                            JsonSerializer.Serialize(writer, item, jsonTypeInfoOutput);
+                        }
+
+                        writer.WriteEndArray();
+                        writer.WriteNumber("pages", pages);
+                        writer.WriteNumber("count", count);
+                        writer.WriteEndObject();
+
+                        await writer.FlushAsync(this._context.RequestAborted);
                     }
-
-                    writer.WriteString("info", info);
-                    writer.WritePropertyName("results");
-                    writer.WriteStartArray();
-
-                    await writer.FlushAsync(this._context.RequestAborted);
-
-                    await foreach (TOutputJson item in ls) {
-                        JsonSerializer.Serialize(writer, item, jsonTypeInfoOutput);
-                    }
-
-                    writer.WriteEndArray();
-                    writer.WriteNumber("pages", pages);
-                    writer.WriteNumber("count", count);
-                    writer.WriteEndObject();
-
-                    await writer.FlushAsync(this._context.RequestAborted);
 
                     _ = await customService.ExecuteSesudahTarik(this._context, db, fd, searchQuery, sort, order, page, row);
                 }
