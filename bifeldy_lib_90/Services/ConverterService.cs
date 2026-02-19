@@ -1,7 +1,9 @@
-﻿using bifeldy_lib_90.Abstractions;
-using bifeldy_lib_90.Libraries;
+﻿using bifeldy_lib_90.Libraries;
+using ChoETL;
 using System.Collections;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -12,26 +14,49 @@ using WkHtmlToPdfDotNet.Contracts;
 
 namespace bifeldy_lib_90.Services {
 
+    //
+    // .NET 8/9 Roslyn
+    //
+    // Tipe Data `List<T>` Ga Bisa Pakai `JsonTypeInfo<T>`
+    // Terpaksa Di Comment, Jadi Ga Ada Constraint
+    // `where T : JsonSerDe, new()`
+    //
+
     public interface IConverterService {
         byte[] HtmlToPdf(HtmlToPdfDocument htmlToPdfDocument);
-        T JsonToObject<T>(string json, JsonTypeInfo<T> typeInfo);
-        string ObjectToJson<T>(T value, JsonTypeInfo<T> typeInfo);
+        T JsonToObject<T>(string json);
+        T JsonToObject<T>(string json, JsonTypeInfo<T> typeInfo) /* where T : JsonSerDe, new() */;
+        string ObjectToJson<T>(T value);
+        string ObjectToJson<T>(T value, JsonTypeInfo<T> typeInfo) /* where T : JsonSerDe, new() */;
         string XmlToJson(string xml);
         object JsonNodeToObject(JsonNode node);
         JsonNode ObjectToJsonNode(object value);
         object JsonToObject(string json);
         string ObjectToJson(object value);
         string FormatByteSizeHumanReadable(long bytes, string forceUnit = null);
-        List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new();
-        List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new();
+        List<CDynamicClassProperty> GetTableClassStructureModel<T>();
+        List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) /* where T : JsonSerDe, new() */;
+        List<CDynamicClassPropertyV2> GetPocoStructureModel<T>();
+        List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) /* where T : JsonSerDe, new() */;
     }
 
     public sealed class CConverterService : IConverterService {
 
         private readonly IConverter _converter;
 
+        private static JsonSerializerOptions JSON_SERIALIZER_OPTIONS = null;
+        private static readonly object _lockObj = new();
+
         public CConverterService(IConverter converter) {
             this._converter = converter;
+            //
+            lock (_lockObj) {
+                if (JSON_SERIALIZER_OPTIONS == null) {
+                    JSON_SERIALIZER_OPTIONS = new JsonSerializerOptions();
+                    JSON_SERIALIZER_OPTIONS.Converters.Add(new DecimalConverter());
+                    JSON_SERIALIZER_OPTIONS.Converters.Add(new NullableDecimalConverter());
+                }
+            }
         }
 
         // Unfortunately the main wkhtmltopdf project is not active any more.
@@ -44,15 +69,47 @@ namespace bifeldy_lib_90.Services {
             return this._converter.Convert(htmlToPdfDocument);
         }
 
-        public T JsonToObject<T>(string json, JsonTypeInfo<T> typeInfo) {
-            return string.IsNullOrEmpty(json) ? default : JsonSerializer.Deserialize(json, typeInfo);
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Safety guaranteed by JsonTypeInfo usage.")]
+        [UnconditionalSuppressMessage("Trimming", "IL2072:Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute'", Justification = "Safe primitive types from JsonTypeInfo.")]
+        public T JsonToObject<T>(string json) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            if (string.IsNullOrEmpty(json)) {
+                return default;
+            }
+
+            return JsonSerializer.Deserialize<T>(json, JSON_SERIALIZER_OPTIONS);
         }
 
-        public string ObjectToJson<T>(T value, JsonTypeInfo<T> typeInfo) {
-            return value == null ? null : JsonSerializer.Serialize(value, typeInfo);
+        public T JsonToObject<T>(string json, JsonTypeInfo<T> typeInfo) /* where T : JsonSerDe, new() */ {
+            if (string.IsNullOrEmpty(json)) {
+                return default;
+            }
+
+            return JsonSerializer.Deserialize(json, typeInfo);
         }
 
-        private JsonNode ConvertXmlToJsonNode(XElement element) {
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Safety guaranteed by JsonTypeInfo usage.")]
+        [UnconditionalSuppressMessage("Trimming", "IL2072:Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute'", Justification = "Safe primitive types from JsonTypeInfo.")]
+        public string ObjectToJson<T>(T value) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            return value == null ? null : JsonSerializer.Serialize(value, JSON_SERIALIZER_OPTIONS);
+        }
+
+        public string ObjectToJson<T>(T value, JsonTypeInfo<T> typeInfo) /* where T : JsonSerDe, new() */ {
+            if (value == null) {
+                return null;
+            }
+
+            return JsonSerializer.Serialize(value, typeInfo);
+        }
+
+        private static JsonNode ConvertXmlToJsonNode(XElement element) {
             var jsonObject = new JsonObject();
 
             foreach (XAttribute attr in element.Attributes()) {
@@ -67,13 +124,13 @@ namespace bifeldy_lib_90.Services {
                         jsonObject.Add(group.Key, null);
                     }
                     else {
-                        jsonObject.Add(group.Key, this.ConvertXmlToJsonNode(child));
+                        jsonObject.Add(group.Key, ConvertXmlToJsonNode(child));
                     }
                 }
                 else {
                     var jsonArray = new JsonArray();
                     foreach (XElement child in group) {
-                        jsonArray.Add(this.ConvertXmlToJsonNode(child));
+                        jsonArray.Add(ConvertXmlToJsonNode(child));
                     }
 
                     jsonObject.Add(group.Key, jsonArray);
@@ -95,14 +152,26 @@ namespace bifeldy_lib_90.Services {
         }
 
         public string XmlToJson(string xml) {
+            if (string.IsNullOrEmpty(xml)) {
+                return null;
+            }
+
             var xdoc = XDocument.Parse(xml);
             xdoc.Declaration = null;
 
-            JsonNode jsonNode = this.ConvertXmlToJsonNode(xdoc.Root);
+            if (xdoc == null || xdoc.Root == null) {
+                return null;
+            }
+
+            JsonNode jsonNode = ConvertXmlToJsonNode(xdoc.Root);
             return jsonNode.ToJsonString();
         }
 
         public object JsonNodeToObject(JsonNode node) {
+            if (node == null) {
+                return null;
+            }
+
             if (node is JsonObject obj) {
                 var dict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
                 foreach (KeyValuePair<string, JsonNode> kv in obj) {
@@ -150,13 +219,20 @@ namespace bifeldy_lib_90.Services {
                     return m;
                 }
 
-                if (val.TryGetValue(out DateTime dateTime)) {
-                    return dateTime;
+                if (val.TryGetValue(out DateTime dt)) {
+                    return dt;
                 }
 
-                if (val.TryGetValue(out DateOnly dateOnly)) {
-                    return dateOnly;
+                if (val.TryGetValue(out DateOnly dto)) {
+                    return dto;
                 }
+
+                //
+                // TODO :: Add More Known Data Type
+                //
+                // ~ Note ~
+                // Guid = String
+                //
 
                 throw new NotSupportedException("Unsupported JSON Primitive");
             }
@@ -167,10 +243,6 @@ namespace bifeldy_lib_90.Services {
         public JsonNode ObjectToJsonNode(object value) {
             if (value == null) {
                 return null;
-            }
-
-            if (value.GetType().IsEnum) {
-                return JsonValue.Create(value.ToString());
             }
 
             if (value is IDictionary<string, object> dict) {
@@ -199,14 +271,16 @@ namespace bifeldy_lib_90.Services {
                 float f => JsonValue.Create(f),
                 double d => JsonValue.Create(d),
                 decimal m => JsonValue.Create(m),
-                DateTime dateTime => JsonValue.Create(dateTime.ToString("O")),
-                DateOnly dateOnly => JsonValue.Create(dateOnly.ToString("O")),
-                _ => throw new NotSupportedException($"Type '{value.GetType()}' is not supported in AOT-safe JSON serialization")
+                DateTime dt => JsonValue.Create(dt.ToString("O")),
+                DateOnly d => JsonValue.Create(d.ToString("O")),
+                _ => RuntimeFeature.IsDynamicCodeSupported
+                    ? this.ObjectToJsonNode(value.ToDictionary())
+                    : throw new NotSupportedException($"Type '{value.GetType()}' Tidak AOT-safe JSON Serialization")
             };
         }
 
         public object JsonToObject(string json) {
-            if (string.IsNullOrWhiteSpace(json)) {
+            if (string.IsNullOrEmpty(json)) {
                 return null;
             }
 
@@ -219,19 +293,15 @@ namespace bifeldy_lib_90.Services {
                 return null;
             }
 
-            var jsonSerializerOptions = new JsonSerializerOptions();
-            jsonSerializerOptions.Converters.Add(new DecimalConverter());
-            jsonSerializerOptions.Converters.Add(new NullableDecimalConverter());
-
-            return this.ObjectToJsonNode(value).ToJsonString(jsonSerializerOptions);
+            return this.ObjectToJsonNode(value)?.ToJsonString(JSON_SERIALIZER_OPTIONS);
         }
 
         public string FormatByteSizeHumanReadable(long bytes, string forceUnit = null) {
-            IDictionary<string, long> dict = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase) {
-                { "TB", 1_000_000_000_000 },
-                { "GB", 1_000_000_000 },
-                { "MB", 1_000_000 },
-                { "KB", 1_000 },
+            var dict = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase) {
+                { "TB", 1000000000000 },
+                { "GB", 1000000000 },
+                { "MB", 1000000 },
+                { "KB", 1000 },
                 { "B", 1 }
             };
 
@@ -251,10 +321,40 @@ namespace bifeldy_lib_90.Services {
                 }
             }
 
-            return $"{(decimal) bytes / digit:0.00} {ext}";
+            return $"{(decimal)bytes / digit:0.00} {ext}";
         }
 
-        public List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
+        public List<CDynamicClassProperty> GetTableClassStructureModel<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            var ls = new List<CDynamicClassProperty>();
+
+            foreach (PropertyInfo propertyInfo in typeof(T).GetProperties()) {
+                Type type = Nullable.GetUnderlyingType(propertyInfo.PropertyType);
+
+                Type dataType = type ?? propertyInfo.PropertyType;
+                bool isNullable = type != null;
+
+                if (type == null && dataType == typeof(string)) {
+                    KeyAttribute primaryKey = propertyInfo.GetCustomAttribute<KeyAttribute>();
+                    isNullable = primaryKey == null;
+                }
+
+                var item = new CDynamicClassProperty() {
+                    ColumnName = propertyInfo.Name,
+                    DataType = dataType.FullName,
+                    IsNullable = isNullable
+                };
+
+                ls.Add(item);
+            }
+
+            return ls;
+        }
+
+        public List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) /* where T : JsonSerDe, new() */ {
             var ls = new List<CDynamicClassProperty>();
 
             foreach (JsonPropertyInfo prop in jsonTypeInfo.Properties) {
@@ -288,7 +388,56 @@ namespace bifeldy_lib_90.Services {
             return ls;
         }
 
-        public List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
+        public List<CDynamicClassPropertyV2> GetPocoStructureModel<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+            }
+
+            var list = new List<CDynamicClassPropertyV2>();
+
+            foreach (PropertyInfo prop in typeof(T).GetProperties()) {
+                Type type = prop.PropertyType;
+
+                // Nullable<T> detection
+                bool isNullable = Nullable.GetUnderlyingType(type) != null;
+                Type coreType = isNullable ? Nullable.GetUnderlyingType(type) : type;
+
+                bool isList =
+                    coreType.IsGenericType &&
+                    coreType.GetGenericTypeDefinition() == typeof(List<>);
+
+                bool isDictionary =
+                    coreType.IsGenericType &&
+                    coreType.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+
+                bool isArray = coreType.IsArray;
+                bool isEnum = coreType.IsEnum;
+
+                bool isClass =
+                    coreType.IsClass &&
+                    coreType != typeof(string) &&
+                    !isDictionary &&
+                    !isList &&
+                    !isArray &&
+                    !isEnum;
+
+                var item = new CDynamicClassPropertyV2() {
+                    ColumnName = prop.Name,
+                    TypeName = coreType.FullName,
+                    IsNullable = isNullable,
+                    IsArray = isArray,
+                    IsList = isList,
+                    IsDictionary = isDictionary,
+                    IsClass = isClass
+                };
+
+                list.Add(item);
+            }
+
+            return list;
+        }
+
+        public List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) /* where T : JsonSerDe, new() */ {
             var list = new List<CDynamicClassPropertyV2>();
 
             foreach (JsonPropertyInfo prop in jsonTypeInfo.Properties) {
