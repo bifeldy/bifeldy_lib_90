@@ -11,14 +11,14 @@ namespace bifeldy_lib_90.Extensions {
 
     public static class ObjectExtension {
 
-        private static readonly HashSet<Type> ExtraSimpleTypes = new() {
+        private static readonly HashSet<Type> ExtraSimpleTypes = [
             typeof(string),
             typeof(decimal),
             typeof(DateTime),
             typeof(DateTimeOffset), // Recommended: Handles time zones
             typeof(TimeSpan),       // Recommended: Handles durations
             typeof(Guid)
-        };
+        ];
 
         public static bool IsSimpleType(Type type) {
             type = Nullable.GetUnderlyingType(type) ?? type;
