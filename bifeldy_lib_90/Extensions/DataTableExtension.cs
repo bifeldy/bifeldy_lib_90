@@ -23,7 +23,7 @@ namespace bifeldy_lib_90.Extensions {
                 foreach (DataTableMapping map in mappings) {
                     object val = row[map.ColumnIndex];
 
-                    if (val != DBNull.Value && val != null) {
+                    if (val != DBNull.Value) {
                         if (val.GetType() != map.TargetType) {
                             val = FastConvert(val, map.TargetType);
                         }
@@ -52,7 +52,7 @@ namespace bifeldy_lib_90.Extensions {
                 .Where(p => p.CanWrite && dt.Columns.Contains(p.Name))
                 .Select(p => new DataTableMapping(
                     p.PropertyType,
-                    (obj, val) => p.SetValue(obj, val),
+                    ObjectExtension.CreateSetter(p),
                     dt.Columns.IndexOf(p.Name)
                 ))
                 .ToList();
@@ -120,22 +120,32 @@ namespace bifeldy_lib_90.Extensions {
         }
 
         private static object FastConvert(object value, Type targetType) {
-            Type actualType = Nullable.GetUnderlyingType(targetType) ?? targetType;
-
-            try {
-                if (actualType == typeof(string)) {
-                    return value.ToString();
-                }
-
-                if (actualType == typeof(Guid)) {
-                    return Guid.Parse(value.ToString());
-                }
-
-                return Convert.ChangeType(value, actualType);
-            }
-            catch {
+            if (value == null) {
                 return null;
             }
+
+            Type actualType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+            if (actualType == typeof(string)) {
+                return value.ToString();
+            }
+
+            if (actualType == typeof(Guid)) {
+                return value is Guid guid ? guid : Guid.Parse(value.ToString());
+            }
+
+            if (actualType.IsEnum) {
+                Type enumBase = Enum.GetUnderlyingType(actualType);
+                object numericValue = Convert.ChangeType(value, enumBase);
+
+                if (!Enum.IsDefined(actualType, numericValue)) {
+                    throw new InvalidOperationException($"Value {value} is not defined in enum {actualType.Name}");
+                }
+
+                return Enum.ToObject(actualType, numericValue);
+            }
+
+            return Convert.ChangeType(value, actualType);
         }
 
         private record DataTableMapping(Type TargetType, Action<object, object> Setter, int ColumnIndex);

@@ -1,4 +1,5 @@
 ﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Models;
 using ChoETL;
@@ -164,28 +165,24 @@ namespace bifeldy_lib_90.Services {
             }
 
             using (IDataReader dr = this.Csv2DataReader(filePath, delimiter, csvColumn, nullValue, eolDelimiter, encoding ?? Encoding.UTF8)) {
-                var propMap = new List<(PropertyInfo Prop, int Index, Type TargetType)>();
-
                 var readerColumns = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
                 for (int i = 0; i < dr.FieldCount; i++) {
                     readerColumns[dr.GetName(i)] = i;
                 }
 
-                foreach (PropertyInfo prop in typeof(T).GetProperties()) {
-                    if (!prop.CanWrite) {
-                        continue; // Skip read-only
-                    }
-
-                    if (readerColumns.TryGetValue(prop.Name, out int index)) {
-                        Type targetType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-                        propMap.Add((prop, index, targetType));
-                    }
-                }
+                var mappings = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.CanWrite && readerColumns.ContainsKey(p.Name))
+                    .Select(p => new CsvMapping(
+                        p.PropertyType,
+                        ObjectExtension.CreateSetter(p),
+                        readerColumns[p.Name]
+                    ))
+                    .ToList();
 
                 while (dr.Read()) {
                     T objT = Activator.CreateInstance<T>();
 
-                    foreach ((PropertyInfo Prop, int Index, Type TargetType) map in propMap) {
+                    foreach (CsvMapping map in mappings) {
                         if (!dr.IsDBNull(map.Index)) {
                             object val = dr.GetValue(map.Index);
 
@@ -193,8 +190,8 @@ namespace bifeldy_lib_90.Services {
                                 val = s.Replace("\"\"", "\"");
                             }
 
-                            val = Convert.ChangeType(val, map.TargetType);
-                            map.Prop.SetValue(objT, val);
+                            val = Convert.ChangeType(val, map.PropType);
+                            map.Setter(objT, val);
                         }
                     }
 
@@ -205,7 +202,7 @@ namespace bifeldy_lib_90.Services {
 
         public IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo, string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) where T : JsonSerDe, new() {
             using (IDataReader dr = this.Csv2DataReader(filePath, delimiter, csvColumn, nullValue, eolDelimiter, encoding ?? Encoding.UTF8)) {
-                var propMap = new List<(JsonPropertyInfo Prop, int Index, Type TargetType)>();
+                var mappings = new List<(JsonPropertyInfo Prop, int Index, Type TargetType)>();
 
                 var readerColumns = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
                 for (int i = 0; i < dr.FieldCount; i++) {
@@ -219,7 +216,7 @@ namespace bifeldy_lib_90.Services {
 
                     if (readerColumns.TryGetValue(prop.Name, out int index)) {
                         Type targetType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-                        propMap.Add((prop, index, targetType));
+                        mappings.Add((prop, index, targetType));
                     }
                 }
 
@@ -230,7 +227,7 @@ namespace bifeldy_lib_90.Services {
 
                     T objT = jsonTypeInfo.CreateObject();
 
-                    foreach ((JsonPropertyInfo Prop, int Index, Type TargetType) map in propMap) {
+                    foreach ((JsonPropertyInfo Prop, int Index, Type TargetType) map in mappings) {
                         if (!dr.IsDBNull(map.Index)) {
                             object val = dr.GetValue(map.Index);
 
@@ -247,6 +244,8 @@ namespace bifeldy_lib_90.Services {
                 }
             }
         }
+
+        private record CsvMapping(Type PropType, Action<object, object> Setter, int Index);
 
     }
 

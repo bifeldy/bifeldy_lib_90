@@ -15,57 +15,31 @@ namespace bifeldy_lib_90.Extensions {
         public static object ReadValue(DbDataReader dr, int index, Type targetType) {
             targetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
 
-            if (targetType == typeof(string)) {
-                return dr.GetString(index);
-            }
-
-            if (targetType == typeof(int)) {
-                return dr.GetInt32(index);
-            }
-
-            if (targetType == typeof(long)) {
-                return dr.GetInt64(index);
-            }
-
-            if (targetType == typeof(bool)) {
-                return dr.GetBoolean(index);
-            }
-
-            if (targetType == typeof(decimal)) {
-                return dr.GetDecimal(index);
-            }
-
-            if (targetType == typeof(double)) {
-                return dr.GetDouble(index);
-            }
-
-            if (targetType == typeof(float)) {
-                return dr.GetFloat(index);
-            }
-
-            if (targetType == typeof(DateTime)) {
-                return dr.GetDateTime(index);
-            }
-
-            if (targetType == typeof(DateTimeOffset)) {
-                return dr.GetFieldValue<DateTimeOffset>(index);
-            }
-
-            if (targetType == typeof(Guid)) {
-                return dr.GetGuid(index);
-            }
-
-            if (targetType == typeof(byte[])) {
-                return (byte[])dr.GetValue(index);
-            }
-
             if (targetType.IsEnum) {
                 Type enumBase = Enum.GetUnderlyingType(targetType);
                 object raw = ReadValue(dr, index, enumBase);
+
+                if (!Enum.IsDefined(targetType, raw)) {
+                    throw new InvalidCastException($"Value {raw} is not defined in enum {targetType.Name}");
+                }
+
                 return Enum.ToObject(targetType, raw);
             }
 
-            return dr.GetValue(index);
+            return targetType switch {
+                var t when t == typeof(string) => dr.GetString(index),
+                var t when t == typeof(int) => dr.GetInt32(index),
+                var t when t == typeof(long) => dr.GetInt64(index),
+                var t when t == typeof(bool) => dr.GetBoolean(index),
+                var t when t == typeof(decimal) => dr.GetDecimal(index),
+                var t when t == typeof(double) => dr.GetDouble(index),
+                var t when t == typeof(float) => dr.GetFloat(index),
+                var t when t == typeof(DateTime) => dr.GetDateTime(index),
+                var t when t == typeof(DateTimeOffset) => dr.GetFieldValue<DateTimeOffset>(index),
+                var t when t == typeof(Guid) => dr.GetGuid(index),
+                var t when t == typeof(byte[]) => (byte[])dr.GetValue(index),
+                _ => dr.GetValue(index)
+            };
         }
 
         private static async IAsyncEnumerable<T> ToAsyncInternal<T>(
@@ -130,7 +104,7 @@ namespace bifeldy_lib_90.Extensions {
                 .Where(p => p.CanWrite && colIndexLookup.ContainsKey(p.Name))
                 .Select(p => new DataReaderMapping(
                     p.PropertyType,
-                    (obj, val) => p.SetValue(obj, val),
+                    ObjectExtension.CreateSetter(p),
                     colIndexLookup[p.Name]
                 ))
                 .ToList();

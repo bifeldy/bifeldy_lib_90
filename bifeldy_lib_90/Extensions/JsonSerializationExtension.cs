@@ -29,6 +29,7 @@ namespace bifeldy_lib_90.Extensions {
             UserSessionJsonSerializerContext.Default,
             API_KEY_T_JsonSerializerContext.Default,
             API_TOKEN_T_JsonSerializerContext.Default,
+            DC_LISTMAILSERVER_T_JsonSerializerContext.Default,
             DC_TABEL_DC_T_JsonSerializerContext.Default,
             DC_TABEL_IP_T_JsonSerializerContext.Default,
             DC_TABEL_V_JsonSerializerContext.Default,

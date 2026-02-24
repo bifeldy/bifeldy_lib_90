@@ -1,6 +1,8 @@
 ﻿using bifeldy_lib_90.Abstractions;
 using bifeldy_lib_90.Libraries;
 using System.Collections;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -126,6 +128,25 @@ namespace bifeldy_lib_90.Extensions {
 
             result["IsCollection"] = false;
             return result;
+        }
+
+        public static Action<object, object> CreateSetter(PropertyInfo property) {
+            // Parameters: (object target, object value)
+            ParameterExpression targetExpr = Expression.Parameter(typeof(object), "target");
+            ParameterExpression valueExpr = Expression.Parameter(typeof(object), "value");
+
+            // Cast the 'target' to the specific class type: (T)target
+            UnaryExpression castTargetExpr = Expression.Convert(targetExpr, property.DeclaringType);
+
+            // Cast the 'value' to the property's type: (PropertyType)value
+            UnaryExpression castValueExpr = Expression.Convert(valueExpr, property.PropertyType);
+
+            // Build the assignment: ((T)target).Property = (PropertyType)value
+            MemberExpression propertyExpr = Expression.Property(castTargetExpr, property);
+            BinaryExpression assignExpr = Expression.Assign(propertyExpr, castValueExpr);
+
+            // Compile into Action<object, object>
+            return Expression.Lambda<Action<object, object>>(assignExpr, targetExpr, valueExpr).Compile();
         }
 
     }

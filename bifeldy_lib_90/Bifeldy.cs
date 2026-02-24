@@ -275,6 +275,7 @@ namespace bifeldy_lib_90 {
             _ = Services.AddScoped<IApiKeyRepository, CApiKeyRepository>();
             _ = Services.AddScoped<IApiTokenRepository, CApiTokenRepository>();
             _ = Services.AddScoped<IGeneralRepository, CGeneralRepository>();
+            _ = Services.AddScoped<IMailRepository, CMailRepository>();
             _ = Services.AddScoped<IServerConfigRepository, CServerConfigRepository>();
             _ = Services.AddScoped<IUserRepository, CUserRepository>();
             // --

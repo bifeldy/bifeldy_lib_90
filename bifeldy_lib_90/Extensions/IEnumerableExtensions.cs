@@ -142,10 +142,15 @@ namespace bifeldy_lib_90.Extensions {
             );
         }
 
-        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IEnumerable<T> items) {
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IEnumerable<T> items, Func<T, Task<T>> modifier = null) {
             foreach (T item in items) {
-                yield return item;
-                await Task.Yield();
+                T i = item;
+
+                if (modifier != null) {
+                    i = await modifier(item);
+                }
+
+                yield return i;
             }
         }
 
