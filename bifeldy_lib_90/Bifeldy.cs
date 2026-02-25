@@ -46,7 +46,7 @@ namespace bifeldy_lib_90 {
         public static int GC_RUN_INTERVAL = 30;
 
         public static string API_PREFIX = null;
-        public static string NGINX_PATH_NAME = "x-forwarded-prefix";
+        public static string NGINX_PATH_NAME = "X-Forwarded-Prefix";
 
         public static List<string> OPEN_API_DOCUMENTS = ApiDocumentName.ApiDefaultDocuments;
 
@@ -199,8 +199,19 @@ namespace bifeldy_lib_90 {
             string jsonFilePath = $"/{jsonFileName}" + "-{documentName}.json";
             _ = App.MapOpenApi(jsonFilePath);
 
-            _ = App.MapGet($"/{API_PREFIX}", async (context) => {
-                context.Response.Redirect($"/docs", true, true);
+            _ = App.MapGet($"/{API_PREFIX}", async context => {
+                IApplicationService app = context.RequestServices.GetRequiredService<IApplicationService>();
+
+                string redirectUrl = "/docs";
+
+                if (!app.DebugMode && context.Request.Headers.TryGetValue(NGINX_PATH_NAME, out StringValues pathBase)) {
+                    string proxyPath = pathBase.Last();
+                    if (!string.IsNullOrEmpty(proxyPath)) {
+                        redirectUrl = $"{proxyPath}{redirectUrl}";
+                    }
+                }
+
+                context.Response.Redirect(redirectUrl, true, true);
                 await Task.CompletedTask;
             });
 
@@ -288,6 +299,8 @@ namespace bifeldy_lib_90 {
             App = app;
             GC_RUN_INTERVAL = gcDelaySkipRunMinutes;
 
+            _ = Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DEFAULT_DATA_FOLDER));
+
             if (forceGcToCleanUpRamEveryRequest) {
                 _ = App.Use(async (context, next) => {
                     context.Response.OnCompleted(() => {
@@ -309,14 +322,6 @@ namespace bifeldy_lib_90 {
             }
         }
 
-        public static void UseForwardedHeaders() {
-            _ = App.UseForwardedHeaders(
-                new ForwardedHeadersOptions() {
-                    ForwardedHeaders = ForwardedHeaders.All
-                }
-            );
-        }
-
         public static void UseHelmet() {
             _ = App.UseHelmet(o => {
                 o.UseContentSecurityPolicy = false; // Buat Web Socket (Blazor SignalR, Socket.io, Web RTC)
@@ -325,19 +330,29 @@ namespace bifeldy_lib_90 {
             });
         }
 
+        public static void UseForwardedHeaders() {
+            var options = new ForwardedHeadersOptions() {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor
+                    | ForwardedHeaders.XForwardedHost
+                    | ForwardedHeaders.XForwardedProto
+            };
+
+            options.KnownProxies.Clear();
+            options.KnownNetworks.Clear();
+            options.ForwardLimit = null;
+
+            _ = App.UseForwardedHeaders();
+        }
+
         public static void UseNginxProxyPathSegment() {
             _ = App.Use((context, next) => {
-                if (context.Request.Headers.TryGetValue(NGINX_PATH_NAME, out StringValues values)) {
-                    string prefix = values.Last()?.TrimEnd('/');
+                if (context.Request.Headers.TryGetValue(NGINX_PATH_NAME, out StringValues prefix)) {
+                    string proxyPath = prefix.Last();
 
-                    if (!string.IsNullOrEmpty(prefix)) {
-                        if (string.IsNullOrEmpty(context.Request.PathBase)) {
-                            context.Request.PathBase = prefix;
-                        }
+                    context.Request.PathBase = new PathString(proxyPath.TrimEnd('/'));
 
-                        if (context.Request.Path.StartsWithSegments(prefix, out PathString remaining)) {
-                            context.Request.Path = remaining;
-                        }
+                    if (context.Request.Path.StartsWithSegments(proxyPath, StringComparison.InvariantCultureIgnoreCase, out PathString remainingPath)) {
+                        context.Request.Path = remainingPath;
                     }
                 }
 
@@ -352,8 +367,6 @@ namespace bifeldy_lib_90 {
             AssemblyName libAsm = Assembly.GetExecutingAssembly().GetName();
 
             string dataFolderPath = Path.Combine(appLocation, DEFAULT_DATA_FOLDER);
-            _ = Directory.CreateDirectory(dataFolderPath);
-
             string targetDatabaseLocationApp = Path.Combine(dataFolderPath, $"{prgAsm.Name}.db");
 
             if (!File.Exists(targetDatabaseLocationApp)) {
@@ -536,7 +549,18 @@ namespace bifeldy_lib_90 {
 
             if (redirectIndexToApi) {
                 _ = App.Map("/", context => {
-                    context.Response.Redirect($"/{API_PREFIX}", true, true);
+                    IApplicationService app = context.RequestServices.GetRequiredService<IApplicationService>();
+
+                    string redirectUrl = $"/{API_PREFIX}";
+
+                    if (!app.DebugMode && context.Request.Headers.TryGetValue(NGINX_PATH_NAME, out StringValues pathBase)) {
+                        string proxyPath = pathBase.Last();
+                        if (!string.IsNullOrEmpty(proxyPath)) {
+                            redirectUrl = $"{proxyPath}{redirectUrl}";
+                        }
+                    }
+
+                    context.Response.Redirect(redirectUrl, true, true);
                     return Task.CompletedTask;
                 });
             }

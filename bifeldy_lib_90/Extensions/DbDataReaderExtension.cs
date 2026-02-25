@@ -64,7 +64,7 @@ namespace bifeldy_lib_90.Extensions {
             }
         }
 
-        public static async IAsyncEnumerable<T> ToAsyncEnumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(
             this DbDataReader dr,
             Action<T> callback = null,
             [EnumeratorCancellation] CancellationToken token = default
@@ -179,7 +179,7 @@ namespace bifeldy_lib_90.Extensions {
             }
         }
 
-        private record DataReaderMapping(Type TargetType, Action<object, object> Setter, int Index);
+        public record DataReaderMapping(Type TargetType, Action<object, object> Setter, int Index);
 
     }
 

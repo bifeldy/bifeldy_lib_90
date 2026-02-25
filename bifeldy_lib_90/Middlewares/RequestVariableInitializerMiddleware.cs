@@ -19,7 +19,7 @@ namespace bifeldy_lib_90.Middlewares {
             this._gs = gs;
         }
 
-        public async Task Invoke(HttpContext context) {
+        public async Task Invoke(HttpContext context, IApplicationService app) {
             ConnectionInfo connection = context.Connection;
             HttpRequest request = context.Request;
             HttpResponse response = context.Response;
@@ -31,7 +31,7 @@ namespace bifeldy_lib_90.Middlewares {
             string traceId = context?.TraceIdentifier;
 
             string requestProxy = string.Empty;
-            if (request.Headers.TryGetValue(Bifeldy.NGINX_PATH_NAME, out StringValues pathBase)) {
+            if (!app.DebugMode && request.Headers.TryGetValue(Bifeldy.NGINX_PATH_NAME, out StringValues pathBase)) {
                 string proxyPath = pathBase.Last();
                 if (!string.IsNullOrEmpty(proxyPath)) {
                     requestProxy = proxyPath;

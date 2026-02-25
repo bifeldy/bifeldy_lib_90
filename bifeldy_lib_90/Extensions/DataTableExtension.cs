@@ -37,7 +37,7 @@ namespace bifeldy_lib_90.Extensions {
             }
         }
 
-        public static IEnumerable<T> ToEnumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(this DataTable dt, Action<T> callback = null) {
+        public static IEnumerable<T> ToEnumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(this DataTable dt, Action<T> callback = null) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }

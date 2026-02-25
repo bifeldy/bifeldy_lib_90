@@ -48,7 +48,7 @@ namespace bifeldy_lib_90.Libraries {
         }
 
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:RequiresDynamicCode", Justification = "We are explicitly registering types to ensure AOT generation.")]
-        private static void RegisterReferenceType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>() where T : class {
+        private static void RegisterReferenceType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : class {
             Register<T>();
             Register<T[]>();
             Register<List<T>>();
@@ -56,7 +56,7 @@ namespace bifeldy_lib_90.Libraries {
         }
 
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:RequiresDynamicCode", Justification = "We are explicitly registering types to ensure AOT generation.")]
-        private static void RegisterValueType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>() where T : struct {
+        private static void RegisterValueType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : struct {
             // Standard
             Register<T>();
             Register<T[]>();
@@ -70,7 +70,7 @@ namespace bifeldy_lib_90.Libraries {
             Register<Dictionary<string, T?>>();
         }
 
-        public static void Register<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>() {
+        public static void Register<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
             Register(typeof(T));
         }
 

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization.Metadata;
@@ -28,7 +29,7 @@ namespace bifeldy_lib_90.Abstractions {
         Task<List<T>> GetListAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default) where T : JsonSerDe, new();
         Task<List<T>> GetListAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default);
         Task<T> ExecScalarAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
-        Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600);
+        Task<T> ExecScalarAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default);
         Task<int> ExecQueryWithResultAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600);
         Task<bool> ExecQueryAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, int minRowsAffected = 1, bool shouldEqualMinRowsAffected = false);
         Task<DynamicParameters> ExecProcedureAsync(string procedureName, DynamicParameters procedureParameter = null, int commandTimeoutSeconds = 3600);
@@ -131,7 +132,7 @@ namespace bifeldy_lib_90.Abstractions {
             return this.GetAsyncEnumerableInternal(dr => dr.ToAsyncEnumerable(typeInfo, callback, token), sqlQuery, sqlParameter, commandTimeoutSeconds, token);
         }
 
-        public virtual IAsyncEnumerable<T> GetAsyncEnumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default) {
+        public virtual IAsyncEnumerable<T> GetAsyncEnumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default) {
             return this.GetAsyncEnumerableInternal(dr => dr.ToAsyncEnumerable(callback, token), sqlQuery, sqlParameter, commandTimeoutSeconds, token);
         }
 
@@ -194,7 +195,7 @@ namespace bifeldy_lib_90.Abstractions {
             return ls;
         }
 
-        public virtual async Task<List<T>> GetListAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default) {
+        public virtual async Task<List<T>> GetListAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default) {
             var ls = new List<T>();
 
             IAsyncEnumerable<T> iae = this.GetAsyncEnumerable(sqlQuery, sqlParameter, commandTimeoutSeconds, callback, token);
@@ -238,12 +239,48 @@ namespace bifeldy_lib_90.Abstractions {
             }
         }
 
-        // https://github.com/npgsql/npgsql/issues/1663
-        public virtual async Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600) {
+        public virtual async Task<T> ExecScalarAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
             try {
-                this.OpenConnection();
-                // Harus di tahan pakai `async/await` biar tidak balapan dengan `finally`
-                return await this.DbConnection.ExecuteScalarAsync<T>(sqlQuery, sqlParameter, this.DbTransaction, commandTimeoutSeconds, CommandType.Text);
+                Type t = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+                if (ObjectExtension.IsSimpleType(t)) {
+                    this.OpenConnection();
+                    return await this.DbConnection.ExecuteScalarAsync<T>(sqlQuery, sqlParameter, this.DbTransaction, commandTimeoutSeconds, CommandType.Text);
+                }
+
+                if (!RuntimeFeature.IsDynamicCodeSupported) {
+                    throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
+                }
+
+                await using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds)) {
+                    var colIndexLookup = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    for (int i = 0; i < dr.FieldCount; i++) {
+                        colIndexLookup[dr.GetName(i)] = i;
+                    }
+
+                    var mappings = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                        .Where(p => p.CanWrite && colIndexLookup.ContainsKey(p.Name))
+                        .Select(p => new DbDataReaderExtension.DataReaderMapping(
+                            p.PropertyType,
+                            ObjectExtension.CreateSetter(p),
+                            colIndexLookup[p.Name]
+                        ))
+                        .ToList();
+
+                    while (await dr.ReadAsync(token)) {
+                        T obj = Activator.CreateInstance<T>();
+
+                        foreach (DbDataReaderExtension.DataReaderMapping m in mappings) {
+                            if (!await dr.IsDBNullAsync(m.Index, token)) {
+                                object value = DbDataReaderExtension.ReadValue(dr, m.Index, m.TargetType);
+                                m.Setter(obj, value);
+                            }
+                        }
+
+                        return obj;
+                    }
+                }
+
+                return default;
             }
             finally {
                 this.TryCloseConnection();

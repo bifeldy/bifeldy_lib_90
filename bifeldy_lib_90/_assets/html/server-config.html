@@ -296,7 +296,7 @@
                 txtServerOkEl.innerHTML = `Dapat Di Akses Dengan ${document.location.protocol}//${document.location.hostname}${ev.target.value}`;
             });
 
-            modalBtnPreviewEl.addEventListener('click', async (ev) => {
+            modalBtnPreviewEl.addEventListener('click', async ev => {
                 ev.preventDefault();
                 ev.stopPropagation();
 
@@ -330,7 +330,7 @@
                 `.replaceAll('                    ', '').trim();
             });
 
-            modalBtnDeleteEl.addEventListener('click', async (ev) => {
+            modalBtnDeleteEl.addEventListener('click', async ev => {
                 ev.preventDefault();
                 ev.stopPropagation();
 
@@ -363,7 +363,7 @@
                 await loadListDc();
             });
 
-            modalBtnSaveEl.addEventListener('click', async (ev) => {
+            modalBtnSaveEl.addEventListener('click', async ev => {
                 ev.preventDefault();
                 ev.stopPropagation();
 

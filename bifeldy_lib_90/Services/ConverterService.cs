@@ -315,7 +315,7 @@ namespace bifeldy_lib_90.Services {
             return $"{(decimal)bytes / digit:0.00} {ext}";
         }
 
-        public List<CDynamicClassProperty> GetTableClassStructureModel<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
+        public List<CDynamicClassProperty> GetTableClassStructureModel<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
@@ -379,7 +379,7 @@ namespace bifeldy_lib_90.Services {
             return ls;
         }
 
-        public List<CDynamicClassPropertyV2> GetPocoStructureModel<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
+        public List<CDynamicClassPropertyV2> GetPocoStructureModel<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
