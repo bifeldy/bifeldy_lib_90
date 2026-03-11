@@ -1,4 +1,5 @@
 ﻿using bifeldy_lib_90.Extensions;
+using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Services;
 using Dapper;
@@ -7,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -29,16 +29,17 @@ namespace bifeldy_lib_90.Abstractions {
         Task<List<T>> GetListAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default) where T : JsonSerDe, new();
         Task<List<T>> GetListAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default);
         Task<T> ExecScalarAsync<T>(JsonTypeInfo<T> typeInfo, string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
-        Task<T> ExecScalarAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default);
+        Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default);
         Task<int> ExecQueryWithResultAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600);
         Task<bool> ExecQueryAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, int minRowsAffected = 1, bool shouldEqualMinRowsAffected = false);
         Task<DynamicParameters> ExecProcedureAsync(string procedureName, DynamicParameters procedureParameter = null, int commandTimeoutSeconds = 3600);
         Task<DbDataReader> ExecReaderAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CommandBehavior commandBehavior = CommandBehavior.Default, CancellationToken token = default);
         Task<List<string>> RetrieveBlob(string sqlQuery, string stringPathDownload, string stringFileName = null, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default);
         Task<string> BulkGetCsv(string sqlQuery, string delimiter, string filename, string outputFolderPath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default);
+        Task<int> BulkInsertInto(string tableName, IDataReader dataReader, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default);
+        Task<int> BulkInsertInto(string tableName, DataTable dataTable, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default);
         IAsyncEnumerable<int> BulkInsertInto<T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
         IAsyncEnumerable<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default);
-        Task<int> BulkInsertInto(string tableName, DataTable dataTable, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default);
     }
 
     public abstract partial class CDatabase : IDatabase, ICloneable {
@@ -132,12 +133,10 @@ namespace bifeldy_lib_90.Abstractions {
             return this.GetAsyncEnumerableInternal(dr => dr.ToAsyncEnumerable(typeInfo, callback, token), sqlQuery, sqlParameter, commandTimeoutSeconds, token);
         }
 
-        public virtual IAsyncEnumerable<T> GetAsyncEnumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default) {
+        public virtual IAsyncEnumerable<T> GetAsyncEnumerable<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default) {
             return this.GetAsyncEnumerableInternal(dr => dr.ToAsyncEnumerable(callback, token), sqlQuery, sqlParameter, commandTimeoutSeconds, token);
         }
 
-        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Safety guaranteed by JsonTypeInfo usage.")]
-        [UnconditionalSuppressMessage("Trimming", "IL2072:Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute'", Justification = "Safe primitive types from JsonTypeInfo.")]
         public virtual async Task<DataTable> GetDataTableAsync(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default, [CallerMemberName] string callerMemberName = null) {
             try {
                 Console.WriteLine($"[{callerMemberName}] :: Yaah, Pake Data Table - Lambat Broo, Mending Ganti Pakai `Class` Biasa Aja ~ Cobain Deh Bikin Kelas `T` Terus Pakai `GetAsyncEnumerable<T>` Atau `GetListAsync<T>`");
@@ -145,7 +144,7 @@ namespace bifeldy_lib_90.Abstractions {
                 const int dataTableMaxAllowedRows = 1_000_000;
                 var result = new DataTable();
 
-                using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
+                await using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
                     DataTable schema = dr.GetSchemaTable();
                     foreach (DataRow row in schema.Rows) {
                         _ = result.Columns.Add(row["ColumnName"].ToString(), (Type)row["DataType"]);
@@ -195,7 +194,7 @@ namespace bifeldy_lib_90.Abstractions {
             return ls;
         }
 
-        public virtual async Task<List<T>> GetListAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default) {
+        public virtual async Task<List<T>> GetListAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Action<T> callback = null, CancellationToken token = default) {
             var ls = new List<T>();
 
             IAsyncEnumerable<T> iae = this.GetAsyncEnumerable(sqlQuery, sqlParameter, commandTimeoutSeconds, callback, token);
@@ -239,7 +238,7 @@ namespace bifeldy_lib_90.Abstractions {
             }
         }
 
-        public virtual async Task<T> ExecScalarAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
+        public virtual async Task<T> ExecScalarAsync<T>(string sqlQuery, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
             try {
                 Type t = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
                 if (ObjectExtension.IsSimpleType(t)) {
@@ -410,6 +409,7 @@ namespace bifeldy_lib_90.Abstractions {
             return (exception == null) ? result : throw exception;
         }
 
+        // Saran :: Kalau Ada Bawaan Library Mending Di Timpa Pakai Nativenya
         public virtual async Task<string> BulkGetCsv(string sqlQuery, string delimiter, string filename, string outputFolderPath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default) {
             string result = null;
             Exception exception = null;
@@ -446,43 +446,118 @@ namespace bifeldy_lib_90.Abstractions {
             return (exception == null) ? result : throw exception;
         }
 
-        private async IAsyncEnumerable<int> BulkInsertInternal<T>(
-            IEnumerable<T> dataListArray,
-            Func<T[], DataTable> dataTableFactory,
-            string tableName,
-            int chunkSize,
-            int commandTimeoutSeconds,
-            [EnumeratorCancellation] CancellationToken token
-        ) {
-            int batchNumber = 1;
-            int totalInserted = 0;
+        // Saran :: Kalau Ada Bawaan Library Mending Di Timpa Pakai Nativenya
+        public virtual async Task<int> BulkInsertInto(string tableName, IDataReader dataReader, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default) {
+            int result = 0;
 
-            foreach (T[] chunk in dataListArray.Chunk(chunkSize)) {
-                using (DataTable dt = dataTableFactory(chunk)) {
-                    int res = await this.BulkInsertInto(tableName, dt, commandTimeoutSeconds, chunkSize, token);
-                    if (res != dt.Rows.Count) {
-                        throw new Exception($"Gagal Menyimpan Data (Batch: #{batchNumber} | Sukses: {totalInserted})");
+            string[] columns = [.. Enumerable.Range(0, dataReader.FieldCount).Select(dataReader.GetName)];
+            string sql = $@"
+                INSERT INTO {tableName} ({string.Join(", ", columns)})
+                VALUES ({string.Join(", ", columns.Select(c => "@" + c))})
+            ";
+
+            DbTransaction transaction = null;
+
+            try {
+                this.OpenConnection();
+
+                transaction = this.DbConnection.BeginTransaction();
+
+                await using (DbCommand cmd = this.DbConnection.CreateCommand()) {
+                    cmd.CommandText = sql;
+                    cmd.Transaction = transaction;
+                    cmd.CommandTimeout = commandTimeoutSeconds;
+
+                    var dbParams = new DbParameter[columns.Length];
+                    for (int i = 0; i < columns.Length; i++) {
+                        DbParameter p = cmd.CreateParameter();
+                        p.ParameterName = columns[i];
+                        // p.Value = DBNull.Value;
+
+                        _ = cmd.Parameters.Add(p);
+
+                        dbParams[i] = p;
                     }
 
-                    batchNumber++;
-                    totalInserted += dt.Rows.Count;
+                    while (dataReader.Read()) {
+                        token.ThrowIfCancellationRequested();
+                        for (int i = 0; i < columns.Length; i++) {
+                            dbParams[i].Value = dataReader.GetValue(i) ?? DBNull.Value;
+                        }
 
-                    yield return dt.Rows.Count;
+                        _ = await cmd.ExecuteNonQueryAsync(token);
+
+                        result++;
+                    }
+
+                    await transaction.CommitAsync(token);
+
+                    return result;
+                }
+            }
+            catch (Exception ex) {
+                if (transaction != null) {
+                    try {
+                        await transaction.RollbackAsync(token);
+                    }
+                    catch (Exception rollEx) {
+                        this._logger.LogError("[BULK_INSERT_ROLLBACK] {ex}", rollEx.Message);
+                    }
+                }
+
+                this._logger.LogError("[BULK_INSERT_ERROR] {ex}", ex.Message);
+                throw;
+            }
+            finally {
+                this.TryCloseConnection();
+            }
+        }
+
+        // Saran :: Kalau Ada Bawaan Library Mending Di Timpa Pakai Nativenya
+        public virtual Task<int> BulkInsertInto(string tableName, DataTable dataTable, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default) {
+            DataTableReader dr = dataTable.CreateDataReader();
+            return this.BulkInsertInto(tableName, dr, commandTimeoutSeconds, chunkSize, token);
+        }
+
+        private async IAsyncEnumerable<int> BulkInsertInternal<T>(
+            string tableName, IEnumerable<T> dataList,
+            Func<IEnumerator<T>, ObjectDataReader<T>> readerFactory,
+            int chunkSize = 2048, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default
+        ) {
+            using (IEnumerator<T> sharedEnumerator = dataList.GetEnumerator()) {
+                bool hasMore = true;
+
+                while (hasMore) {
+                    token.ThrowIfCancellationRequested();
+
+                    using (ObjectDataReader<T> reader = readerFactory(sharedEnumerator)) {
+                        int res = await this.BulkInsertInto(tableName, reader, commandTimeoutSeconds, chunkSize, token);
+
+                        yield return res;
+
+                        if (res < chunkSize) {
+                            hasMore = false;
+                        }
+                    }
                 }
             }
         }
 
         public virtual IAsyncEnumerable<int> BulkInsertInto<T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
-            return this.BulkInsertInternal(dataListArray, chunk => chunk.ToDataTable(jsonTypeInfo, tableName), tableName, chunkSize, commandTimeoutSeconds, token);
+            return this.BulkInsertInternal(
+                tableName, dataListArray,
+                e => new ObjectDataReader<T>(e, jsonTypeInfo, chunkSize),
+                chunkSize, commandTimeoutSeconds, token
+            );
         }
 
         public virtual IAsyncEnumerable<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
-            return this.BulkInsertInternal(dataListArray, chunk => chunk.ToDataTable(tableName), tableName, chunkSize, commandTimeoutSeconds, token);
+            return this.BulkInsertInternal(
+                tableName, dataListArray,
+                e => new ObjectDataReader<T>(e, chunkSize),
+                chunkSize, commandTimeoutSeconds, token
+            );
         }
-
-        /** Wajib di Override */
-
-        public abstract Task<int> BulkInsertInto(string tableName, DataTable dataTable, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default);
 
     }
 

@@ -1,13 +1,11 @@
 ﻿using bifeldy_lib_90.Abstractions;
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Services;
-using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Data;
-using System.Data.Common;
 
 namespace bifeldy_lib_90.Databases {
 
@@ -37,94 +35,79 @@ namespace bifeldy_lib_90.Databases {
             this.DbConnection = new SqliteConnection(_dbConnectionString);
         }
 
-        public override async Task<int> BulkInsertInto(string tableName, DataTable dataTable, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default) {
+        public override async Task<int> BulkInsertInto(string tableName, IDataReader dataReader, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default) {
             int result = 0;
-            Exception exception = null;
+
+            string[] columns = [.. Enumerable.Range(0, dataReader.FieldCount).Select(dataReader.GetName)];
+
+            string columnList = string.Join(", ", columns);
+            string parameterList = string.Join(", ", columns.Select(c => $"@{c}"));
+
+            string sql = $@"
+                INSERT INTO {tableName} ({columnList})
+                VALUES ({parameterList})
+            ";
+
+            SqliteTransaction transaction = null;
 
             try {
-                if (string.IsNullOrEmpty(tableName)) {
-                    throw new Exception("Target Tabel Tidak Ditemukan");
+                this.OpenConnection();
+
+                await using (var pragmaCmd = (SqliteCommand)this.DbConnection.CreateCommand()) {
+                    pragmaCmd.CommandText = "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;";
+                    _ = await pragmaCmd.ExecuteNonQueryAsync(token);
                 }
 
-                int colCount = dataTable.Columns.Count;
+                transaction = ((SqliteConnection)this.DbConnection).BeginTransaction();
 
-                var types = new Type[colCount];
-                int[] lengths = new int[colCount];
-                string[] fieldNames = new string[colCount];
+                await using (var cmd = (SqliteCommand)this.DbConnection.CreateCommand()) {
+                    cmd.CommandText = sql;
+                    cmd.Transaction = transaction;
+                    cmd.CommandTimeout = commandTimeoutSeconds;
 
-                string sqlQuery = $"SELECT * FROM {tableName} WHERE 1 = 0";
-                DbDataReader reader = await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.Default, token);
-
-                SqliteDataReader rdr = null;
-                if (reader is IWrappedDataReader dapperWrappedReader) {
-                    rdr = (SqliteDataReader)dapperWrappedReader.Reader;
-                }
-                else {
-                    rdr = (SqliteDataReader)reader;
-                }
-
-                await using (rdr) {
-                    if (rdr.FieldCount != colCount) {
-                        throw new Exception("Jumlah Kolom Tabel Tidak Sama");
+                    var sqliteParams = new SqliteParameter[dataReader.FieldCount];
+                    for (int i = 0; i < dataReader.FieldCount; i++) {
+                        sqliteParams[i] = new SqliteParameter(columns[i], DBNull.Value);
+                        _ = cmd.Parameters.Add(sqliteParams[i]);
                     }
 
-                    DataColumnCollection columns = rdr.GetSchemaTable().Columns;
-                    for (int i = 0; i < colCount; i++) {
-                        types[i] = columns[i].DataType;
-                        lengths[i] = columns[i].MaxLength;
-                        fieldNames[i] = columns[i].ColumnName;
-                    }
-                }
+                    while (dataReader.Read()) {
+                        token.ThrowIfCancellationRequested();
 
-                string sbHeader = string.Empty;
-                for (int c = 0; c < colCount; c++) {
-                    if (!string.IsNullOrEmpty(sbHeader)) {
-                        sbHeader += ", ";
-                    }
-
-                    sbHeader += fieldNames[c];
-                }
-
-                for (int r = 0; r < dataTable.Rows.Count; r++) {
-                    var param = new List<SqliteParameter>();
-
-                    string sbColumn = string.Empty;
-                    for (int c = 0; c < colCount; c++) {
-                        if (!string.IsNullOrEmpty(sbColumn)) {
-                            sbColumn += ", ";
+                        for (int i = 0; i < dataReader.FieldCount; i++) {
+                            sqliteParams[i].Value = dataReader.GetValue(i) ?? DBNull.Value;
                         }
 
-                        string paramKey = $"{fieldNames[c]}_{r}";
-
-                        sbColumn += $":{paramKey}";
-                        param.Add(new SqliteParameter(paramKey, dataTable.Rows[r][fieldNames[c]]));
-                    }
-
-                    sqlQuery = $"INSERT INTO {tableName} ({sbHeader}) VALUES ({sbColumn})";
-
-                    await using (var cmd = (SqliteCommand)this.DbConnection.CreateCommand()) {
-                        cmd.CommandText = sqlQuery;
-                        cmd.CommandTimeout = commandTimeoutSeconds;
-                        cmd.Parameters.AddRange([.. param]);
-
-                        int run = await cmd.ExecuteNonQueryAsync(token);
-                        if (run <= 0) {
-                            throw new Exception("Gagal Insert Data");
-                        }
+                        _ = await cmd.ExecuteNonQueryAsync(token);
 
                         result++;
                     }
                 }
+
+                await transaction.CommitAsync(token);
+
+                return result;
             }
             catch (Exception ex) {
-                this._logger.LogError("[SQLITE_BULK_INSERT] {ex}", ex.Message);
-                exception = ex;
+                if (transaction != null) {
+                    try {
+                        await transaction.RollbackAsync(token);
+                    }
+                    catch (Exception rollEx) {
+                        this._logger.LogError("[SQLITE_BULK_INSERT_ROLLBACK] {ex}", rollEx.Message);
+                    }
+                }
+
+                this._logger.LogError("[SQLITE_BULK_INSERT_ERROR] {ex}", ex.Message);
+                throw;
             }
             finally {
+                if (transaction != null) {
+                    await transaction.DisposeAsync();
+                }
+
                 this.TryCloseConnection();
             }
-
-            return (exception == null) ? result : throw exception;
         }
 
         public CSqlite NewExternalConnection(string dbName) {

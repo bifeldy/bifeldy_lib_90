@@ -54,29 +54,40 @@ namespace bifeldy_lib_90.Databases {
             this.DbConnection = new SqlConnection(_dbConnectionString);
         }
 
-        public override async Task<int> BulkInsertInto(string tableName, DataTable dataTable, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default) {
-            int result = 0;
-            Exception exception = null;
-
+        public override async Task<int> BulkInsertInto(string tableName, IDataReader dataReader, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default) {
             try {
+                int rowsInserted = 0;
+
                 this.OpenConnection();
+
                 using (var dbBulkCopy = new SqlBulkCopy((SqlConnection)this.DbConnection) {
                     DestinationTableName = tableName,
-                    BatchSize = chunkSize
+                    BulkCopyTimeout = commandTimeoutSeconds,
+                    BatchSize = chunkSize,
+                    EnableStreaming = true,
+                    NotifyAfter = 1
                 }) {
-                    await dbBulkCopy.WriteToServerAsync(dataTable, token);
-                    result = dataTable.Rows.Count;
+                    dbBulkCopy.SqlRowsCopied += (s, e) => {
+                        rowsInserted = (int)e.RowsCopied;
+                    };
+
+                    for (int i = 0; i < dataReader.FieldCount; i++) {
+                        string colName = dataReader.GetName(i);
+                        _ = dbBulkCopy.ColumnMappings.Add(colName, colName);
+                    }
+
+                    await dbBulkCopy.WriteToServerAsync(dataReader, token);
+
+                    return rowsInserted;
                 }
             }
             catch (Exception ex) {
                 this._logger.LogError("[SQL_BULK_INSERT] {ex}", ex.Message);
-                exception = ex;
+                throw;
             }
             finally {
                 this.TryCloseConnection();
             }
-
-            return (exception == null) ? result : throw exception;
         }
 
         public CMsSQL NewExternalConnection(string dbIpAddrss, string dbUsername, string dbPassword, string dbName) {

@@ -80,7 +80,7 @@ namespace bifeldy_lib_90.Databases {
                 }
 
                 if (includeHeader) {
-                    sqlQuery = $"SELECT * FROM ({sqlQuery}) alias_{DateTime.Now.Ticks} WHERE 1 = 0";
+                    sqlQuery = $"SELECT * FROM ( {sqlQuery} ) alias_{DateTime.Now.Ticks} WHERE 1 = 0";
 
                     await using (var rdr = (NpgsqlDataReader)await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, CommandBehavior.SequentialAccess, token)) {
                         ReadOnlyCollection<NpgsqlDbColumn> columns = rdr.GetColumnSchema();
@@ -149,128 +149,136 @@ namespace bifeldy_lib_90.Databases {
             return (exception == null) ? result : throw exception;
         }
 
-        // https://stackoverflow.com/questions/65687071/bulk-insert-copy-ienumerable-into-table-with-npgsql
-        public override async Task<int> BulkInsertInto(string tableName, DataTable dataTable, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default) {
-            int result = 0;
-            Exception exception = null;
+        private async Task<(NpgsqlDbType[] types, int[] lengths, string[] fieldNames)> GetMetadata(
+            string tableName,
+            string[] columnNames,
+            int commandTimeoutSeconds = 3600,
+            CancellationToken token = default
+        ) {
+            string sqlQuery = $"SELECT * FROM {tableName} WHERE 1 = 0";
 
+            await using (DbDataReader reader = await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.SchemaOnly, token)) {
+                NpgsqlDataReader rdr = reader is IWrappedDataReader dapper
+                    ? (NpgsqlDataReader)dapper.Reader
+                    : (NpgsqlDataReader)reader;
+
+                await using (rdr) {
+                    ReadOnlyCollection<NpgsqlDbColumn> dbColumns = rdr.GetColumnSchema();
+                    int colCount = columnNames.Length;
+
+                    var types = new NpgsqlDbType[colCount];
+                    int[] lengths = new int[colCount];
+                    string[] fieldNames = new string[colCount];
+
+                    for (int i = 0; i < colCount; i++) {
+                        NpgsqlDbColumn column = dbColumns.FirstOrDefault(c => c.ColumnName.Equals(columnNames[i], StringComparison.OrdinalIgnoreCase));
+                        if (column == null) {
+                            throw new Exception($"Kolom {columnNames[i]} tidak ditemukan di {tableName}");
+                        }
+
+                        types[i] = (NpgsqlDbType)column.NpgsqlDbType;
+                        lengths[i] = column.ColumnSize ?? 0;
+                        fieldNames[i] = column.ColumnName;
+                    }
+
+                    return (types, lengths, fieldNames);
+                }
+            }
+        }
+
+        private async Task BulkInsertData(NpgsqlBinaryImporter writer, object obj, NpgsqlDbType types, int lengths, CancellationToken token) {
+            switch (types) {
+                case NpgsqlDbType.Bigint:
+                    await writer.WriteAsync(Convert.ToInt64(obj), types, token);
+                    break;
+                case NpgsqlDbType.Integer:
+                    await writer.WriteAsync(Convert.ToInt32(obj), types, token);
+                    break;
+                case NpgsqlDbType.Smallint:
+                    await writer.WriteAsync(Convert.ToInt16(obj), types, token);
+                    break;
+                case NpgsqlDbType.Money:
+                case NpgsqlDbType.Numeric:
+                    await writer.WriteAsync(Convert.ToDecimal(obj).RemoveTrail(), types, token);
+                    break;
+                case NpgsqlDbType.Double:
+                    await writer.WriteAsync(Convert.ToDouble(obj), types, token);
+                    break;
+                case NpgsqlDbType.Real:
+                    await writer.WriteAsync(Convert.ToSingle(obj), types, token);
+                    break;
+                case NpgsqlDbType.Boolean:
+                    await writer.WriteAsync(Convert.ToBoolean(obj), types, token);
+                    break;
+                case NpgsqlDbType.Char:
+                    if (lengths == 1) {
+                        string str = Convert.ToString(obj);
+                        if (string.IsNullOrEmpty(str)) {
+                            obj = string.Empty;
+                        }
+                        else {
+                            char[] chr = str.ToCharArray();
+                            if (chr.Length == lengths) {
+                                await writer.WriteAsync(chr[lengths - 1], types, token);
+                                break;
+                            }
+                        }
+                    }
+
+                    goto case NpgsqlDbType.Varchar;
+                case NpgsqlDbType.Varchar:
+                case NpgsqlDbType.Text:
+                    await writer.WriteAsync(Convert.ToString(obj), types, token);
+                    break;
+                case NpgsqlDbType.Time:
+                case NpgsqlDbType.Timestamp:
+                case NpgsqlDbType.TimestampTz:
+                case NpgsqlDbType.Date:
+                    await writer.WriteAsync(Convert.ToDateTime(obj), types, token);
+                    break;
+                case NpgsqlDbType.Bytea:
+                    await writer.WriteAsync((byte[])obj, types, token);
+                    break;
+                default:
+                    await writer.WriteAsync(obj, types, token);
+                    break;
+
+                    //
+                    // TODO :: Add More Handles While Free Time ~
+                    //
+            }
+        }
+
+        public override async Task<int> BulkInsertInto(string tableName, IDataReader dataReader, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default) {
             try {
+                int result = 0;
+
                 if (string.IsNullOrEmpty(tableName)) {
                     throw new Exception("Target Tabel Tidak Ditemukan");
                 }
 
-                int colCount = dataTable.Columns.Count;
-                var lsCol = dataTable.Columns.Cast<DataColumn>().Select(c => c.ColumnName.ToUpper()).ToList();
-                if (colCount != lsCol.Count) {
-                    throw new Exception($"Jumlah Kolom Mapping Tabel Aneh Tidak Sesuai");
-                }
+                string[] readerColumns = [.. Enumerable.Range(0, dataReader.FieldCount).Select(dataReader.GetName)];
 
-                var types = new NpgsqlDbType[colCount];
-                int[] lengths = new int[colCount];
-                string[] fieldNames = new string[colCount];
-
-                string sqlQuery = $"SELECT * FROM {tableName} WHERE 1 = 0";
-                DbDataReader reader = await this.ExecReaderAsync(sqlQuery, null, commandTimeoutSeconds, CommandBehavior.Default, token);
-
-                NpgsqlDataReader rdr = null;
-                if (reader is IWrappedDataReader dapperWrappedReader) {
-                    rdr = (NpgsqlDataReader)dapperWrappedReader.Reader;
-                }
-                else {
-                    rdr = (NpgsqlDataReader)reader;
-                }
-
-                await using (rdr) {
-                    ReadOnlyCollection<NpgsqlDbColumn> columns = rdr.GetColumnSchema();
-
-                    for (int i = 0; i < colCount; i++) {
-                        NpgsqlDbColumn column = columns.FirstOrDefault(c => c.ColumnName.Equals(lsCol[i], StringComparison.OrdinalIgnoreCase));
-                        if (column == null) {
-                            throw new Exception($"Kolom {lsCol[i]} Tidak Tersedia Di Tabel Tujuan {tableName}");
-                        }
-
-                        types[i] = (NpgsqlDbType)column.NpgsqlDbType;
-                        lengths[i] = column.ColumnSize == null ? 0 : (int)column.ColumnSize;
-                        fieldNames[i] = column.ColumnName;
-                    }
-                }
+                (NpgsqlDbType[] types, int[] lengths, string[] fieldNames) = await this.GetMetadata(tableName, readerColumns, commandTimeoutSeconds, token);
 
                 var sB = new StringBuilder(fieldNames[0]);
-                for (int p = 1; p < colCount; p++) {
+                for (int p = 1; p < readerColumns.Length; p++) {
                     _ = sB.Append(", " + fieldNames[p]);
                 }
 
                 await using (NpgsqlBinaryImporter writer = await ((NpgsqlConnection)this.DbConnection).BeginBinaryImportAsync($"COPY {tableName} ({sB}) FROM STDIN (FORMAT BINARY)", token)) {
-                    for (int j = 0; j < dataTable.Rows.Count; j++) {
-                        DataRow dR = dataTable.Rows[j];
+                    while (dataReader.Read()) {
                         await writer.StartRowAsync(token);
 
-                        for (int i = 0; i < colCount; i++) {
-                            if (dR[fieldNames[i]] == DBNull.Value) {
+                        for (int i = 0; i < fieldNames.Length; i++) {
+                            int colIndex = dataReader.GetOrdinal(fieldNames[i]);
+                            object _obj = dataReader.GetValue(colIndex);
+
+                            if (_obj == null || _obj == DBNull.Value) {
                                 await writer.WriteNullAsync(token);
                             }
                             else {
-                                object _obj = dR[fieldNames[i]];
-                                switch (types[i]) {
-                                    case NpgsqlDbType.Bigint:
-                                        await writer.WriteAsync(Convert.ToInt64(_obj), types[i], token);
-                                        break;
-                                    case NpgsqlDbType.Integer:
-                                        await writer.WriteAsync(Convert.ToInt32(_obj), types[i], token);
-                                        break;
-                                    case NpgsqlDbType.Smallint:
-                                        await writer.WriteAsync(Convert.ToInt16(_obj), types[i], token);
-                                        break;
-                                    case NpgsqlDbType.Money:
-                                    case NpgsqlDbType.Numeric:
-                                        await writer.WriteAsync(Convert.ToDecimal(_obj).RemoveTrail(), types[i], token);
-                                        break;
-                                    case NpgsqlDbType.Double:
-                                        await writer.WriteAsync(Convert.ToDouble(_obj), types[i], token);
-                                        break;
-                                    case NpgsqlDbType.Real:
-                                        await writer.WriteAsync(Convert.ToSingle(_obj), types[i], token);
-                                        break;
-                                    case NpgsqlDbType.Boolean:
-                                        await writer.WriteAsync(Convert.ToBoolean(_obj), types[i], token);
-                                        break;
-                                    case NpgsqlDbType.Char:
-                                        if (lengths[i] == 1) {
-                                            string str = Convert.ToString(_obj);
-                                            if (string.IsNullOrEmpty(str)) {
-                                                _obj = string.Empty;
-                                            }
-                                            else {
-                                                char[] chr = str.ToCharArray();
-                                                if (chr.Length == lengths[i]) {
-                                                    await writer.WriteAsync(chr[lengths[i] - 1], types[i], token);
-                                                    break;
-                                                }
-                                            }
-                                        }
-
-                                        goto case NpgsqlDbType.Varchar;
-                                    case NpgsqlDbType.Varchar:
-                                    case NpgsqlDbType.Text:
-                                        await writer.WriteAsync(Convert.ToString(_obj), types[i], token);
-                                        break;
-                                    case NpgsqlDbType.Time:
-                                    case NpgsqlDbType.Timestamp:
-                                    case NpgsqlDbType.TimestampTz:
-                                    case NpgsqlDbType.Date:
-                                        await writer.WriteAsync(Convert.ToDateTime(_obj), types[i], token);
-                                        break;
-                                    case NpgsqlDbType.Bytea:
-                                        await writer.WriteAsync((byte[])_obj, types[i], token);
-                                        break;
-                                    default:
-                                        await writer.WriteAsync(_obj, types[i], token);
-                                        break;
-
-                                        //
-                                        // TODO :: Add More Handles While Free Time ~
-                                        //
-                                }
+                                await this.BulkInsertData(writer, _obj, types[i], lengths[i], token);
                             }
                         }
 
@@ -279,16 +287,16 @@ namespace bifeldy_lib_90.Databases {
 
                     _ = await writer.CompleteAsync(token);
                 }
+
+                return result;
             }
             catch (Exception ex) {
-                this._logger.LogError("[PG_BULK_INSERT] {ex}", ex.Message);
-                exception = ex;
+                this._logger.LogError("[PG_BULK_INSERT_ERROR] {ex}", ex.Message);
+                throw;
             }
             finally {
                 this.TryCloseConnection();
             }
-
-            return (exception == null) ? result : throw exception;
         }
 
         public CPostgres NewExternalConnection(string dbIpAddrss, string dbPort, string dbUsername, string dbPassword, string dbName) {
