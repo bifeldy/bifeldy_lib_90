@@ -37,7 +37,7 @@ namespace bifeldy_lib_90.Libraries {
 
         public ObjectDataReader(IEnumerator<T> enumerator, int limit) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
-                throw new Exception("Reflection hanya bisa di JIT, gunakan JsonTypeInfo untuk AOT.");
+                throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
             this._enumerator = enumerator;
