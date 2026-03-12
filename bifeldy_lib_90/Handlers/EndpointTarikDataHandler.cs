@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using System.Collections.Specialized;
 using System.Net.Mime;
 using System.Runtime.CompilerServices;
@@ -94,31 +95,31 @@ namespace bifeldy_lib_90.Handlers {
 
                     await this._context.Response.StartAsync();
 
-                    await using (var writer = new Utf8JsonWriter(this._context.Response.BodyWriter)) {
-                        writer.WriteStartObject();
+                    var writer = new Utf8JsonWriter(this._context.Response.BodyWriter);
 
-                        string info = $"{StatusCodes.Status200OK} - {callerMemberName}";
-                        if (!string.IsNullOrEmpty(suffixInfo)) {
-                            info = $"{StatusCodes.Status200OK} - {callerMemberName} {suffixInfo}";
-                        }
+                    writer.WriteStartObject();
 
-                        writer.WriteString("info", info);
-                        writer.WritePropertyName("results");
-                        writer.WriteStartArray();
-
-                        await writer.FlushAsync(this._context.RequestAborted);
-
-                        await foreach (TOutputJson item in ls) {
-                            JsonSerializer.Serialize(writer, item, jsonTypeInfoOutput);
-                        }
-
-                        writer.WriteEndArray();
-                        writer.WriteNumber("pages", pages);
-                        writer.WriteNumber("count", count);
-                        writer.WriteEndObject();
-
-                        await writer.FlushAsync(this._context.RequestAborted);
+                    string info = $"{StatusCodes.Status200OK} - {callerMemberName}";
+                    if (!string.IsNullOrEmpty(suffixInfo)) {
+                        info = $"{StatusCodes.Status200OK} - {callerMemberName} {suffixInfo}";
                     }
+
+                    writer.WriteString("info", info);
+                    writer.WritePropertyName("results");
+                    writer.WriteStartArray();
+
+                    await writer.FlushAsync(this._context.RequestAborted);
+
+                    await foreach (TOutputJson item in ls.WithCancellation(this._context.RequestAborted)) {
+                        JsonSerializer.Serialize(writer, item, jsonTypeInfoOutput);
+                    }
+
+                    writer.WriteEndArray();
+                    writer.WriteNumber("pages", pages);
+                    writer.WriteNumber("count", count);
+                    writer.WriteEndObject();
+
+                    await writer.FlushAsync(this._context.RequestAborted);
 
                     _ = await customService.ExecuteSesudahTarik(this._context, db, fd, searchQuery, sort, order, page, row);
                 }
@@ -239,7 +240,16 @@ namespace bifeldy_lib_90.Handlers {
                     result = fileName
                 };
 
-                this._context.Response.Headers.Location = $"/downloader?completedOnly=true&fileType=csv&fileName={fileName}";
+                string redirectUrl = $"/downloader?completedOnly=true&fileType=csv&fileName={fileName}";
+
+                if (!this._app.DebugMode && this._context.Request.Headers.TryGetValue(Bifeldy.NGINX_PATH_NAME, out StringValues pathBase)) {
+                    string proxyPath = pathBase.Last();
+                    if (!string.IsNullOrEmpty(proxyPath)) {
+                        redirectUrl = $"{proxyPath}{redirectUrl}";
+                    }
+                }
+
+                this._context.Response.Headers.Location = redirectUrl;
                 this._context.Response.StatusCode = StatusCodes.Status202Accepted;
                 this._context.Response.ContentType = MediaTypeNames.Application.Json;
 
@@ -368,7 +378,16 @@ namespace bifeldy_lib_90.Handlers {
                     result = fileName
                 };
 
-                this._context.Response.Headers.Location = $"/downloader?completedOnly=true&fileType={fileType}&fileName={fileName}";
+                string redirectUrl = $"/downloader?completedOnly=true&fileType={fileType}&fileName={fileName}";
+
+                if (!this._app.DebugMode && this._context.Request.Headers.TryGetValue(Bifeldy.NGINX_PATH_NAME, out StringValues pathBase)) {
+                    string proxyPath = pathBase.Last();
+                    if (!string.IsNullOrEmpty(proxyPath)) {
+                        redirectUrl = $"{proxyPath}{redirectUrl}";
+                    }
+                }
+
+                this._context.Response.Headers.Location = redirectUrl;
                 this._context.Response.StatusCode = StatusCodes.Status202Accepted;
                 this._context.Response.ContentType = MediaTypeNames.Application.Json;
 

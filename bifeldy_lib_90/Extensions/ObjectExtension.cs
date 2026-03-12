@@ -12,16 +12,28 @@ namespace bifeldy_lib_90.Extensions {
     public static class ObjectExtension {
 
         private static readonly HashSet<Type> ExtraSimpleTypes = [
+            typeof(byte[]),
             typeof(string),
             typeof(decimal),
+            typeof(DateOnly),
             typeof(DateTime),
             typeof(DateTimeOffset), // Recommended: Handles time zones
+            typeof(TimeOnly),
             typeof(TimeSpan),       // Recommended: Handles durations
             typeof(Guid)
         ];
 
         public static bool IsSimpleType(Type type) {
             type = Nullable.GetUnderlyingType(type) ?? type;
+
+            if (type.IsArray && type != typeof(byte[])) {
+                return true;
+            }
+
+            if (typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string)) {
+                return true;
+            }
+
             return type.IsPrimitive || type.IsEnum || ExtraSimpleTypes.Contains(type);
         }
 

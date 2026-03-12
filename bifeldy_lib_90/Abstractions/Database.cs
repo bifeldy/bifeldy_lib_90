@@ -119,7 +119,8 @@ namespace bifeldy_lib_90.Abstractions {
         ) {
             try {
                 await using (DbDataReader dr = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, token: token)) {
-                    await foreach (T item in streamSelector(dr).WithCancellation(token)) {
+                    IAsyncEnumerable<T> iae = streamSelector(dr);
+                    await foreach (T item in iae.WithCancellation(token)) {
                         yield return item;
                     }
                 }
@@ -187,7 +188,7 @@ namespace bifeldy_lib_90.Abstractions {
             var ls = new List<T>();
 
             IAsyncEnumerable<T> iae = this.GetAsyncEnumerable(typeInfo, sqlQuery, sqlParameter, commandTimeoutSeconds, callback, token);
-            await foreach (T item in iae) {
+            await foreach (T item in iae.WithCancellation(token)) {
                 ls.Add(item);
             }
 
@@ -198,7 +199,7 @@ namespace bifeldy_lib_90.Abstractions {
             var ls = new List<T>();
 
             IAsyncEnumerable<T> iae = this.GetAsyncEnumerable(sqlQuery, sqlParameter, commandTimeoutSeconds, callback, token);
-            await foreach (T item in iae) {
+            await foreach (T item in iae.WithCancellation(token)) {
                 ls.Add(item);
             }
 
@@ -256,14 +257,13 @@ namespace bifeldy_lib_90.Abstractions {
                         colIndexLookup[dr.GetName(i)] = i;
                     }
 
-                    var mappings = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    IEnumerable<DbDataReaderExtension.DataReaderMapping> mappings = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
                         .Where(p => p.CanWrite && colIndexLookup.ContainsKey(p.Name))
                         .Select(p => new DbDataReaderExtension.DataReaderMapping(
                             p.PropertyType,
                             ObjectExtension.CreateSetter(p),
                             colIndexLookup[p.Name]
-                        ))
-                        .ToList();
+                        ));
 
                     while (await dr.ReadAsync(token)) {
                         T obj = Activator.CreateInstance<T>();
@@ -551,12 +551,25 @@ namespace bifeldy_lib_90.Abstractions {
             );
         }
 
-        public virtual IAsyncEnumerable<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
-            return this.BulkInsertInternal(
+        public virtual async IAsyncEnumerable<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) {
+            if (dataListArray == null) {
+                yield break;
+            }
+
+            Type t = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            if (ObjectExtension.IsSimpleType(t)) {
+                throw new Exception("Hanya Diperbolehkan List Data Array Dari Object [Class/Record/Struct] Yang Mempuyai Key & Value Untuk Nama Kolom Dan Isi Datanya");
+            }
+
+            IAsyncEnumerable<int> res = this.BulkInsertInternal(
                 tableName, dataListArray,
                 e => new ObjectDataReader<T>(e, chunkSize),
                 chunkSize, commandTimeoutSeconds, token
             );
+
+            await foreach (int r in res.WithCancellation(token)) {
+                yield return r;
+            }
         }
 
     }

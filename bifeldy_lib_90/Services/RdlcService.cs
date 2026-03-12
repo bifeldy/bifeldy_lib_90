@@ -213,7 +213,7 @@ namespace bifeldy_lib_90.Services {
                 HtmlContent = model.HtmlContent,
                 WebSettings = new WebSettings() {
                     DefaultEncoding = "utf-8",
-                    EnableIntelligentShrinking = false
+                    EnableIntelligentShrinking = true
                 }
             });
 
@@ -293,10 +293,10 @@ namespace bifeldy_lib_90.Services {
                     throw new Exception($"Ukuran wIn ({wIn}) / hIn ({hIn}) Masih NULL");
                 }
 
-                double mTop = this.ParseDimensionToInch(topMargin) ?? 1.0;
-                double mBottom = this.ParseDimensionToInch(bottomMargin) ?? 1.0;
-                double mLeft = this.ParseDimensionToInch(leftMargin) ?? 1.0;
-                double mRight = this.ParseDimensionToInch(rightMargin) ?? 1.0;
+                double mTop = this.ParseDimensionToInch(topMargin) ?? 0.1;
+                double mBottom = this.ParseDimensionToInch(bottomMargin) ?? 0.1;
+                double mLeft = this.ParseDimensionToInch(leftMargin) ?? 0.1;
+                double mRight = this.ParseDimensionToInch(rightMargin) ?? 0.1;
 
                 string wStr = wIn?.ToString("0.##", CultureInfo.InvariantCulture) + "in";
                 string hStr = hIn?.ToString("0.##", CultureInfo.InvariantCulture) + "in";
@@ -310,7 +310,7 @@ namespace bifeldy_lib_90.Services {
                         body {{ 
                             margin: 0 !important; 
                             padding: 0 !important; 
-                            width: auto !important;
+                            width: 100% !important;
                             overflow: hidden !important;
                         }}
                         table {{ 
@@ -459,7 +459,7 @@ namespace bifeldy_lib_90.Services {
                     await using (var writer = new Utf8JsonWriter(fs)) {
                         writer.WriteStartArray();
 
-                        await foreach (T row in dataStream) {
+                        await foreach (T row in dataStream.WithCancellation(ct)) {
                             JsonSerializer.Serialize(writer, row, typeInfo);
                         }
 

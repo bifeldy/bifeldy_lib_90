@@ -79,7 +79,7 @@ namespace bifeldy_lib_90.Handlers {
             string orderSort = string.Empty;
             if (!string.IsNullOrEmpty(sort) && !string.IsNullOrEmpty(order)) {
                 string qs = (jsonKeysTableCustomColumns == null) ? this.jsonKeysTableColumns[sort.ToLower()] : jsonKeysTableCustomColumns[sort.ToLower()];
-                string qo = order.ToLower() == "desc" ? "DESC" : "ASC";
+                string qo = order.Equals("desc", StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
                 qs = qs.ToLower().Replace("distinct", string.Empty);
                 orderSort = $@"
                     ORDER BY
@@ -152,7 +152,7 @@ namespace bifeldy_lib_90.Handlers {
         public async IAsyncEnumerable<TOutputJson> TarikDataFullStream<TOutputJson, TInputJson>(JsonTypeInfo<TOutputJson> jsonTypeInfo, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
             (IDictionary<string, string> jsonKeysTableCustomColumns, string sqlCustomQuery, DynamicParameters sqlParam) = await this.GetCustomQueryParam(ht, db, fd, searchQuery, sort, order);
             IAsyncEnumerable<TOutputJson> iae = this.GetDataFullStreamWithParam(jsonTypeInfo, db, sqlParam, sqlCustomQuery, jsonKeysTableCustomColumns, ht.RequestAborted);
-            await foreach (TOutputJson item in iae) {
+            await foreach (TOutputJson item in iae.WithCancellation(ht.RequestAborted)) {
                 yield return item;
             }
         }

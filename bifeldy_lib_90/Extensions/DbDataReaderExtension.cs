@@ -1,7 +1,6 @@
 ﻿using bifeldy_lib_90.Abstractions;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -64,7 +63,7 @@ namespace bifeldy_lib_90.Extensions {
             }
         }
 
-        public static async IAsyncEnumerable<T> ToAsyncEnumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
             this DbDataReader dr,
             Action<T> callback = null,
             [EnumeratorCancellation] CancellationToken token = default
@@ -109,7 +108,8 @@ namespace bifeldy_lib_90.Extensions {
                 ))
                 .ToList();
 
-            await foreach (T item in ToAsyncInternal(dr, mappings, Activator.CreateInstance<T>, callback, token)) {
+            IAsyncEnumerable<T> iae = ToAsyncInternal(dr, mappings, Activator.CreateInstance<T>, callback, token);
+            await foreach (T item in iae.WithCancellation(token)) {
                 yield return item;
             }
         }
@@ -142,7 +142,8 @@ namespace bifeldy_lib_90.Extensions {
                 ? () => jsonTypeInfo.CreateObject()
                 : () => new T();
 
-            await foreach (T item in ToAsyncInternal(dr, mappings, factory, callback, token)) {
+            IAsyncEnumerable<T> iae = ToAsyncInternal(dr, mappings, factory, callback, token);
+            await foreach (T item in iae.WithCancellation(token)) {
                 yield return item;
             }
         }

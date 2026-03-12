@@ -1,5 +1,4 @@
 ﻿using bifeldy_lib_90.Abstractions;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
@@ -13,16 +12,19 @@ namespace bifeldy_lib_90.Libraries {
         private readonly IAsyncEnumerable<T> _source;
         private readonly JsonTypeInfo<T> _typeInfo;
         private readonly bool _ndjson;
+        private readonly CancellationToken _token;
 
         public AsyncEnumerableJsonContent(
             IAsyncEnumerable<T> source,
             string mediaType,
             JsonTypeInfo<T> typeInfo,
-            bool ndjson
+            bool ndjson,
+            CancellationToken _token
         ) {
             this._source = source;
             this._typeInfo = typeInfo;
             this._ndjson = ndjson;
+            this._token = _token;
             //
             this.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
         }
@@ -38,17 +40,15 @@ namespace bifeldy_lib_90.Libraries {
             this.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
         }
 
-        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Safety guaranteed by JsonTypeInfo usage.")]
-        [UnconditionalSuppressMessage("Trimming", "IL2072:Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute'", Justification = "Safe primitive types from JsonTypeInfo.")]
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context) {
             var jsonSerializerOptions = new JsonSerializerOptions();
             jsonSerializerOptions.Converters.Add(new DecimalConverter());
             jsonSerializerOptions.Converters.Add(new NullableDecimalConverter());
 
             if (this._ndjson) {
-                await foreach (T item in this._source) {
+                await foreach (T item in this._source.WithCancellation(this._token)) {
                     if (this._typeInfo != null) {
-                        await JsonSerializer.SerializeAsync(stream, item, this._typeInfo);
+                        await JsonSerializer.SerializeAsync(stream, item, this._typeInfo, this._token);
                     }
                     else {
                         if (!RuntimeFeature.IsDynamicCodeSupported) {
@@ -68,7 +68,7 @@ namespace bifeldy_lib_90.Libraries {
                 })) {
                     writer.WriteStartArray();
 
-                    await foreach (T item in this._source) {
+                    await foreach (T item in this._source.WithCancellation(this._token)) {
                         if (this._typeInfo != null) {
                             JsonSerializer.Serialize(writer, item, this._typeInfo);
                         }

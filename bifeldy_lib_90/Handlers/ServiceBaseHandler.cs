@@ -127,11 +127,12 @@ namespace bifeldy_lib_90.Handlers {
             _ = await db.ExecQueryAsync(sqlQuery, sqlParam);
         }
 
-        protected async IAsyncEnumerable<T> GetRequestJsonStreamData<T>(HttpContext http, JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
+        protected static async IAsyncEnumerable<T> GetRequestJsonStreamData<T>(HttpContext http, JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {
             string contentType = http.Request.ContentType;
 
             if (string.Equals(contentType, "application/json", StringComparison.OrdinalIgnoreCase)) {
-                await foreach (T item in JsonSerializer.DeserializeAsyncEnumerable(http.Request.Body, jsonTypeInfo, http.RequestAborted)) {
+                IAsyncEnumerable<T> iae = JsonSerializer.DeserializeAsyncEnumerable(http.Request.Body, jsonTypeInfo, http.RequestAborted);
+                await foreach (T item in iae.WithCancellation(http.RequestAborted)) {
                     if (item == null) {
                         continue;
                     }
