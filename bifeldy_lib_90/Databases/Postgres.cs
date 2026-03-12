@@ -135,7 +135,7 @@ namespace bifeldy_lib_90.Databases {
                                 line = line.ToUpper();
                             }
 
-                            if (useDoubleQuote) {
+                            if (!useDoubleQuote) {
                                 if (line.Contains("\x01")) {
                                     line = line.Replace("\x01", "");
                                 }
