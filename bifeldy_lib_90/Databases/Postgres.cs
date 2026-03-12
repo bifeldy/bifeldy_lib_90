@@ -70,44 +70,62 @@ namespace bifeldy_lib_90.Databases {
             try {
                 encoding ??= Encoding.UTF8;
 
-                // if (sqlParameter != null) {
-                //     return base.BulkGetCsv(sqlQuery, delimiter, filename, outputFolderPath, includeHeader, useDoubleQuote, allUppercase, sqlParameter, commandTimeoutSeconds, encoding, token);
-                // }
+                if (sqlParameter != null) {
+                    return await base.BulkGetCsv(sqlQuery, delimiter, filename, outputFolderPath, includeHeader, useDoubleQuote, allUppercase, sqlParameter, commandTimeoutSeconds, encoding, token);
+                }
 
-                string tempPath = Path.Combine(outputFolderPath ?? this._gs.TempFolderPath, filename);
+                string tempPath = Path.Combine(outputFolderPath ?? this._gs.TempFolderPath, $"{filename}.tmp");
                 if (File.Exists(tempPath)) {
                     File.Delete(tempPath);
                 }
 
                 if (includeHeader) {
-                    sqlQuery = $"SELECT * FROM ( {sqlQuery} ) alias_{DateTime.Now.Ticks} WHERE 1 = 0";
+                    string _sqlQuery = $"SELECT * FROM ( {sqlQuery} ) alias_{DateTime.Now.Ticks} WHERE 1 = 0";
+                    await using (DbDataReader reader = await this.ExecReaderAsync(_sqlQuery, null, commandTimeoutSeconds, CommandBehavior.SchemaOnly, token)) {
+                        NpgsqlDataReader rdr = reader is IWrappedDataReader dapper
+                            ? (NpgsqlDataReader)dapper.Reader
+                            : (NpgsqlDataReader)reader;
 
-                    await using (var rdr = (NpgsqlDataReader)await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, CommandBehavior.SequentialAccess, token)) {
-                        ReadOnlyCollection<NpgsqlDbColumn> columns = rdr.GetColumnSchema();
-                        string header = string.Join(delimiter, columns.Select(c => {
-                            string text = c.ColumnName;
+                        await using (rdr) {
+                            ReadOnlyCollection<NpgsqlDbColumn> columns = rdr.GetColumnSchema();
+                            string header = string.Join(delimiter, columns.Select(c => {
+                                string text = c.ColumnName;
 
-                            if (allUppercase) {
-                                text = text.ToUpper();
+                                if (allUppercase) {
+                                    text = text.ToUpper();
+                                }
+
+                                if (useDoubleQuote) {
+                                    text = $"\"{text.Replace("\"", "\"\"")}\"";
+                                }
+
+                                return text;
+                            }));
+
+                            await using (var writer = new StreamWriter(tempPath, false, encoding)) {
+                                await writer.WriteLineAsync(header.AsMemory(), token);
                             }
-
-                            if (useDoubleQuote) {
-                                text = $"\"{text.Replace("\"", "\"\"")}\"";
-                            }
-
-                            return text;
-                        }));
-
-                        await using (var writer = new StreamWriter(tempPath, false, encoding)) {
-                            await writer.WriteLineAsync(header.AsMemory(), token);
                         }
                     }
                 }
 
-                sqlQuery = $"COPY ({sqlQuery}) TO STDOUT WITH CSV DELIMITER '{delimiter}'";
-                if (!useDoubleQuote) {
-                    sqlQuery += " QUOTE '\x01'";
+                var options = new List<string>() {
+                    "FORMAT CSV",
+                    $"DELIMITER '{delimiter}'"
+                };
+
+                if (useDoubleQuote) {
+                    options.Add("QUOTE '\"'");
+                    options.Add("FORCE_QUOTE *");
                 }
+                else {
+                    // If you truly want NO quotes, you might use a character that 
+                    // never appears in your data, like a backtick or a non-printable char.
+                    options.Add("QUOTE '\x01'");
+                }
+
+                string sqlOptions = string.Join(", ", options);
+                sqlQuery = $"COPY ( {sqlQuery} ) TO STDOUT WITH ( {sqlOptions} )";
 
                 using (TextReader reader = await ((NpgsqlConnection)this.DbConnection).BeginTextExportAsync(sqlQuery, token)) {
                     await using (var writer = new StreamWriter(tempPath, true, encoding)) {
@@ -117,7 +135,7 @@ namespace bifeldy_lib_90.Databases {
                                 line = line.ToUpper();
                             }
 
-                            if (!useDoubleQuote) {
+                            if (useDoubleQuote) {
                                 if (line.Contains("\x01")) {
                                     line = line.Replace("\x01", "");
                                 }

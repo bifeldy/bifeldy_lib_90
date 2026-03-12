@@ -411,18 +411,21 @@ namespace bifeldy_lib_90.Abstractions {
 
         // Saran :: Kalau Ada Bawaan Library Mending Di Timpa Pakai Nativenya
         public virtual async Task<string> BulkGetCsv(string sqlQuery, string delimiter, string filename, string outputFolderPath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default) {
-            string result = null;
-            Exception exception = null;
-
             try {
-                string tempPath = Path.Combine(outputFolderPath ?? this._gs.TempFolderPath, filename);
+                string tempPath = Path.Combine(outputFolderPath ?? this._gs.TempFolderPath, $"{filename}.tmp");
                 if (File.Exists(tempPath)) {
                     File.Delete(tempPath);
                 }
 
-                string _sqlQuery = $"SELECT * FROM ( {sqlQuery} ) alias_{DateTime.Now.Ticks}";
-                await using (DbDataReader rdr = await this.ExecReaderAsync(_sqlQuery, sqlParameter, commandTimeoutSeconds, CommandBehavior.SequentialAccess, token)) {
-                    await rdr.ToCsv(delimiter, tempPath, includeHeader, useDoubleQuote, allUppercase, encoding ?? Encoding.UTF8, token);
+                sqlQuery = $"SELECT * FROM ( {sqlQuery} ) alias_{DateTime.Now.Ticks}";
+                await using (DbDataReader reader = await this.ExecReaderAsync(sqlQuery, sqlParameter, commandTimeoutSeconds, CommandBehavior.SequentialAccess, token)) {
+                    DbDataReader rdr = reader is IWrappedDataReader dapper
+                        ? (DbDataReader)dapper.Reader
+                        : reader;
+
+                    await using (rdr) {
+                        await rdr.ToCsv(delimiter, tempPath, includeHeader, useDoubleQuote, allUppercase, encoding ?? Encoding.UTF8, token);
+                    }
                 }
 
                 string realPath = Path.Combine(outputFolderPath ?? this._gs.CsvFolderPath, filename);
@@ -433,17 +436,15 @@ namespace bifeldy_lib_90.Abstractions {
                 File.Move(tempPath, $"{realPath}.tmp", true);
                 File.Move($"{realPath}.tmp", realPath, true);
 
-                result = realPath;
+                return realPath;
             }
             catch (Exception ex) {
                 this._logger.LogError("[BULK_GET_CSV] {ex}", ex.Message);
-                exception = ex;
+                throw;
             }
             finally {
                 this.TryCloseConnection();
             }
-
-            return (exception == null) ? result : throw exception;
         }
 
         // Saran :: Kalau Ada Bawaan Library Mending Di Timpa Pakai Nativenya
