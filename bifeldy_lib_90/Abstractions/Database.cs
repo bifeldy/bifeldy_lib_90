@@ -38,8 +38,10 @@ namespace bifeldy_lib_90.Abstractions {
         Task<string> BulkGetCsv(string sqlQuery, string delimiter, string filename, string outputFolderPath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default);
         Task<int> BulkInsertInto(string tableName, IDataReader dataReader, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default);
         Task<int> BulkInsertInto(string tableName, DataTable dataTable, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default);
-        IAsyncEnumerable<int> BulkInsertInto<T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
-        IAsyncEnumerable<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default);
+        IAsyncEnumerable<int> BulkInsertIntoIAE<T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
+        IAsyncEnumerable<int> BulkInsertIntoIAE<T>(string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default);
+        Task<int> BulkInsertInto<T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
+        Task<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, int commandTimeoutSeconds = 3600, CancellationToken token = default);
     }
 
     public abstract partial class CDatabase : IDatabase, ICloneable {
@@ -522,7 +524,7 @@ namespace bifeldy_lib_90.Abstractions {
 
         private async IAsyncEnumerable<int> BulkInsertInternal<T>(
             string tableName, IEnumerable<T> dataList,
-            Func<IEnumerator<T>, ObjectDataReader<T>> readerFactory,
+            Func<IEnumerator<T>, EnumeratorObjectDataReader<T>> readerFactory,
             int chunkSize = 2048, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default
         ) {
             using (IEnumerator<T> sharedEnumerator = dataList.GetEnumerator()) {
@@ -531,7 +533,7 @@ namespace bifeldy_lib_90.Abstractions {
                 while (hasMore) {
                     token.ThrowIfCancellationRequested();
 
-                    using (ObjectDataReader<T> reader = readerFactory(sharedEnumerator)) {
+                    using (EnumeratorObjectDataReader<T> reader = readerFactory(sharedEnumerator)) {
                         int res = await this.BulkInsertInto(tableName, reader, commandTimeoutSeconds, chunkSize, token);
 
                         yield return res;
@@ -544,33 +546,60 @@ namespace bifeldy_lib_90.Abstractions {
             }
         }
 
-        public virtual IAsyncEnumerable<int> BulkInsertInto<T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
+        public virtual IAsyncEnumerable<int> BulkInsertIntoIAE<T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
             return this.BulkInsertInternal(
                 tableName, dataListArray,
-                e => new ObjectDataReader<T>(e, jsonTypeInfo, chunkSize),
+                e => new EnumeratorObjectDataReader<T>(e, jsonTypeInfo, chunkSize),
                 chunkSize, commandTimeoutSeconds, token
             );
         }
 
-        public virtual async IAsyncEnumerable<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, [EnumeratorCancellation] CancellationToken token = default) {
-            if (dataListArray == null) {
-                yield break;
-            }
-
+        public virtual IAsyncEnumerable<int> BulkInsertIntoIAE<T>(string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
             Type t = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
             if (ObjectExtension.IsSimpleType(t)) {
                 throw new Exception("Hanya Diperbolehkan List Data Array Dari Object [Class/Record/Struct] Yang Mempuyai Key & Value Untuk Nama Kolom Dan Isi Datanya");
             }
 
-            IAsyncEnumerable<int> res = this.BulkInsertInternal(
+            return this.BulkInsertInternal(
                 tableName, dataListArray,
-                e => new ObjectDataReader<T>(e, chunkSize),
+                e => new EnumeratorObjectDataReader<T>(e, chunkSize),
                 chunkSize, commandTimeoutSeconds, token
             );
+        }
 
-            await foreach (int r in res.WithCancellation(token)) {
-                yield return r;
+        public virtual async Task<int> BulkInsertInto<T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
+            int result = 0;
+
+            IAsyncEnumerable<int> iae = this.BulkInsertIntoIAE(
+                jsonTypeInfo,
+                tableName,
+                dataListArray,
+                commandTimeoutSeconds: commandTimeoutSeconds,
+                token: token
+            );
+
+            await foreach (int i in iae.WithCancellation(token)) {
+                result += i;
             }
+
+            return result;
+        }
+
+        public virtual async Task<int> BulkInsertInto<T>(string tableName, IEnumerable<T> dataListArray, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
+            int result = 0;
+
+            IAsyncEnumerable<int> iae = this.BulkInsertIntoIAE(
+                tableName,
+                dataListArray,
+                commandTimeoutSeconds: commandTimeoutSeconds,
+                token: token
+            );
+
+            await foreach (int i in iae.WithCancellation(token)) {
+                result += i;
+            }
+
+            return result;
         }
 
     }

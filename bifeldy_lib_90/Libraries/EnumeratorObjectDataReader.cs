@@ -5,7 +5,7 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace bifeldy_lib_90.Libraries {
 
-    public sealed class ObjectDataReader<T> : IDataReader {
+    public sealed class EnumeratorObjectDataReader<T> : IDataReader {
 
         private readonly IEnumerator<T> _enumerator;
         private readonly bool _leaveOpen;
@@ -16,7 +16,7 @@ namespace bifeldy_lib_90.Libraries {
         private readonly string[] _columnNames;
         private readonly Type[] _columnTypes;
 
-        public ObjectDataReader(IEnumerator<T> enumerator, JsonTypeInfo<T> jsonTypeInfo, int limit) {
+        public EnumeratorObjectDataReader(IEnumerator<T> enumerator, JsonTypeInfo<T> jsonTypeInfo, int limit) {
             this._enumerator = enumerator;
             this._limit = limit;
             this._leaveOpen = true;
@@ -35,7 +35,7 @@ namespace bifeldy_lib_90.Libraries {
             }
         }
 
-        public ObjectDataReader(IEnumerator<T> enumerator, int limit) {
+        public EnumeratorObjectDataReader(IEnumerator<T> enumerator, int limit) {
             if (!RuntimeFeature.IsDynamicCodeSupported) {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
