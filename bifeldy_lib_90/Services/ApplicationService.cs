@@ -38,7 +38,7 @@ namespace bifeldy_lib_90.Services {
 #if DEBUG
                 true;
 #else
-                    return false;
+                false;
 #endif
 
 

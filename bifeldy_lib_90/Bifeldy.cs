@@ -351,7 +351,7 @@ namespace bifeldy_lib_90 {
 
                     context.Request.PathBase = new PathString(proxyPath.TrimEnd('/'));
 
-                    if (context.Request.Path.StartsWithSegments(proxyPath, StringComparison.InvariantCultureIgnoreCase, out PathString remainingPath)) {
+                    if (context.Request.Path.StartsWithSegments(proxyPath, StringComparison.OrdinalIgnoreCase, out PathString remainingPath)) {
                         context.Request.Path = remainingPath;
                     }
                 }
