@@ -19,6 +19,7 @@ namespace bifeldy_lib_90.Extensions {
             EnvVarJsonSerializerContext.Default,
             InfoDcJsonSerializerContext.Default,
             InputJsonDcPingPongJsonSerializerContext.Default,
+            JobTrackerJsonContext.Default,
             JsonSerDeJsonSerializerContext.Default,
             KunciRequestJsonSerializerContext.Default,
             ListApiDcJsonSerializerContext.Default,

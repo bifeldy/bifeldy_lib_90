@@ -28,8 +28,26 @@ namespace bifeldy_lib_90.JobSchedulers {
                 Cron = this._cron,
                 ExecuteAsync = async (sp, ct) => {
                     TJob jobInstance = sp.GetRequiredService<TJob>();
-                    if (jobInstance is IBackgroundJob bg) {
-                        await bg.ExecuteAsync(ct);
+                    IJobTracker tracker = sp.GetRequiredService<IJobTracker>();
+
+                    DateTime startTime = DateTime.UtcNow;
+                    bool success = false;
+                    string errorMessage = null;
+
+                    try {
+                        if (jobInstance is IBackgroundJob bg) {
+                            await bg.ExecuteAsync(ct);
+                        }
+
+                        success = true;
+                    }
+                    catch (Exception ex) {
+                        errorMessage = ex.Message;
+                        throw;
+                    }
+                    finally {
+                        DateTime endTime = DateTime.UtcNow;
+                        await tracker.RecordJobHistoryAsync(typeof(TJob).Name, startTime, endTime, success, errorMessage, ct);
                     }
                 }
             });

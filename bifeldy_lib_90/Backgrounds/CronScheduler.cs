@@ -1,4 +1,5 @@
-﻿using bifeldy_lib_90.Models;
+﻿using bifeldy_lib_90.JobSchedulers;
+using bifeldy_lib_90.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ namespace bifeldy_lib_90.Backgrounds {
 
         private readonly IServiceProvider _root;
         private readonly ILogger<CronScheduler> _logger;
+        private readonly IJobTracker _tracker;
 
         private readonly List<RuntimeJob> _cronJobs;
         private readonly ConcurrentDictionary<string, (Task Task, CancellationTokenSource Cts)> _runningJobs = new(StringComparer.OrdinalIgnoreCase);
@@ -19,14 +21,16 @@ namespace bifeldy_lib_90.Backgrounds {
         public CronScheduler(
             IServiceProvider root,
             ILogger<CronScheduler> logger,
-            IEnumerable<CronJob> jobs
+            IEnumerable<CronJob> jobs,
+            IJobTracker tracker
         ) {
             this._root = root;
             this._logger = logger;
+            this._tracker = tracker;
 
             this._cronJobs = [.. jobs.Select(j => new RuntimeJob() {
                 Job = j,
-                NextRunUtc = GetNext(j, DateTime.UtcNow)
+                NextRunUtc = DateTime.UtcNow
             })];
         }
 
@@ -64,6 +68,29 @@ namespace bifeldy_lib_90.Backgrounds {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+            DateTime startupTime = DateTime.UtcNow;
+
+            foreach (RuntimeJob job in this._cronJobs) {
+                DateTime? lastSuccessfulRun = await this._tracker.GetLastSuccessfulRunAsync(job.Job.Name, stoppingToken);
+
+                if (lastSuccessfulRun.HasValue) {
+                    DateTime expectedNextRun = GetNext(job.Job, lastSuccessfulRun.Value);
+
+                    if (expectedNextRun < startupTime) {
+                        this._logger.LogInformation(
+                            "[{name}_MANAGER] ⌚ Misfire {Job} Seharusnya jalan {Expected}, Mengeksekusi sekarang untuk catch-up.",
+                            nameof(CronScheduler),
+                            job.Job.Name,
+                            expectedNextRun.ToLocalTime()
+                        );
+
+                        this.StartJob(job.Job.Name, job.Job.ExecuteAsync, job.MaxRetries, job.RetryDelay);
+                    }
+                }
+
+                job.NextRunUtc = GetNext(job.Job, startupTime);
+            }
+
             while (!stoppingToken.IsCancellationRequested) {
                 DateTime now = DateTime.UtcNow;
 
@@ -112,11 +139,24 @@ namespace bifeldy_lib_90.Backgrounds {
                         }
                     }
                     catch (OperationCanceledException) {
-                        this._logger.LogWarning("Job cancelled: {Job}", name);
-                        break; // do not retry if cancelled
+                        this._logger.LogWarning(
+                            "[{name}_MANAGER] ⌚ Job cancelled: {Job}",
+                            nameof(CronScheduler),
+                            name
+                        );
+
+                        break;
                     }
                     catch (Exception ex) {
-                        this._logger.LogError(ex, "Job failed (Attempt {Attempt}/{Max}): {Job}", attempt, maxRetries, name);
+                        this._logger.LogError(
+                            ex,
+                            "[{name}_MANAGER] ⌚ Job failed (Attempt {Attempt}/{Max}): {Job}",
+                            nameof(CronScheduler),
+                            attempt,
+                            maxRetries,
+                            name
+                        );
+
                         if (attempt <= maxRetries) {
                             await Task.Delay(delay, cts.Token);
                         }
@@ -145,8 +185,9 @@ namespace bifeldy_lib_90.Backgrounds {
         }
 
         private static DateTime GetNext(CronJob job, DateTime nowUtc) {
-            return job.Expression.GetNextOccurrence(nowUtc, TimeZoneInfo.Utc) ?? nowUtc.AddMinutes(1);
+            return job.Expression.GetNextOccurrence(nowUtc, TimeZoneInfo.Local) ?? nowUtc.AddMinutes(1);
         }
+
     }
 
 }

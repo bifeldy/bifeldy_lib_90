@@ -247,6 +247,7 @@ namespace bifeldy_lib_90 {
 
         public static void AddDependencyInjection() {
             _ = Services.AddProblemDetails();
+            _ = Services.AddSingleton<IDataSourceCache, CDataSourceCache>();
 
             // --
             // Transient Selalu Dapat Object Baru ~
@@ -644,6 +645,8 @@ namespace bifeldy_lib_90 {
         public static void StartJobScheduler() {
             // Default Job Bawaan ~
             _ = ScheduleJob("* * * * *").AddJob<CleanUpJobScheduler>();
+
+            _ = Services.AddSingleton<IJobTracker, CJobTracker>();
 
             IEnumerable<CronJob> jobs = [.. Schedules.Values.SelectMany(s => s._jobs)];
 
