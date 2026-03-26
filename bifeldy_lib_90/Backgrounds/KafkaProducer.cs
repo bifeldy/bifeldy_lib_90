@@ -126,13 +126,13 @@ namespace bifeldy_lib_90.Backgrounds {
                 observeable = this._pubSub.GetGlobalAppBehaviorSubject<Message<string, string>>(this.KAFKA_NAME);
                 subs = observeable.Subscribe(async data => {
                     if (data != null) {
+                        _ = await this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).WaitAsync(-1, stoppingToken);
+
                         try {
                             var msg = new Message<string, string>() {
                                 Key = data.Key,
                                 Value = data.Value
                             };
-
-                            await this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).WaitAsync(stoppingToken);
 
                             msgs.Add(msg);
                         }
@@ -146,21 +146,24 @@ namespace bifeldy_lib_90.Backgrounds {
                     await Task.Yield();
 
                     if (msgs.Count > 0) {
-                        await this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).WaitAsync(stoppingToken);
+                        _ = await this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).WaitAsync(-1, stoppingToken);
 
-                        Message<string, string>[] cpMsgs = [.. msgs];
-                        msgs.Clear();
+                        try {
+                            Message<string, string>[] cpMsgs = [.. msgs];
+                            msgs.Clear();
 
-                        foreach (Message<string, string> msg in cpMsgs) {
-                            try {
-                                _ = await producer.ProduceAsync(topicName, msg, stoppingToken);
-                            }
-                            catch (Exception e) {
-                                this._logger.LogError("[KAFKA_PRODUCER_MESSAGE] {e}", e.Message);
+                            foreach (Message<string, string> msg in cpMsgs) {
+                                try {
+                                    _ = await producer.ProduceAsync(topicName, msg, stoppingToken);
+                                }
+                                catch (Exception e) {
+                                    this._logger.LogError("[KAFKA_PRODUCER_MESSAGE] {e}", e.Message);
+                                }
                             }
                         }
-
-                        _ = this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).Release();
+                        finally {
+                            _ = this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).Release();
+                        }
                     }
                 }
             }

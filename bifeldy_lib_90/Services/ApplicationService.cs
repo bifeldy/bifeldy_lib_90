@@ -64,11 +64,11 @@ namespace bifeldy_lib_90.Services {
         }
 
         public string GetVariabel(string key, string kunci) {
+            _ = this._locker.SemaphoreGlobalApp("KUNCI").Wait(-1);
+
             string cacheKey = $"{kunci}_{key}".ToLower().Trim();
 
             try {
-                _ = this._locker.SemaphoreGlobalApp("KUNCI").Wait(-1);
-
                 string result = this._cache.GetString(cacheKey);
                 if (!string.IsNullOrEmpty(result?.Trim())) {
                     return result;

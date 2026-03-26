@@ -193,9 +193,9 @@ namespace bifeldy_lib_90.Handlers {
                         ILockerService ___locker = ___sp.GetRequiredService<ILockerService>();
                         CronScheduler ___sched = ___sp.GetRequiredService<CronScheduler>();
 
-                        try {
-                            _ = await ___locker.SemaphoreGlobalApp(callerMemberName, MAX_CONN_SESS, MAX_CONN_SESS).WaitAsync(-1, ___ctx);
+                        _ = await ___locker.SemaphoreGlobalApp(callerMemberName, MAX_CONN_SESS, MAX_CONN_SESS).WaitAsync(-1, ___ctx);
 
+                        try {
                             if (___ctx.IsCancellationRequested) {
                                 throw new Exception("Job Dibatalkan");
                             }
@@ -303,9 +303,9 @@ namespace bifeldy_lib_90.Handlers {
                         IRdlcService ___rdlc = ___sp.GetRequiredService<IRdlcService>();
                         CronScheduler ___sched = ___sp.GetRequiredService<CronScheduler>();
 
-                        try {
-                            _ = await ___locker.SemaphoreGlobalApp(callerMemberName, MAX_CONN_SESS, MAX_CONN_SESS).WaitAsync(-1, ___ctx);
+                        _ = await ___locker.SemaphoreGlobalApp(callerMemberName, MAX_CONN_SESS, MAX_CONN_SESS).WaitAsync(-1, ___ctx);
 
+                        try {
                             if (___ctx.IsCancellationRequested) {
                                 throw new Exception("Job Dibatalkan");
                             }
