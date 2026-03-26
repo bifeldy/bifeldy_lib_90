@@ -33,9 +33,9 @@ namespace bifeldy_lib_90.Services {
         JsonNode ObjectToJsonNode(object value);
         object JsonToObject(string json);
         string FormatByteSizeHumanReadable(long bytes, string forceUnit = null);
-        List<CDynamicClassProperty> GetTableClassStructureModel<T>();
+        List<CDynamicClassProperty> GetTableClassStructureModel<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>();
         List<CDynamicClassProperty> GetTableClassStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) /* where T : JsonSerDe, new() */;
-        List<CDynamicClassPropertyV2> GetPocoStructureModel<T>();
+        List<CDynamicClassPropertyV2> GetPocoStructureModel<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>();
         List<CDynamicClassPropertyV2> GetPocoStructureModel<T>(JsonTypeInfo<T> jsonTypeInfo) /* where T : JsonSerDe, new() */;
     }
 

@@ -13,12 +13,12 @@ using System.Text.Json.Serialization.Metadata;
 namespace bifeldy_lib_90.Services {
 
     public interface ICsvService {
-        List<CCsvColumn> GetColumnFromClassType<T>();
+        List<CCsvColumn> GetColumnFromClassType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>();
         List<CCsvColumn> GetColumnFromClassType<T>(JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new();
         DataTable Csv2DataTable(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string tableName = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
         string Csv2Json(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
         IDataReader Csv2DataReader(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
-        IEnumerable<T> Csv2Enumerable<T>(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
+        IEnumerable<T> Csv2Enumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null);
         IEnumerable<T> Csv2Enumerable<T>(JsonTypeInfo<T> jsonTypeInfo, string filePath, string delimiter, List<CCsvColumn> csvColumn = null, string nullValue = "", string eolDelimiter = null, Encoding encoding = null) where T : JsonSerDe, new();
     }
 

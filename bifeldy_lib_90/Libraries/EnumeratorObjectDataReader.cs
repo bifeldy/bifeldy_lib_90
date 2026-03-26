@@ -1,11 +1,12 @@
 ﻿using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization.Metadata;
 
 namespace bifeldy_lib_90.Libraries {
 
-    public sealed class EnumeratorObjectDataReader<T> : IDataReader {
+    public sealed class EnumeratorObjectDataReader<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T> : IDataReader {
 
         private readonly IEnumerator<T> _enumerator;
         private readonly bool _leaveOpen;
@@ -75,7 +76,11 @@ namespace bifeldy_lib_90.Libraries {
         public string GetName(int i) => this._columnNames[i];
         public object GetValue(int i) => this._accessors[i](this._enumerator.Current);
         public int GetOrdinal(string name) => Array.FindIndex(this._columnNames, n => n.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2063", Justification = "Types in _columnTypes are guaranteed to be safe for this context.")]
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicFields)]
         public Type GetFieldType(int i) => this._columnTypes[i];
+
         public string GetDataTypeName(int i) => this._columnTypes[i].Name;
         public bool IsDBNull(int i) => this.GetValue(i) == DBNull.Value;
 

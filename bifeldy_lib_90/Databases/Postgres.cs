@@ -24,6 +24,7 @@ namespace bifeldy_lib_90.Databases {
 
     public sealed class CPostgres : CDatabase, IPostgres {
 
+        private readonly IDataSourceCache _dsCache;
         private readonly IServerConfigRepository _scr;
 
         private string DbIpAddrss { get; set; }
@@ -35,11 +36,13 @@ namespace bifeldy_lib_90.Databases {
         public CPostgres(
             IOptions<EnvVar> envVar,
             ILogger<CPostgres> logger,
+            IDataSourceCache dsCache,
             IApplicationService @as,
             IGlobalService gs,
             IHttpContextAccessor hca,
             IServerConfigRepository scr
         ) : base(envVar, logger, @as, gs, hca) {
+            this._dsCache = dsCache;
             this._scr = scr;
             this.InitializeConnection();
         }
@@ -60,7 +63,8 @@ namespace bifeldy_lib_90.Databases {
             this.DbName = dbName ?? this._as.GetVariabel("DatabasePostgres", kunciGxxx);
 
             string _dbConnectionString = $"Host={this.DbIpAddrss};Port={this.DbPort};Username={this.DbUsername};Password={this.DbPassword};Database={this.DbName};Timeout=180;ApplicationName={this._as.AppName}_{this._as.AppVersion};"; // 3 Minutes
-            this.DbConnection = new NpgsqlConnection(_dbConnectionString);
+            NpgsqlDataSource dataSource = this._dsCache.GetOrAddNpgsqlDataSource(_dbConnectionString);
+            this.DbConnection = dataSource.CreateConnection();
         }
 
         public override async Task<string> BulkGetCsv(string sqlQuery, string delimiter, string filename, string outputFolderPath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default) {
@@ -161,7 +165,7 @@ namespace bifeldy_lib_90.Databases {
                 exception = ex;
             }
             finally {
-                this.TryCloseConnection();
+                await this.TryCloseConnectionAsync(token: token);
             }
 
             return (exception == null) ? result : throw exception;
@@ -313,7 +317,7 @@ namespace bifeldy_lib_90.Databases {
                 throw;
             }
             finally {
-                this.TryCloseConnection();
+                await this.TryCloseConnectionAsync(token: token);
             }
         }
 

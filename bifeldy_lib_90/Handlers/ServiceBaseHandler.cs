@@ -124,7 +124,7 @@ namespace bifeldy_lib_90.Handlers {
             sqlParam.Add("token", token);
             sqlParam.Add("keterangan", statusErrMsg);
 
-            _ = await db.ExecQueryAsync(sqlQuery, sqlParam);
+            _ = await db.ExecQueryAsync(sqlQuery, sqlParam, token: http.RequestAborted);
         }
 
         protected static async IAsyncEnumerable<T> GetRequestJsonStreamData<T>(HttpContext http, JsonTypeInfo<T> jsonTypeInfo) where T : JsonSerDe, new() {

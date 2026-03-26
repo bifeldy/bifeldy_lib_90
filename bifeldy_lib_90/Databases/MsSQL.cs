@@ -58,7 +58,7 @@ namespace bifeldy_lib_90.Databases {
             try {
                 int rowsInserted = 0;
 
-                this.OpenConnection();
+                await this.OpenConnectionAsync(token);
 
                 using (var dbBulkCopy = new SqlBulkCopy((SqlConnection)this.DbConnection) {
                     DestinationTableName = tableName,
@@ -86,7 +86,7 @@ namespace bifeldy_lib_90.Databases {
                 throw;
             }
             finally {
-                this.TryCloseConnection();
+                await this.TryCloseConnectionAsync(token: token);
             }
         }
 

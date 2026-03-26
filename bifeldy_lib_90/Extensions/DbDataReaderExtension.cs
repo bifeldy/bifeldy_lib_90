@@ -1,6 +1,7 @@
 ﻿using bifeldy_lib_90.Abstractions;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -63,7 +64,7 @@ namespace bifeldy_lib_90.Extensions {
             }
         }
 
-        public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
+        public static async IAsyncEnumerable<T> ToAsyncEnumerable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(
             this DbDataReader dr,
             Action<T> callback = null,
             [EnumeratorCancellation] CancellationToken token = default

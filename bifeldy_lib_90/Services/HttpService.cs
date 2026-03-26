@@ -4,6 +4,7 @@ using bifeldy_lib_90.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Mime;
@@ -408,7 +409,7 @@ namespace bifeldy_lib_90.Services {
                         this._logger.LogError("[HTTP_REQUEST_{method}] {ex}", httpRequestMessage.Method.Method, ex.Message);
                     }
                     finally {
-                        await Task.Delay(TimeSpan.FromSeconds(Math.Min(5 * retry, timeoutSeconds / maxRetry)));
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Min(5 * retry, timeoutSeconds / maxRetry)), token);
                     }
                 }
             }
@@ -454,7 +455,7 @@ namespace bifeldy_lib_90.Services {
                         this._logger.LogError("[HTTP_REQUEST_{method}] {ex}", httpRequestMessage.Method.Method, ex.Message);
                     }
                     finally {
-                        await Task.Delay(TimeSpan.FromSeconds(Math.Min(5 * retry, timeoutSeconds / maxRetry)));
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Min(5 * retry, timeoutSeconds / maxRetry)), token);
                     }
                 }
             }
@@ -612,6 +613,8 @@ namespace bifeldy_lib_90.Services {
             throw new Exception($"Streaming Untuk Content-Type '{response.Content.Headers.ContentType?.MediaType}' Tidak Tersedia");
         }
 
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Safety guaranteed by JsonTypeInfo usage.")]
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:RequiresDynamicCode", Justification = "We are explicitly registering types to ensure AOT generation.")]
         public async IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
             var jsonSerializerOptions = new JsonSerializerOptions();
             jsonSerializerOptions.Converters.Add(new DecimalConverter());

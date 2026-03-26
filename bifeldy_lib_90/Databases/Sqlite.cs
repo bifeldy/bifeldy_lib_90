@@ -51,7 +51,7 @@ namespace bifeldy_lib_90.Databases {
             SqliteTransaction transaction = null;
 
             try {
-                this.OpenConnection();
+                await this.OpenConnectionAsync(token);
 
                 await using (var pragmaCmd = (SqliteCommand)this.DbConnection.CreateCommand()) {
                     pragmaCmd.CommandText = "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;";
@@ -106,7 +106,7 @@ namespace bifeldy_lib_90.Databases {
                     await transaction.DisposeAsync();
                 }
 
-                this.TryCloseConnection();
+                await this.TryCloseConnectionAsync(token: token);
             }
         }
 

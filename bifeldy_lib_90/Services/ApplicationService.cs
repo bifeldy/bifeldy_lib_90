@@ -82,7 +82,12 @@ namespace bifeldy_lib_90.Services {
                 if (!string.IsNullOrEmpty(result)) {
                     string jsonPathKunci = Path.Combine(this.AppLocation, Bifeldy.DEFAULT_DATA_FOLDER, "Kunci.json");
 
-                    if (result.ToUpper().Contains("ERROR") || result.ToUpper().Contains("EXCEPTION") || result.ToUpper().Contains("GAGAL") || result.ToUpper().Contains("NGINX")) {
+                    if (
+                        result.Contains("ERROR", StringComparison.OrdinalIgnoreCase) ||
+                        result.Contains("EXCEPTION", StringComparison.OrdinalIgnoreCase) ||
+                        result.Contains("GAGAL", StringComparison.OrdinalIgnoreCase) ||
+                        result.Contains("NGINX", StringComparison.OrdinalIgnoreCase)
+                    ) {
                         bool fromSavedJsonFile = false;
 
                         if (File.Exists(jsonPathKunci)) {
@@ -92,9 +97,7 @@ namespace bifeldy_lib_90.Services {
                                 var dictKunci = (IDictionary<string, object>)this._converter.JsonToObject(jsonContent);
 
                                 if (dictKunci != null) {
-                                    if (dictKunci.ContainsKey(cacheKey)) {
-                                        object val = dictKunci[cacheKey];
-
+                                    if (dictKunci.TryGetValue(cacheKey, out object val)) {
                                         if (val != null) {
                                             result = val?.ToString();
 

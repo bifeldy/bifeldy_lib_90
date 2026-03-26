@@ -1,4 +1,5 @@
 ﻿using bifeldy_lib_90.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
@@ -40,6 +41,7 @@ namespace bifeldy_lib_90.Libraries {
             this.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
         }
 
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Safety guaranteed by JsonTypeInfo usage.")]
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context) {
             var jsonSerializerOptions = new JsonSerializerOptions();
             jsonSerializerOptions.Converters.Add(new DecimalConverter());
