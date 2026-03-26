@@ -22,8 +22,8 @@ namespace bifeldy_lib_90.Services {
         List<Tuple<string, string>> CleanHeader(IHeaderDictionary httpHeader);
         HttpClient CreateHttpClient(uint timeoutSeconds = 60, string publicKeysBase64HashJsonFilePath = null);
         Task<IResult> ForwardRequest(string urlTarget, HttpRequest request, HttpResponse response, bool isApiEndpoint = false, uint timeoutSeconds = 300, string publicKeysBase64HashJsonFilePath = null, CancellationToken cancellationToken = default);
-        IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken = default);
-        IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> jsonTypeInfo, CancellationToken cancellationToken = default) where T : JsonSerDe, new();
+        IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, int bufferSize = 32768, CancellationToken cancellationToken = default);
+        IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> jsonTypeInfo, int bufferSize = 32768, CancellationToken cancellationToken = default) where T : JsonSerDe, new();
         Task<HttpResponseMessage> HeadData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null, CancellationToken token = default);
         Task<HttpResponseMessage> GetData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null, CancellationToken token = default);
         Task<HttpResponseMessage> DeleteData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null, CancellationToken token = default);
@@ -143,7 +143,7 @@ namespace bifeldy_lib_90.Services {
             }
 
             return new HttpClient(httpMessageHandler) {
-                Timeout = TimeSpan.FromSeconds(timeoutSeconds)
+                Timeout = timeoutSeconds <= 0 ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds(timeoutSeconds)
             };
         }
 
@@ -553,6 +553,7 @@ namespace bifeldy_lib_90.Services {
             HttpResponseMessage response,
             Func<Stream, IAsyncEnumerable<T>> callbackStream,
             Func<string, T> callbackLine,
+            int bufferSize = 32768,
             [EnumeratorCancellation] CancellationToken cancellationToken = default
         ) {
             if (response == null) {
@@ -580,13 +581,12 @@ namespace bifeldy_lib_90.Services {
                 yield break;
             }
 
-            if (response.Content.Headers.ContentType?.MediaType == "application/x-ndjson") {
-                using (var reader = new StreamReader(
-                    stream,
-                    Encoding.UTF8,
-                    detectEncodingFromByteOrderMarks: false,
-                    leaveOpen: true
-                )) {
+            if (string.Equals(
+                response.Content.Headers.ContentType?.MediaType,
+                "application/x-ndjson",
+                StringComparison.OrdinalIgnoreCase
+            )) {
+                using (var reader = new StreamReader(stream, Encoding.UTF8, false, bufferSize, true)) {
                     while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested) {
                         string line = await reader.ReadLineAsync(cancellationToken);
 
@@ -615,7 +615,7 @@ namespace bifeldy_lib_90.Services {
 
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Safety guaranteed by JsonTypeInfo usage.")]
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:RequiresDynamicCode", Justification = "We are explicitly registering types to ensure AOT generation.")]
-        public async IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
+        public async IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, int bufferSize = 32768, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
             var jsonSerializerOptions = new JsonSerializerOptions();
             jsonSerializerOptions.Converters.Add(new DecimalConverter());
             jsonSerializerOptions.Converters.Add(new NullableDecimalConverter());
@@ -624,6 +624,7 @@ namespace bifeldy_lib_90.Services {
                 response,
                 (stream) => JsonSerializer.DeserializeAsyncEnumerable<T>(stream, jsonSerializerOptions, cancellationToken),
                 (line) => JsonSerializer.Deserialize<T>(line, jsonSerializerOptions),
+                bufferSize,
                 cancellationToken
             );
 
@@ -632,11 +633,12 @@ namespace bifeldy_lib_90.Services {
             }
         }
 
-        public async IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> jsonTypeInfo, [EnumeratorCancellation] CancellationToken cancellationToken = default) where T : JsonSerDe, new() {
+        public async IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> jsonTypeInfo, int bufferSize = 32768, [EnumeratorCancellation] CancellationToken cancellationToken = default) where T : JsonSerDe, new() {
             IAsyncEnumerable<T> iae = ReadStreamingJsonAsync(
                 response,
                 (stream) => JsonSerializer.DeserializeAsyncEnumerable(stream, jsonTypeInfo, cancellationToken),
                 (line) => JsonSerializer.Deserialize(line, jsonTypeInfo),
+                bufferSize,
                 cancellationToken
             );
 
