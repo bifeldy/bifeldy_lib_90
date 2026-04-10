@@ -34,7 +34,7 @@ namespace bifeldy_lib_90.Backgrounds {
             })];
         }
 
-        public void EnqueueDynamicJob(string name, Func<IServiceProvider, CancellationToken, Task> execute, int maxRetries = 3, TimeSpan? retryDelay = null, DateTime? startedAt = null) {
+        public void EnqueueDynamicJob(string name, Func<IServiceProvider, CancellationToken, Task> execute, int maxRetries = 2, TimeSpan? retryDelay = null, DateTime? startedAt = null) {
             if (string.IsNullOrEmpty(name)) {
                 name = Guid.NewGuid().ToString();
             }
@@ -114,7 +114,7 @@ namespace bifeldy_lib_90.Backgrounds {
         private void StartJob(
             string name,
             Func<IServiceProvider, CancellationToken, Task> execute,
-            int maxRetries = 3,
+            int maxRetries = 2,
             TimeSpan? retryDelay = null
         ) {
             if (this._runningJobs.ContainsKey(name)) {

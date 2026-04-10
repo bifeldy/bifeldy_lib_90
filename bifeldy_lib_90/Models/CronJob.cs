@@ -13,7 +13,7 @@ namespace bifeldy_lib_90.Models {
     }
 
     public abstract class RetryJob {
-        public int MaxRetries { get; init; } = 3;
+        public int MaxRetries { get; init; } = 2;
         public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(10);
     }
 
