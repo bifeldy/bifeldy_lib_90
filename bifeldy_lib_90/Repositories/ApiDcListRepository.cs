@@ -63,7 +63,9 @@ namespace bifeldy_lib_90.Repositories {
         public async Task<(List<ListApiDc>, decimal, decimal)> GetAll(IDatabase db) {
             string sqlQuery = @"
                 SELECT
-                    a.dc_kode, a.flag_dbpg, a.ip_nginx, a.user_nginx, a.pass_nginx,
+                    a.dc_kode, a.flag_dbpg,
+                    COALESCE(a.ip_nginx_cloud, a.ip_nginx) AS ip_nginx,
+                    a.user_nginx, a.pass_nginx,
                     b.app_name, b.api_host, b.api_path,
                     c.last_online, c.version, c.port_grpc,
                     COALESCE(b.api_path, '/datadc' || LOWER(a.dc_kode) || '/api/') default_api_path
@@ -80,7 +82,7 @@ namespace bifeldy_lib_90.Repositories {
                         GROUP BY d.dc_kode, d.ip_origin, d.version, d.port_grpc
                     ) c ON (
                         a.dc_kode = c.dc_kode
-                        AND COALESCE(b.api_host, a.ip_nginx) = c.ip_origin
+                        AND COALESCE(b.api_host, COALESCE(a.ip_nginx_cloud, a.ip_nginx)) = c.ip_origin
                     )
                 ORDER BY
                     b.api_path, a.dc_kode

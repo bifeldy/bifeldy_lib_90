@@ -211,7 +211,7 @@ namespace bifeldy_lib_90.Repositories {
             string sqlQuery = @"
                 SELECT
                     a.dc_kode,
-                    a.ip_nginx,
+                    COALESCE(a.ip_nginx_cloud, a.ip_nginx) AS ip_nginx,
                     b.api_host,
                     b.api_path
                 FROM
