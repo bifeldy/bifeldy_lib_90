@@ -78,7 +78,7 @@ namespace bifeldy_lib_90.Databases {
                     return await base.BulkGetCsv(sqlQuery, delimiter, filename, outputFolderPath, includeHeader, useDoubleQuote, allUppercase, sqlParameter, commandTimeoutSeconds, encoding, token);
                 }
 
-                string tempPath = Path.Combine(outputFolderPath ?? this._gs.TempFolderPath, $"{filename}.tmp");
+                string tempPath = Path.Combine(this._gs.TempFolderPath, filename);
                 if (File.Exists(tempPath)) {
                     File.Delete(tempPath);
                 }

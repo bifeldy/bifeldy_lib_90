@@ -23,7 +23,7 @@ namespace bifeldy_lib_90.Services {
             int totalFileInZip = 0;
 
             try {
-                string tempPath = Path.Combine(outputFolderPath ?? this._gs.TempFolderPath, zipFileName);
+                string tempPath = Path.Combine(this._gs.TempFolderPath, zipFileName);
                 if (File.Exists(tempPath)) {
                     File.Delete(tempPath);
                 }
@@ -72,7 +72,7 @@ namespace bifeldy_lib_90.Services {
             int totalFileInZip = 0;
 
             try {
-                string tempPath = Path.Combine(outputFolderPath ?? this._gs.TempFolderPath, zipFileName);
+                string tempPath = Path.Combine(this._gs.TempFolderPath, zipFileName);
                 if (File.Exists(tempPath)) {
                     File.Delete(tempPath);
                 }
