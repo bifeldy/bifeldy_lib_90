@@ -238,8 +238,11 @@ namespace bifeldy_lib_90.Services {
                 //
                 // TODO :: Add More Known Data Type
                 //
-                // ~ Note ~
-                // Guid = String
+                // ~ Note = Known JSON String Items ~
+                // Guid
+                // DateOnly
+                // TimeOnly
+                // DateTime
                 //
 
                 throw new NotSupportedException($"Unsupported JSON Primitive: {val.ToJsonString()}");
