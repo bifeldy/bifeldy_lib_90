@@ -43,7 +43,7 @@ namespace bifeldy_lib_90.Abstractions {
         Task<int> BulkInsertInto(string tableName, DataTable dataTable, int commandTimeoutSeconds = 3600, int chunkSize = 2048, CancellationToken token = default);
         IAsyncEnumerable<int> BulkInsertIntoIAE<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
         IAsyncEnumerable<int> BulkInsertIntoIAE<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string tableName, IEnumerable<T> dataListArray, int chunkSize = 2048, int commandTimeoutSeconds = 3600, CancellationToken token = default);
-        Task<int> BulkInsertInto<T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
+        Task<int> BulkInsertInto<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new();
         Task<int> BulkInsertInto<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(string tableName, IEnumerable<T> dataListArray, int commandTimeoutSeconds = 3600, CancellationToken token = default);
     }
 
@@ -368,7 +368,7 @@ namespace bifeldy_lib_90.Abstractions {
 
             try {
                 string _sqlQuery = $"SELECT COUNT(*) FROM ( {sqlQuery} ) RetrieveBlob_{DateTime.Now.Ticks}";
-                ulong? _totalFiles = await this.ExecScalarAsync<ulong?>(_sqlQuery, sqlParameter, commandTimeoutSeconds, token);
+                ulong _totalFiles = await this.ExecScalarAsync<ulong>(_sqlQuery, sqlParameter, commandTimeoutSeconds, token);
                 if (_totalFiles <= 0) {
                     throw new Exception("File Tidak Ditemukan");
                 }
@@ -434,7 +434,7 @@ namespace bifeldy_lib_90.Abstractions {
         // Saran :: Kalau Ada Bawaan Library Mending Di Timpa Pakai Nativenya
         public virtual async Task<string> BulkGetCsv(string sqlQuery, string delimiter, string filename, string outputFolderPath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default) {
             try {
-                string tempPath = Path.Combine(outputFolderPath ?? this._gs.TempFolderPath, $"{filename}.tmp");
+                string tempPath = Path.Combine(this._gs.TempFolderPath, filename);
                 if (File.Exists(tempPath)) {
                     File.Delete(tempPath);
                 }
@@ -587,7 +587,7 @@ namespace bifeldy_lib_90.Abstractions {
             );
         }
 
-        public virtual async Task<int> BulkInsertInto<T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
+        public virtual async Task<int> BulkInsertInto<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>(JsonTypeInfo<T> jsonTypeInfo, string tableName, IEnumerable<T> dataListArray, int commandTimeoutSeconds = 3600, CancellationToken token = default) where T : JsonSerDe, new() {
             int result = 0;
 
             IAsyncEnumerable<int> iae = this.BulkInsertIntoIAE(
