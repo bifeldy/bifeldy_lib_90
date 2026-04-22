@@ -3,6 +3,7 @@ using bifeldy_lib_90.Libraries;
 using System.Collections;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -174,7 +175,7 @@ namespace bifeldy_lib_90.Services {
             if (node is JsonObject obj) {
                 var dict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
                 foreach (KeyValuePair<string, JsonNode> kv in obj) {
-                    dict[kv.Key] = kv.Value == null ? null : this.JsonNodeToObject(kv.Value);
+                    dict[kv.Key] = this.JsonNodeToObject(kv.Value);
                 }
 
                 return dict;
@@ -183,17 +184,13 @@ namespace bifeldy_lib_90.Services {
             if (node is JsonArray arr) {
                 var list = new List<object>();
                 foreach (JsonNode item in arr) {
-                    list.Add(item == null ? null : this.JsonNodeToObject(item));
+                    list.Add(this.JsonNodeToObject(item));
                 }
 
                 return list;
             }
 
             if (node is JsonValue val) {
-                if (val.TryGetValue(out string s)) {
-                    return s;
-                }
-
                 if (val.TryGetValue(out bool b)) {
                     return b;
                 }
@@ -206,24 +203,36 @@ namespace bifeldy_lib_90.Services {
                     return l;
                 }
 
-                if (val.TryGetValue(out float f)) {
-                    return f;
+                if (val.TryGetValue(out decimal m)) {
+                    return m;
                 }
 
                 if (val.TryGetValue(out double d)) {
                     return d;
                 }
 
-                if (val.TryGetValue(out decimal m)) {
-                    return m;
+                if (val.TryGetValue(out float f)) {
+                    return f;
                 }
 
-                if (val.TryGetValue(out DateTime dt)) {
-                    return dt;
-                }
+                if (val.TryGetValue(out string s)) {
+                    if (Guid.TryParse(s, out Guid g)) {
+                        return g;
+                    }
 
-                if (val.TryGetValue(out DateOnly dto)) {
-                    return dto;
+                    if (DateOnly.TryParseExact(s, "yyyy-MM-dd", out DateOnly dOnly)) {
+                        return dOnly;
+                    }
+
+                    if (TimeOnly.TryParse(s, out TimeOnly tOnly)) {
+                        return tOnly;
+                    }
+
+                    if (DateTime.TryParse(s, null, DateTimeStyles.RoundtripKind, out DateTime dt)) {
+                        return dt;
+                    }
+
+                    return s;
                 }
 
                 //
@@ -233,7 +242,7 @@ namespace bifeldy_lib_90.Services {
                 // Guid = String
                 //
 
-                throw new NotSupportedException("Unsupported JSON Primitive");
+                throw new NotSupportedException($"Unsupported JSON Primitive: {val.ToJsonString()}");
             }
 
             return null;
@@ -270,8 +279,10 @@ namespace bifeldy_lib_90.Services {
                 float f => JsonValue.Create(f),
                 double d => JsonValue.Create(d),
                 decimal m => JsonValue.Create(m),
+                Guid g => JsonValue.Create(g.ToString("D")),
                 DateTime dt => JsonValue.Create(dt.ToString("O")),
-                DateOnly d => JsonValue.Create(d.ToString("O")),
+                DateOnly d => JsonValue.Create(d.ToString("yyyy-MM-dd")),
+                TimeOnly t => JsonValue.Create(t.ToString("O")),
                 _ => RuntimeFeature.IsDynamicCodeSupported
                     ? this.ObjectToJsonNode(value.ToDictionary())
                     : throw new NotSupportedException($"Type '{value.GetType()}' Tidak AOT-safe JSON Serialization")
