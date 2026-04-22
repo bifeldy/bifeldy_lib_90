@@ -86,7 +86,7 @@ namespace bifeldy_lib_90.Middlewares {
                             res = new ResponseJsonMulti<ServerConfigKunci>() {
                                 info = $"{shortCircuit} - Kunci Kode DC",
                                 results = config,
-                                count = config.Count(),
+                                count = (ulong)config.Count(),
                                 pages = 1
                             };
                         }

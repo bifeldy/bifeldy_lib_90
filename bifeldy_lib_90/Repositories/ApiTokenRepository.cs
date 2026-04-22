@@ -8,7 +8,7 @@ namespace bifeldy_lib_90.Repositories {
 
     public interface IApiTokenRepository {
         Task<bool> Create(IDatabase db, API_TOKEN_T apiToken);
-        Task<(List<API_TOKEN_T>, decimal, decimal)> GetAll(IDatabase db, string q = null, string page = "1", string row = "10", string sort = "user_name", string order = "asc");
+        Task<(List<API_TOKEN_T>, ulong, ulong)> GetAll(IDatabase db, string q = null, string page = "1", string row = "10", string sort = "user_name", string order = "asc");
         Task<API_TOKEN_T> GetByUserName(IDatabase db, string userName);
         Task<API_TOKEN_T> GetByUserNamePass(IDatabase db, string userName, string password);
         Task<bool> Update(IDatabase db, API_TOKEN_T apiToken);
@@ -44,7 +44,7 @@ namespace bifeldy_lib_90.Repositories {
             return res > 0;
         }
 
-        public Task<(List<API_TOKEN_T>, decimal, decimal)> GetAll(
+        public Task<(List<API_TOKEN_T>, ulong, ulong)> GetAll(
             IDatabase db,
             string q = null,
             string page = "1",

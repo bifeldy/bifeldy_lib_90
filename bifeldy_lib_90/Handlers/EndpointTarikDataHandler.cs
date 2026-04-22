@@ -88,7 +88,7 @@ namespace bifeldy_lib_90.Handlers {
                 _ = await customService.ExecuteSebelumTarik(this._context, db, fd, searchQuery, sort, order, page, row);
 
                 if (!forceFullDataSkipPaging) {
-                    (decimal pages, decimal count, IAsyncEnumerable<TOutputJson> ls) = await customService.TarikDataPaging(jsonTypeInfoOutput, this._context, db, fd, searchQuery, sort, order, page, row);
+                    (ulong pages, ulong count, IAsyncEnumerable<TOutputJson> ls) = await customService.TarikDataPaging(jsonTypeInfoOutput, this._context, db, fd, searchQuery, sort, order, page, row);
 
                     this._context.Response.StatusCode = StatusCodes.Status200OK;
                     this._context.Response.ContentType = MediaTypeNames.Application.Json;

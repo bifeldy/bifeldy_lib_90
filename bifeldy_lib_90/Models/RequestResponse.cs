@@ -21,8 +21,8 @@ namespace bifeldy_lib_90.Models {
 
     public sealed class ResponseJsonMulti<T> : ResponseJson {
         [JsonPropertyOrder(2)] public IEnumerable<T> results { get; set; }
-        [JsonPropertyOrder(3)] public decimal? pages { get; set; }
-        [JsonPropertyOrder(4)] public decimal? count { get; set; }
+        [JsonPropertyOrder(3)] public ulong? pages { get; set; }
+        [JsonPropertyOrder(4)] public ulong? count { get; set; }
     }
 
     [JsonSourceGenerationOptions(Converters = new[] { typeof(DecimalConverter), typeof(NullableDecimalConverter) })]

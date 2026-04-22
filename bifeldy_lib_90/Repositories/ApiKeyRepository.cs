@@ -8,7 +8,7 @@ namespace bifeldy_lib_90.Repositories {
 
     public interface IApiKeyRepository {
         Task<bool> Create(IDatabase db, API_KEY_T apiKey);
-        Task<(List<API_KEY_T>, decimal, decimal)> GetAll(IDatabase db, string q = null, string page = "1", string row = "10", string sort = "ip_origin", string order = "asc");
+        Task<(List<API_KEY_T>, ulong, ulong)> GetAll(IDatabase db, string q = null, string page = "1", string row = "10", string sort = "ip_origin", string order = "asc");
         Task<API_KEY_T> GetByKey(IDatabase db, string key);
         Task<bool> Update(IDatabase db, API_KEY_T apiKey);
         Task<bool> Delete(IDatabase db, string key);
@@ -55,7 +55,7 @@ namespace bifeldy_lib_90.Repositories {
             return res > 0;
         }
 
-        public Task<(List<API_KEY_T>, decimal, decimal)> GetAll(
+        public Task<(List<API_KEY_T>, ulong, ulong)> GetAll(
             IDatabase db,
             string q = null,
             string page = "1",

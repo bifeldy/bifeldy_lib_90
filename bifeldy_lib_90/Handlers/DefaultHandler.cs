@@ -6,7 +6,7 @@ using System.Text.Json.Serialization.Metadata;
 namespace bifeldy_lib_90.Handlers {
 
     public interface IDefaultHandler {
-        Task<(List<T>, decimal, decimal)> GetListDataPaging<T>(IDatabase db, string sqlQuery, DynamicParameters sqlParam, JsonTypeInfo<T> jsonTypeInfo, string page, string row, string sort, string order) where T : JsonSerDe, new();
+        Task<(List<T>, ulong, ulong)> GetListDataPaging<T>(IDatabase db, string sqlQuery, DynamicParameters sqlParam, JsonTypeInfo<T> jsonTypeInfo, string page, string row, string sort, string order) where T : JsonSerDe, new();
     }
 
     public sealed class CDefaultHandler : IDefaultHandler {
@@ -15,7 +15,7 @@ namespace bifeldy_lib_90.Handlers {
             //
         }
 
-        public async Task<(List<T>, decimal, decimal)> GetListDataPaging<T>(
+        public async Task<(List<T>, ulong, ulong)> GetListDataPaging<T>(
             IDatabase db, string sqlQuery, DynamicParameters sqlParam,
             JsonTypeInfo<T> jsonTypeInfo,
             string page, string row, string sort, string order
@@ -54,8 +54,8 @@ namespace bifeldy_lib_90.Handlers {
             sqlParam.Add("page_num", (decimal)qp);
             sqlParam.Add("row_num", (decimal)qr);
 
-            decimal count = await db.ExecScalarAsync<decimal>($"SELECT COUNT(*) FROM ({sqlQuery}) temp_{DateTime.Now.Ticks}", sqlParam);
-            decimal pages = Math.Ceiling(count / ((queryRow is > 0 and <= 500) ? queryRow : 10));
+            ulong count = await db.ExecScalarAsync<ulong>($"SELECT COUNT(*) FROM ({sqlQuery}) temp_{DateTime.Now.Ticks}", sqlParam);
+            ulong pages = (ulong)Math.Ceiling((decimal)count / ((queryRow is > 0 and <= 500) ? queryRow : 10));
 
             List<T> ls = await db.GetListAsync(
                 jsonTypeInfo,

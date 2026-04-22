@@ -12,7 +12,7 @@ namespace bifeldy_lib_90.Repositories {
 
     public interface IApiDcListRepository {
         Task<bool> Create(IDatabase db, ListApiDc apiDcList);
-        Task<(List<ListApiDc>, decimal, decimal)> GetAll(IDatabase db);
+        Task<(List<ListApiDc>, ulong, ulong)> GetAll(IDatabase db);
         Task<bool> Update(IDatabase db, ListApiDc apiDcList);
         Task<decimal?> Ping(IDatabase db, ListApiDc apiDcList);
     }
@@ -60,7 +60,7 @@ namespace bifeldy_lib_90.Repositories {
             return res > 0;
         }
 
-        public async Task<(List<ListApiDc>, decimal, decimal)> GetAll(IDatabase db) {
+        public async Task<(List<ListApiDc>, ulong, ulong)> GetAll(IDatabase db) {
             string sqlQuery = @"
                 SELECT
                     a.dc_kode, a.flag_dbpg,
@@ -82,7 +82,6 @@ namespace bifeldy_lib_90.Repositories {
                         GROUP BY d.dc_kode, d.ip_origin, d.version, d.port_grpc
                     ) c ON (
                         a.dc_kode = c.dc_kode
-                        AND COALESCE(b.api_host, COALESCE(a.ip_nginx_cloud, a.ip_nginx)) = c.ip_origin
                     )
                 ORDER BY
                     b.api_path, a.dc_kode
@@ -97,7 +96,7 @@ namespace bifeldy_lib_90.Repositories {
                 sqlParam
             );
 
-            return (ls, ls.Count, 1);
+            return (ls, (ulong)ls.Count, 1);
         }
 
         public async Task<bool> Update(IDatabase db, ListApiDc apiDcList) {
@@ -125,69 +124,70 @@ namespace bifeldy_lib_90.Repositories {
             apiDcList.PING_PONG = null;
 
             if (!string.IsNullOrEmpty(apiDcList.API_PATH)) {
-                string separator = "/api/";
                 string hostApiDc = string.IsNullOrEmpty(apiDcList?.API_HOST) ? apiDcList?.IP_NGINX : apiDcList?.API_HOST;
+                string pathApiDc = string.IsNullOrEmpty(apiDcList.API_PATH) ? $"{this._as.AppName}{apiDcList.DC_KODE}/api" : apiDcList?.API_PATH;
 
-                var uri = new Uri($"http://{hostApiDc}{apiDcList.API_PATH}");
-                string[] urls = uri.ToString().Split(separator);
-                if (urls.Length == 2) {
-                    urls[1] = "ping-pong";
+                if (!hostApiDc.StartsWith("http")) {
+                    hostApiDc = $"http://{hostApiDc}";
+                }
 
-                    string url = string.Join(separator, urls);
-                    uri = new Uri(url);
+                if (!pathApiDc.StartsWith("/")) {
+                    pathApiDc = $"/{pathApiDc}";
+                }
 
-                    string hashed = this._chiper.HashText(this._as.AppName);
+                if (!pathApiDc.EndsWith("/")) {
+                    pathApiDc = $"{pathApiDc}/";
+                }
 
-                    NameValueCollection queryUrlDc = HttpUtility.ParseQueryString(uri.Query);
-                    queryUrlDc.Set("key", hashed);
-                    queryUrlDc.Set("secret", hashed);
+                var uri = new Uri($"{hostApiDc}{pathApiDc}ping-pong");
+                string hashed = this._chiper.HashText(this._as.AppName);
 
-                    var uriBuilder = new UriBuilder(uri) {
-                        Query = queryUrlDc.ToString()
-                    };
+                NameValueCollection queryUrlDc = HttpUtility.ParseQueryString(uri.Query);
+                queryUrlDc.Set("key", hashed);
+                queryUrlDc.Set("secret", hashed);
 
-                    uri = uriBuilder.Uri;
-                    url = uri.ToString();
+                var uriBuilder = new UriBuilder(uri) {
+                    Query = queryUrlDc.ToString()
+                };
 
-                    string kodeDc = await this._generalRepo.GetKodeDc(db);
+                string kodeDc = await this._generalRepo.GetKodeDc(db);
 
-                    long startTime = Stopwatch.GetTimestamp();
-                    HttpResponseMessage res = await this._http.PutData(
-                        url,
-                        new InputJsonDcPingPong() {
-                            kode_dc = kodeDc,
-                            version = this._as.AppVersion,
-                            port_api = this._env.API_PORT,
-                            port_grpc = 0
-                        },
-                        InputJsonDcPingPongJsonSerializerContext.Default.InputJsonDcPingPong
-                    );
+                long startTime = Stopwatch.GetTimestamp();
+                HttpResponseMessage res = await this._http.PutData(
+                    uriBuilder.Uri.ToString(),
+                    new InputJsonDcPingPong() {
+                        kode_dc = kodeDc,
+                        version = this._as.AppVersion,
+                        port_api = this._env.API_PORT,
+                        port_grpc = 0
+                    },
+                    InputJsonDcPingPongJsonSerializerContext.Default.InputJsonDcPingPong
+                );
 
-                    if (!res.IsSuccessStatusCode) {
-                        string errMsg = res.ReasonPhrase;
+                if (!res.IsSuccessStatusCode) {
+                    string errMsg = res.ReasonPhrase;
 
-                        try {
-                            string jsonString = await res.Content.ReadAsStringAsync();
+                    try {
+                        string jsonString = await res.Content.ReadAsStringAsync();
 
-                            ResponseJsonSingle<ResponseJsonMessage> r = this._cs.JsonToObject(
-                                jsonString,
-                                ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage
-                            );
+                        ResponseJsonSingle<ResponseJsonMessage> r = this._cs.JsonToObject(
+                            jsonString,
+                            ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage
+                        );
 
-                            errMsg = r.result.message;
-                        }
-                        catch {
-                            //
-                        }
-
-                        throw new TidakMemenuhiException($"Tidak Dapat Tersambung Ke {hostApiDc} :: {errMsg}");
+                        errMsg = r.result.message;
+                    }
+                    catch {
+                        //
                     }
 
-                    long endTime = Stopwatch.GetTimestamp();
-                    decimal elapsedMs = (decimal)(endTime - startTime) / (Stopwatch.Frequency / 1000);
-
-                    apiDcList.PING_PONG = decimal.Round(elapsedMs, 1, MidpointRounding.AwayFromZero);
+                    throw new TidakMemenuhiException($"Tidak Dapat Tersambung Ke {hostApiDc} :: {errMsg}");
                 }
+
+                long endTime = Stopwatch.GetTimestamp();
+                decimal elapsedMs = (decimal)(endTime - startTime) / (Stopwatch.Frequency / 1000);
+
+                apiDcList.PING_PONG = decimal.Round(elapsedMs, 1, MidpointRounding.AwayFromZero);
             }
 
             return apiDcList.PING_PONG;

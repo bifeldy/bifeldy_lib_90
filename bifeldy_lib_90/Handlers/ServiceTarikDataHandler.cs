@@ -12,7 +12,7 @@ namespace bifeldy_lib_90.Handlers {
         string GetSqlQueryFrom();
         string GetAllColumnSelectAsString(IDictionary<string, string> jsonKeysTableCustomColumns = null);
         string GetFullQuery(string sqlCustomQuery = null, IDictionary<string, string> jsonKeysTableCustomColumns = null);
-        Task<(decimal, decimal, IAsyncEnumerable<TOutputJson>)> TarikDataPaging<TOutputJson, TInputJson>(JsonTypeInfo<TOutputJson> jsonTypeInfo, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page, string row) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
+        Task<(ulong, ulong, IAsyncEnumerable<TOutputJson>)> TarikDataPaging<TOutputJson, TInputJson>(JsonTypeInfo<TOutputJson> jsonTypeInfo, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page, string row) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
         IAsyncEnumerable<TOutputJson> TarikDataFullStream<TOutputJson, TInputJson>(JsonTypeInfo<TOutputJson> jsonTypeInfo, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new();
         Task<(IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParam<TInputJson>(HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new();
         Task<(string, string, string, IDictionary<string, string>, IDictionary<string, string>, string, DynamicParameters)> GetCustomQueryParamExportDocs<TInputJson>(string rdlcPath, string dsName, string exportAs, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page = null, string row = null) where TInputJson : JsonSerDe, new();
@@ -75,7 +75,7 @@ namespace bifeldy_lib_90.Handlers {
             return sqlParam;
         }
 
-        private async Task<(decimal, decimal, IAsyncEnumerable<T>)> GetDataPagingWithParam<T>(JsonTypeInfo<T> jsonTypeInfo, IDatabase db, string sort, string order, string page, string row, DynamicParameters sqlParam = null, string sqlCustomQuery = null, IDictionary<string, string> jsonKeysTableCustomColumns = null) where T : JsonSerDe, new() {
+        private async Task<(ulong, ulong, IAsyncEnumerable<T>)> GetDataPagingWithParam<T>(JsonTypeInfo<T> jsonTypeInfo, IDatabase db, string sort, string order, string page, string row, DynamicParameters sqlParam = null, string sqlCustomQuery = null, IDictionary<string, string> jsonKeysTableCustomColumns = null) where T : JsonSerDe, new() {
             string orderSort = string.Empty;
             if (!string.IsNullOrEmpty(sort) && !string.IsNullOrEmpty(order)) {
                 string qs = (jsonKeysTableCustomColumns == null) ? this.jsonKeysTableColumns[sort.ToLower()] : jsonKeysTableCustomColumns[sort.ToLower()];
@@ -105,8 +105,8 @@ namespace bifeldy_lib_90.Handlers {
                 }
             }
 
-            decimal count = await db.ExecScalarAsync<decimal>($"SELECT COUNT(*) {sqlCustomQuery ?? this.sqlQuery}", sqlParam);
-            decimal pages = Math.Ceiling(count / ((queryRow is > 0 and <= 500) ? queryRow : 10));
+            ulong count = await db.ExecScalarAsync<ulong>($"SELECT COUNT(*) {sqlCustomQuery ?? this.sqlQuery}", sqlParam);
+            ulong pages = (ulong)Math.Ceiling((decimal)count / ((queryRow is > 0 and <= 500) ? queryRow : 10));
 
             string query = $@"
                 {this.GetFullQuery(sqlCustomQuery, jsonKeysTableCustomColumns)}
@@ -144,7 +144,7 @@ namespace bifeldy_lib_90.Handlers {
             ";
         }
 
-        public async Task<(decimal, decimal, IAsyncEnumerable<TOutputJson>)> TarikDataPaging<TOutputJson, TInputJson>(JsonTypeInfo<TOutputJson> jsonTypeInfo, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page, string row) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
+        public async Task<(ulong, ulong, IAsyncEnumerable<TOutputJson>)> TarikDataPaging<TOutputJson, TInputJson>(JsonTypeInfo<TOutputJson> jsonTypeInfo, HttpContext ht, IDatabase db, TInputJson fd, string searchQuery, string sort, string order, string page, string row) where TInputJson : JsonSerDe, new() where TOutputJson : JsonSerDe, new() {
             (IDictionary<string, string> jsonKeysTableCustomColumns, string sqlCustomQuery, DynamicParameters sqlParam) = await this.GetCustomQueryParam(ht, db, fd, searchQuery, sort, order, page, row);
             return await this.GetDataPagingWithParam(jsonTypeInfo, db, sort, order, page, row, sqlParam, sqlCustomQuery, jsonKeysTableCustomColumns);
         }
