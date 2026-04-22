@@ -1,6 +1,9 @@
 ﻿using bifeldy_lib_90.Extensions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Primitives;
 using Microsoft.OpenApi.Models;
 
 namespace bifeldy_lib_90.Transformers {
@@ -27,6 +30,29 @@ namespace bifeldy_lib_90.Transformers {
             OpenApiDocumentTransformerContext context,
             CancellationToken cancellationToken
         ) {
+            IHttpContextAccessor httpContextAccessor = context.ApplicationServices.GetService<IHttpContextAccessor>();
+            HttpContext httpContext = httpContextAccessor?.HttpContext;
+
+            if (httpContext != null) {
+                string scheme = httpContext.Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? httpContext.Request.Scheme;
+                string host = httpContext.Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? httpContext.Request.Host.Value;
+
+                string pathBase = string.Empty;
+                if (httpContext.Request.Headers.TryGetValue(Bifeldy.NGINX_PATH_NAME, out StringValues proxyPath)) {
+                    string p = proxyPath.Last()?.Trim('/');
+                    if (!string.IsNullOrEmpty(p)) {
+                        pathBase = $"/{p}";
+                    }
+                }
+
+                document.Servers = [
+                    new() {
+                        Url = $"{scheme}://{host}{pathBase}",
+                        Description = "Production Server (Proxy)"
+                    }
+                ];
+            }
+
             string currentDocumentName = context.DocumentName;
 
             var filteredPaths = new OpenApiPaths();
