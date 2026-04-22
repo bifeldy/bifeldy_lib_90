@@ -29,7 +29,7 @@ namespace bifeldy_lib_90.Services {
         private readonly ILockerService _locker;
         private readonly IConverterService _converter;
 
-        private readonly Assembly _prgAsm = Assembly.GetEntryAssembly();
+        // private readonly Assembly _prgAsm = Assembly.GetEntryAssembly();
         // private readonly Assembly _libAsm = Assembly.GetExecutingAssembly();
 
         private readonly SettingLibb _SettingLibb;
@@ -44,7 +44,7 @@ namespace bifeldy_lib_90.Services {
 
         public string AppName => Bifeldy.App.Environment.ApplicationName;
         public string AppLocation => AppDomain.CurrentDomain.BaseDirectory;
-        public string AppVersion => this._prgAsm.GetName().Version.ToString();
+        public string AppVersion => Assembly.GetEntryAssembly().GetName().Version.ToString();
 
         public CApplicationService(
             IOptions<EnvVar> envVar,
