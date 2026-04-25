@@ -293,10 +293,10 @@ namespace bifeldy_lib_90.Services {
                     throw new Exception($"Ukuran wIn ({wIn}) / hIn ({hIn}) Masih NULL");
                 }
 
-                double mTop = this.ParseDimensionToInch(topMargin) ?? 1.0;
-                double mBottom = this.ParseDimensionToInch(bottomMargin) ?? 1.0;
-                double mLeft = this.ParseDimensionToInch(leftMargin) ?? 1.0;
-                double mRight = this.ParseDimensionToInch(rightMargin) ?? 1.0;
+                double mTop = this.ParseDimensionToInch(topMargin) ?? 0.5;
+                double mBottom = this.ParseDimensionToInch(bottomMargin) ?? 0.5;
+                double mLeft = this.ParseDimensionToInch(leftMargin) ?? 0.5;
+                double mRight = this.ParseDimensionToInch(rightMargin) ?? 0.5;
 
                 string wStr = wIn?.ToString("0.##", CultureInfo.InvariantCulture) + "in";
                 string hStr = hIn?.ToString("0.##", CultureInfo.InvariantCulture) + "in";
