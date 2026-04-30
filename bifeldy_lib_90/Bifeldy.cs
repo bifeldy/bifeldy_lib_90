@@ -333,8 +333,8 @@ namespace bifeldy_lib_90 {
 
         public static void UseForwardedHeaders() {
             var options = new ForwardedHeadersOptions() {
-                ForwardedHeaders = ForwardedHeaders.XForwardedFor
-                    | ForwardedHeaders.XForwardedHost
+                ForwardedHeaders = ForwardedHeaders.XForwardedHost
+                    | ForwardedHeaders.XForwardedFor
                     | ForwardedHeaders.XForwardedProto
             };
 
@@ -342,7 +342,7 @@ namespace bifeldy_lib_90 {
             options.KnownNetworks.Clear();
             options.ForwardLimit = null;
 
-            _ = App.UseForwardedHeaders();
+            _ = App.UseForwardedHeaders(options);
         }
 
         public static void UseNginxProxyPathSegment() {
