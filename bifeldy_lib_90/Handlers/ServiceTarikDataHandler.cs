@@ -68,7 +68,7 @@ namespace bifeldy_lib_90.Handlers {
             this._http = http;
         }
 
-        private DynamicParameters GetPageRowParamList(decimal qp = 0, decimal qr = 0) {
+        private static DynamicParameters GetPageRowParamList(decimal qp = 0, decimal qr = 0) {
             var sqlParam = new DynamicParameters();
             sqlParam.Add("page_num", qp);
             sqlParam.Add("row_num", qr);
@@ -93,7 +93,7 @@ namespace bifeldy_lib_90.Handlers {
             ulong qp = (queryRow > 0 && queryRow <= 500) ? queryRow : 10;
             ulong qr = queryPage > 0 ? (queryPage * queryRow) - queryRow : 0;
 
-            DynamicParameters defaultSqlParam = this.GetPageRowParamList(qp, qr);
+            DynamicParameters defaultSqlParam = GetPageRowParamList(qp, qr);
             if (sqlParam == null) {
                 sqlParam = defaultSqlParam;
             }

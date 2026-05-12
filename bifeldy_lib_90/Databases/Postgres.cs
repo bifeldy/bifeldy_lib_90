@@ -140,7 +140,7 @@ namespace bifeldy_lib_90.Databases {
                             }
 
                             if (!useDoubleQuote) {
-                                if (line.Contains("\x01")) {
+                                if (line.Contains('\u0001')) {
                                     line = line.Replace("\x01", "");
                                 }
                             }
@@ -208,7 +208,7 @@ namespace bifeldy_lib_90.Databases {
             }
         }
 
-        private async Task BulkInsertData(NpgsqlBinaryImporter writer, object obj, NpgsqlDbType types, int lengths, CancellationToken token) {
+        private static async Task BulkInsertData(NpgsqlBinaryImporter writer, object obj, NpgsqlDbType types, int lengths, CancellationToken token) {
             switch (types) {
                 case NpgsqlDbType.Bigint:
                     await writer.WriteAsync(Convert.ToInt64(obj), types, token);
@@ -300,7 +300,7 @@ namespace bifeldy_lib_90.Databases {
                                 await writer.WriteNullAsync(token);
                             }
                             else {
-                                await this.BulkInsertData(writer, _obj, types[i], lengths[i], token);
+                                await BulkInsertData(writer, _obj, types[i], lengths[i], token);
                             }
                         }
 
