@@ -69,14 +69,14 @@ namespace bifeldy_lib_90.Repositories {
                 WHERE
                     (app_name = '*' OR UPPER(app_name) = :app_name)
                     AND (
-                        ip_origin ILIKE :search_query
-                        OR keter ILIKE :search_query
+                        UPPER(ip_origin) LIKE :search_query
+                        OR UPPER(keter) LIKE :search_query
                     )
             ";
 
             var sqlParam = new DynamicParameters();
             sqlParam.Add("app_name", this._as.AppName.ToUpper());
-            sqlParam.Add("search_query", $"%{q}%");
+            sqlParam.Add("search_query", $"%{q}%".ToUpper());
 
             return this._defaultHandler.GetListDataPaging(
                 db, sqlQuery, sqlParam,
