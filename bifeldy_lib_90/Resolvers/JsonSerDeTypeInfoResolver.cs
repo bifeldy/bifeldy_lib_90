@@ -19,19 +19,20 @@ namespace bifeldy_lib_90.Resolvers {
                 return null;
             }
 
-            if (!typeof(JsonSerDe).IsAssignableFrom(info.Type)) {
-                return info;
-            }
-
-            if (info.Kind == JsonTypeInfoKind.Object &&
-                info.CreateObject?.Invoke() is JsonSerDe model) {
-
-                string[] hidden = model.HiddenProperties();
-
+            if (info.Kind == JsonTypeInfoKind.Object && typeof(JsonSerDe).IsAssignableFrom(info.Type)) {
                 foreach (JsonPropertyInfo prop in info.Properties) {
-                    if (hidden.Contains(prop.Name, StringComparer.OrdinalIgnoreCase)) {
-                        prop.ShouldSerialize = (_, _) => false;
-                    }
+                    Func<object, object, bool> originalShouldSerialize = prop.ShouldSerialize;
+
+                    prop.ShouldSerialize = (obj, propValue) => {
+                        if (obj is JsonSerDe entity) {
+                            string[] hidden = entity.HiddenProperties();
+                            if (hidden != null && hidden.Contains(prop.Name, StringComparer.OrdinalIgnoreCase)) {
+                                return false;
+                            }
+                        }
+
+                        return originalShouldSerialize == null || originalShouldSerialize(obj, propValue);
+                    };
                 }
             }
 

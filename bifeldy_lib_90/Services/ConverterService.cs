@@ -1,13 +1,14 @@
-﻿using bifeldy_lib_90.Extensions;
+﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Libraries;
 using System.Collections;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Xml.Linq;
 using WkHtmlToPdfDotNet;
@@ -45,7 +46,7 @@ namespace bifeldy_lib_90.Services {
         private readonly IConverter _converter;
 
         private static JsonSerializerOptions JSON_SERIALIZER_OPTIONS = null;
-        private static readonly object _lockObj = new();
+        private static readonly Lock _lockObj = new();
 
         public CConverterService(IConverter converter) {
             this._converter = converter;
@@ -175,7 +176,7 @@ namespace bifeldy_lib_90.Services {
             if (node is JsonObject obj) {
                 var dict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
                 foreach (KeyValuePair<string, JsonNode> kv in obj) {
-                    dict[kv.Key] = this.JsonNodeToObject(kv.Value);
+                    dict[kv.Key] = kv.Value == null ? null : this.JsonNodeToObject(kv.Value);
                 }
 
                 return dict;
@@ -184,13 +185,17 @@ namespace bifeldy_lib_90.Services {
             if (node is JsonArray arr) {
                 var list = new List<object>();
                 foreach (JsonNode item in arr) {
-                    list.Add(this.JsonNodeToObject(item));
+                    list.Add(item == null ? null : this.JsonNodeToObject(item));
                 }
 
                 return list;
             }
 
             if (node is JsonValue val) {
+                if (val.TryGetValue(out string s)) {
+                    return s;
+                }
+
                 if (val.TryGetValue(out bool b)) {
                     return b;
                 }
@@ -203,49 +208,34 @@ namespace bifeldy_lib_90.Services {
                     return l;
                 }
 
-                if (val.TryGetValue(out decimal m)) {
-                    return m;
+                if (val.TryGetValue(out float f)) {
+                    return f;
                 }
 
                 if (val.TryGetValue(out double d)) {
                     return d;
                 }
 
-                if (val.TryGetValue(out float f)) {
-                    return f;
+                if (val.TryGetValue(out decimal m)) {
+                    return m;
                 }
 
-                if (val.TryGetValue(out string s)) {
-                    if (Guid.TryParse(s, out Guid g)) {
-                        return g;
-                    }
+                if (val.TryGetValue(out DateTime dt)) {
+                    return dt;
+                }
 
-                    if (DateOnly.TryParseExact(s, "yyyy-MM-dd", out DateOnly dOnly)) {
-                        return dOnly;
-                    }
-
-                    if (TimeOnly.TryParse(s, out TimeOnly tOnly)) {
-                        return tOnly;
-                    }
-
-                    if (DateTime.TryParse(s, null, DateTimeStyles.RoundtripKind, out DateTime dt)) {
-                        return dt;
-                    }
-
-                    return s;
+                if (val.TryGetValue(out DateOnly dto)) {
+                    return dto;
                 }
 
                 //
                 // TODO :: Add More Known Data Type
                 //
-                // ~ Note = Known JSON String Items ~
-                // Guid
-                // DateOnly
-                // TimeOnly
-                // DateTime
+                // ~ Note ~
+                // Guid = String
                 //
 
-                throw new NotSupportedException($"Unsupported JSON Primitive: {val.ToJsonString()}");
+                throw new NotSupportedException("Unsupported JSON Primitive");
             }
 
             return null;
@@ -282,14 +272,46 @@ namespace bifeldy_lib_90.Services {
                 float f => JsonValue.Create(f),
                 double d => JsonValue.Create(d),
                 decimal m => JsonValue.Create(m),
-                Guid g => JsonValue.Create(g.ToString("D")),
                 DateTime dt => JsonValue.Create(dt.ToString("O")),
-                DateOnly d => JsonValue.Create(d.ToString("yyyy-MM-dd")),
-                TimeOnly t => JsonValue.Create(t.ToString("O")),
-                _ => RuntimeFeature.IsDynamicCodeSupported
-                    ? this.ObjectToJsonNode(value.ToDictionary())
-                    : throw new NotSupportedException($"Type '{value.GetType()}' Tidak AOT-safe JSON Serialization")
+                DateOnly d => JsonValue.Create(d.ToString("O")),
+                _ => this.ProcessComplexObject(value)
             };
+        }
+
+        private JsonNode ProcessComplexObject(object value) {
+            if (!RuntimeFeature.IsDynamicCodeSupported) {
+                throw new NotSupportedException($"Type '{value.GetType()}' Tidak AOT-safe JSON Serialization");
+            }
+
+            var dict = value.ToDictionary();
+
+            JsonNode res = this.ObjectToJsonNode(dict);
+
+            RemoveHiddenProperties(res, value);
+
+            return res;
+        }
+
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Reflection pada GetType() dijamin aman atau hanya dieksekusi saat JIT.")]
+        private static void RemoveHiddenProperties(JsonNode node, object originalValue) {
+            if (node is JsonObject jsonObj) {
+                if (originalValue is JsonSerDe entity) {
+                    IEnumerable<string> hiddenProps = entity.HiddenProperties();
+                    if (hiddenProps != null) {
+                        foreach (string prop in hiddenProps) {
+                            _ = jsonObj.Remove(prop);
+                        }
+                    }
+                }
+
+                if (RuntimeFeature.IsDynamicCodeSupported) {
+                    foreach (PropertyInfo prop in originalValue.GetType().GetProperties()) {
+                        if (Attribute.IsDefined(prop, typeof(JsonIgnoreAttribute))) {
+                            _ = jsonObj.Remove(prop.Name);
+                        }
+                    }
+                }
+            }
         }
 
         public object JsonToObject(string json) {
@@ -404,8 +426,9 @@ namespace bifeldy_lib_90.Services {
                 Type type = prop.PropertyType;
 
                 // Nullable<T> detection
-                bool isNullable = Nullable.GetUnderlyingType(type) != null;
-                Type coreType = isNullable ? Nullable.GetUnderlyingType(type) : type;
+                Type underlyingType = Nullable.GetUnderlyingType(type);
+                bool isNullable = underlyingType != null;
+                Type coreType = underlyingType ?? type;
 
                 bool isList =
                     coreType.IsGenericType &&
