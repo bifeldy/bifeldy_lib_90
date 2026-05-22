@@ -1,4 +1,5 @@
 ﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Models;
 using Microsoft.AspNetCore.Http;
@@ -617,9 +618,7 @@ namespace bifeldy_lib_90.Services {
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Safety guaranteed by JsonTypeInfo usage.")]
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:RequiresDynamicCode", Justification = "We are explicitly registering types to ensure AOT generation.")]
         public async IAsyncEnumerable<T> ReadStreamingJsonAsync<T>(HttpResponseMessage response, int bufferSize = 32768, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
-            var jsonSerializerOptions = new JsonSerializerOptions();
-            jsonSerializerOptions.Converters.Add(new DecimalConverter());
-            jsonSerializerOptions.Converters.Add(new NullableDecimalConverter());
+            JsonSerializerOptions jsonSerializerOptions = JsonSerializationExtension.ConfigureJson();
 
             IAsyncEnumerable<T> iae = ReadStreamingJsonAsync(
                 response,

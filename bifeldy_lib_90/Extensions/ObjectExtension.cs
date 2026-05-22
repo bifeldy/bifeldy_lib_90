@@ -1,5 +1,4 @@
 ﻿using bifeldy_lib_90.Abstractions;
-using bifeldy_lib_90.Libraries;
 using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -42,9 +41,7 @@ namespace bifeldy_lib_90.Extensions {
                 throw new Exception("Hanya Bisa Dijalankan Menggunakan JIT, Bukan AOT");
             }
 
-            var jsonSerializerOptions = new JsonSerializerOptions();
-            jsonSerializerOptions.Converters.Add(new DecimalConverter());
-            jsonSerializerOptions.Converters.Add(new NullableDecimalConverter());
+            JsonSerializerOptions jsonSerializerOptions = JsonSerializationExtension.ConfigureJson();
 
             if (instanceToConvert == null) {
                 return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);

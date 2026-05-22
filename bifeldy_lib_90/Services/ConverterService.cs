@@ -52,11 +52,7 @@ namespace bifeldy_lib_90.Services {
             this._converter = converter;
             //
             lock (_lockObj) {
-                if (JSON_SERIALIZER_OPTIONS == null) {
-                    JSON_SERIALIZER_OPTIONS = new JsonSerializerOptions();
-                    JSON_SERIALIZER_OPTIONS.Converters.Add(new DecimalConverter());
-                    JSON_SERIALIZER_OPTIONS.Converters.Add(new NullableDecimalConverter());
-                }
+                JSON_SERIALIZER_OPTIONS ??= JsonSerializationExtension.ConfigureJson();
             }
         }
 

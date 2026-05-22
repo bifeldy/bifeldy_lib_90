@@ -1,4 +1,4 @@
-﻿using bifeldy_lib_90.Libraries;
+﻿using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Services;
 using System.Text.Json;
@@ -25,11 +25,8 @@ namespace bifeldy_lib_90.JobSchedulers {
 
             this._filePath = Path.Combine(app.AppLocation, Bifeldy.DEFAULT_DATA_FOLDER, "JobScheduler.json");
 
-            var jsonSerializerOptions = new JsonSerializerOptions() {
-                WriteIndented = true
-            };
-            jsonSerializerOptions.Converters.Add(new DecimalConverter());
-            jsonSerializerOptions.Converters.Add(new NullableDecimalConverter());
+            JsonSerializerOptions jsonSerializerOptions = JsonSerializationExtension.ConfigureJson();
+            jsonSerializerOptions.WriteIndented = true;
 
             this._jsonContext = new JobTrackerJsonContext(jsonSerializerOptions);
         }

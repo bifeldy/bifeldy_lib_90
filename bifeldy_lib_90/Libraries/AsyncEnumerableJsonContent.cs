@@ -1,4 +1,5 @@
 ﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Extensions;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
@@ -43,9 +44,7 @@ namespace bifeldy_lib_90.Libraries {
 
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Safety guaranteed by JsonTypeInfo usage.")]
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context) {
-            var jsonSerializerOptions = new JsonSerializerOptions();
-            jsonSerializerOptions.Converters.Add(new DecimalConverter());
-            jsonSerializerOptions.Converters.Add(new NullableDecimalConverter());
+            JsonSerializerOptions jsonSerializerOptions = JsonSerializationExtension.ConfigureJson();
 
             if (this._ndjson) {
                 await foreach (T item in this._source.WithCancellation(this._token)) {
