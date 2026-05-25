@@ -1,6 +1,7 @@
 ﻿using bifeldy_lib_90.Abstractions;
 using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Libraries;
+using bifeldy_lib_90.Resolvers;
 using System.Collections;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
@@ -103,7 +104,9 @@ namespace bifeldy_lib_90.Services {
                 return null;
             }
 
-            return JsonSerializer.Serialize(value, typeInfo);
+            JsonTypeInfo<T> resolvedTypeInfo = AotResolverCache<T>.GetResolvedInfo(typeInfo);
+
+            return JsonSerializer.Serialize(value, resolvedTypeInfo);
         }
 
         private static JsonNode ConvertXmlToJsonNode(XElement element) {
