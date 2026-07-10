@@ -9,11 +9,11 @@ namespace bifeldy_lib_90.Services {
 
     public interface IKafkaService {
         Task CreateTopicIfNotExist(string hostPort, string topicName, short replication = 1, int partition = 1);
-        ProducerConfig GenerateKafkaProducerConfig(string hostPort);
+        ProducerConfig GenerateKafkaProducerConfig(string hostPort, SecurityProtocol? securityProtocol = null, SaslMechanism? saslMechanism = null, string saslUsername = null, string saslPassword = null);
         IProducer<T1, T2> GenerateProducerBuilder<T1, T2>(ProducerConfig config);
         IProducer<T1, T2> CreateKafkaProducerInstance<T1, T2>(string hostPort);
         Task<List<DeliveryResult<string, string>>> ProduceSingleMultipleMessages(string hostPort, string topicName, List<Message<string, string>> data);
-        ConsumerConfig GenerateKafkaConsumerConfig(string hostPort, string groupId, AutoOffsetReset autoOffsetReset);
+        ConsumerConfig GenerateKafkaConsumerConfig(string hostPort, string groupId, AutoOffsetReset autoOffsetReset, SecurityProtocol? securityProtocol = null, SaslMechanism? saslMechanism = null, string saslUsername = null, string saslPassword = null);
         IConsumer<T1, T2> GenerateConsumerBuilder<T1, T2>(ConsumerConfig config);
         IConsumer<T1, T2> CreateKafkaConsumerInstance<T1, T2>(string hostPort, string groupId);
         TopicPartition CreateKafkaConsumerTopicPartition(string topicName, int partition);
@@ -79,9 +79,13 @@ namespace bifeldy_lib_90.Services {
             }
         }
 
-        public ProducerConfig GenerateKafkaProducerConfig(string hostPort) {
+        public ProducerConfig GenerateKafkaProducerConfig(string hostPort, SecurityProtocol? securityProtocol = null, SaslMechanism? saslMechanism = null, string saslUsername = null, string saslPassword = null) {
             return new ProducerConfig() {
-                BootstrapServers = hostPort
+                BootstrapServers = hostPort,
+                SecurityProtocol = securityProtocol,
+                SaslMechanism = saslMechanism,
+                SaslUsername = saslUsername,
+                SaslPassword = saslPassword
             };
         }
 
@@ -113,12 +117,16 @@ namespace bifeldy_lib_90.Services {
             }
         }
 
-        public ConsumerConfig GenerateKafkaConsumerConfig(string hostPort, string groupId, AutoOffsetReset autoOffsetReset) {
+        public ConsumerConfig GenerateKafkaConsumerConfig(string hostPort, string groupId, AutoOffsetReset autoOffsetReset, SecurityProtocol? securityProtocol = null, SaslMechanism? saslMechanism = null, string saslUsername = null, string saslPassword = null) {
             return new ConsumerConfig() {
                 BootstrapServers = hostPort,
                 GroupId = groupId,
                 AutoOffsetReset = autoOffsetReset,
-                EnableAutoCommit = false
+                EnableAutoCommit = false,
+                SecurityProtocol = securityProtocol,
+                SaslMechanism = saslMechanism,
+                SaslUsername = saslUsername,
+                SaslPassword = saslPassword
             };
         }
 
