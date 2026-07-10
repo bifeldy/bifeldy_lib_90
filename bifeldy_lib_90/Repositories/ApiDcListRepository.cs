@@ -1,5 +1,4 @@
 ﻿using bifeldy_lib_90.Abstractions;
-using bifeldy_lib_90.Exceptions;
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Services;
 using Dapper;
@@ -164,25 +163,7 @@ namespace bifeldy_lib_90.Repositories {
                     InputJsonDcPingPongJsonSerializerContext.Default.InputJsonDcPingPong
                 );
 
-                if (!res.IsSuccessStatusCode) {
-                    string errMsg = res.ReasonPhrase;
-
-                    try {
-                        string jsonString = await res.Content.ReadAsStringAsync();
-
-                        ResponseJsonSingle<ResponseJsonMessage> r = this._cs.JsonToObject(
-                            jsonString,
-                            ResponseJsonSerializerContext.Default.ResponseJsonSingleResponseJsonMessage
-                        );
-
-                        errMsg = r.result.message;
-                    }
-                    catch {
-                        //
-                    }
-
-                    throw new TidakMemenuhiException($"Tidak Dapat Tersambung Ke {hostApiDc} :: {errMsg}");
-                }
+                _ = await this._http.CheckHttpJsonResult(res);
 
                 long endTime = Stopwatch.GetTimestamp();
                 decimal elapsedMs = (decimal)(endTime - startTime) / (Stopwatch.Frequency / 1000);

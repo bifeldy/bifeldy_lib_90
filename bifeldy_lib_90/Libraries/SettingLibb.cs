@@ -39,11 +39,9 @@ namespace bifeldy_lib_90.Libraries {
                     KunciRequestJsonSerializerContext.Default.KunciRequest
                 );
 
-                HttpResponseMessage response = httpRes.Result;
-
-                Task<string> respBody = response.Content.ReadAsStringAsync();
-
-                return respBody.Result;
+                HttpResponseMessage res = httpRes.Result;
+                Task<string> jsonString = this._http.CheckHttpJsonResult(res);
+                return jsonString.Result;
             }
             catch (Exception ex) {
                 return ex.Message;

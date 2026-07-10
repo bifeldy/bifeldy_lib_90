@@ -101,11 +101,9 @@ namespace bifeldy_lib_90.Repositories {
             string url = await this.GetURLWebService(db, "SYNCHO") ?? this._envVar.WS_SYNCHO;
             url += kodeDcInduk;
 
-            HttpResponseMessage httpResponse = await this._http.PostData(url, null);
-
-            string httpResString = await httpResponse.Content.ReadAsStringAsync();
-
-            return this._converter.JsonToObject(httpResString, DC_TABEL_V_JsonSerializerContext.Default.ListDC_TABEL_V);
+            HttpResponseMessage res = await this._http.PostData(url, null);
+            string jsonString = await this._http.CheckHttpJsonResult(res);
+            return this._converter.JsonToObject(jsonString, DC_TABEL_V_JsonSerializerContext.Default.ListDC_TABEL_V);
         }
 
         //

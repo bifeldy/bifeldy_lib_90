@@ -37,6 +37,7 @@ namespace bifeldy_lib_90.Services {
         Task<HttpResponseMessage> PatchData<T>(string urlPath, T objBody, JsonTypeInfo<T> jsonTypeInfo, bool multipart = false, List<Tuple<string, string>> headerOpts = null, string[] contentKeyName = null, string[] contentType = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null, CancellationToken token = default) where T : JsonSerDe, new();
         Task<HttpResponseMessage> PatchData(string urlPath, object objBody, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null, CancellationToken token = default);
         Task<HttpResponseMessage> TraceData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null, CancellationToken token = default);
+        Task<string> CheckHttpJsonResult(HttpResponseMessage res);
     }
 
     public sealed class CHttpService : IHttpService {
@@ -693,6 +694,26 @@ namespace bifeldy_lib_90.Services {
 
         public Task<HttpResponseMessage> TraceData(string urlPath, List<Tuple<string, string>> headerOpts = null, uint timeoutSeconds = 180, uint maxRetry = 3, HttpCompletionOption readOpt = HttpCompletionOption.ResponseContentRead, Encoding encoding = null, string publicKeysBase64HashJsonFilePath = null, CancellationToken token = default) {
             return this.SendWithRetry(urlPath, HttpMethod.Trace, null, httpHeaders: headerOpts, encoding: encoding ?? Encoding.UTF8, timeoutSeconds: timeoutSeconds, maxRetry: maxRetry, readOpt: readOpt, publicKeysBase64HashJsonFilePath: publicKeysBase64HashJsonFilePath, token: token);
+        }
+
+        public async Task<string> CheckHttpJsonResult(HttpResponseMessage res) {
+            string jsonString = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode) {
+                string errMsg = res.ReasonPhrase;
+
+                try {
+                    ResponseJsonSingle<ResponseJsonMessage> r = this._cs.JsonToObject<ResponseJsonSingle<ResponseJsonMessage>>(jsonString);
+                    errMsg = r.result.message;
+                }
+                catch {
+                    //
+                }
+
+                throw new Exception($"Tidak Dapat Tersambung HTTP {(int)res.StatusCode} :: {errMsg}");
+            }
+
+            return jsonString;
         }
 
     }
