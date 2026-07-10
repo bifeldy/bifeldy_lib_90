@@ -13,17 +13,18 @@ namespace bifeldy_lib_90.Middlewares {
 
         private readonly RequestDelegate _next;
         private readonly ILogger<JwtMiddleware> _logger;
+        private readonly IGlobalService _gs;
         private readonly IChiperService _chiper;
-
-        public string SessionKey { get; } = "user-session";
 
         public JwtMiddleware(
             RequestDelegate next,
             ILogger<JwtMiddleware> logger,
+            IGlobalService gs,
             IChiperService chiper
         ) {
             this._next = next;
             this._logger = logger;
+            this._gs = gs;
             this._chiper = chiper;
         }
 
@@ -75,7 +76,7 @@ namespace bifeldy_lib_90.Middlewares {
                 JwtSecurityToken userToken = this._chiper.DecodeJWT(token);
                 IEnumerable<Claim> userClaim = userToken.Claims;
 
-                var userClaimIdentity = new ClaimsIdentity(userClaim, this.SessionKey);
+                var userClaimIdentity = new ClaimsIdentity(userClaim, this._gs.SessionKey);
                 context.User = new ClaimsPrincipal(userClaimIdentity);
 
                 Claim _claimName = userClaim.Where(c => c.Type == ClaimTypes.Name).FirstOrDefault();

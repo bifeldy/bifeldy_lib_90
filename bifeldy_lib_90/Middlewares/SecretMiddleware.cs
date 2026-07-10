@@ -16,8 +16,6 @@ namespace bifeldy_lib_90.Middlewares {
         private readonly IApplicationService _app;
         private readonly IChiperService _chiper;
 
-        public string SessionKey { get; } = "user-session";
-
         public SecretMiddleware(
             RequestDelegate next,
             ILogger<SecretMiddleware> logger,

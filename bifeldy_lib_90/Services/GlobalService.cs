@@ -17,6 +17,7 @@ using System.Web;
 namespace bifeldy_lib_90.Services {
 
     public interface IGlobalService {
+        string SessionKey { get; }
         string BackupFolderPath { get; set; }
         string TempFolderPath { get; set; }
         string DownloadFolderPath { get; set; }
@@ -45,6 +46,8 @@ namespace bifeldy_lib_90.Services {
         private readonly IChiperService _chiper;
         private readonly IHostApplicationLifetime _host;
         private readonly IHttpService _http;
+
+        public string SessionKey { get; } = "user-session";
 
         public string BackupFolderPath { get; set; }
         public string TempFolderPath { get; set; }
@@ -204,8 +207,8 @@ namespace bifeldy_lib_90.Services {
 
         public string GetTokenData(HttpRequest request, RequestJson reqBody) {
             string token = string.Empty;
-            if (!string.IsNullOrEmpty(request.Cookies["user-session"])) {
-                token = request.Cookies["user-session"];
+            if (!string.IsNullOrEmpty(request.Cookies[this.SessionKey])) {
+                token = request.Cookies[this.SessionKey];
             }
             else if (!string.IsNullOrEmpty(request.Headers.Authorization)) {
                 token = request.Headers.Authorization;
