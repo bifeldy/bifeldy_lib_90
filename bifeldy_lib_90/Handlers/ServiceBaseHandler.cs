@@ -5,6 +5,8 @@ using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -164,6 +166,93 @@ namespace bifeldy_lib_90.Handlers {
             }
             else {
                 throw new Exception($"Streaming Untuk Content-Type '{contentType}' Tidak Tersedia");
+            }
+        }
+
+        protected async Task<int> InsertDataFromTempWithUpdrecIdCurrSession<T>(JsonTypeInfo<T> jsonTypeInfo, HttpContext http, IDatabase db, List<T> ls, string currSession, bool mergeOnly = true) {
+            string tableName = typeof(T).Name.ToUpper();
+            string tempTableName = $"{tableName}_TEMP";
+
+            var sqlParam = new DynamicParameters();
+            sqlParam.Add("updrec_id", currSession);
+
+            _ = await db.ExecQueryAsync(
+                $@"
+                    DELETE FROM {tempTableName}
+                    WHERE updrec_id = :updrec_id
+                ",
+                sqlParam,
+                token: http.RequestAborted
+            );
+
+            int totalDataInserted = 0;
+            foreach (T[] data in ls.Chunk((int)this.MAX_CHUNK_SIZE)) {
+                totalDataInserted += await db.BulkInsertInto(tempTableName, data);
+            }
+
+            IList<JsonPropertyInfo> properties = jsonTypeInfo.Properties;
+            string[] columnNames = [.. properties.Select(d => d.Name.ToUpper())];
+
+            IEnumerable<string> pkNames = properties.Where(d => {
+                return d.AttributeProvider
+                    .GetCustomAttributes(true)
+                    .Where(a => typeof(KeyAttribute).IsAssignableFrom(a.GetType()))
+                    .Any();
+            }).Select(d => d.Name.ToUpper());
+
+            tableName = tableName.ToLower();
+            tempTableName = tempTableName.ToLower();
+
+            var colUpdate = new List<string>();
+            foreach (string column in columnNames) {
+                if (!pkNames.Contains(column)) {
+                    colUpdate.Add(column);
+                }
+            }
+
+            string columnName = string.Join(", ", columnNames).ToLower();
+
+            try {
+                _ = await db.TransactionStartAndOpenAsync();
+
+                if (!mergeOnly) {
+                    sqlParam = new DynamicParameters();
+                    sqlParam.Add("updrec_id", currSession);
+
+                    _ = await db.ExecQueryAsync($@"DELETE FROM {tableName}", sqlParam);
+                }
+
+                string sqlQuery = $@"
+                    INSERT INTO {tableName} ({columnName})
+                        SELECT {columnName}
+                        FROM {tempTableName}
+                        WHERE updrec_id = :updrec_id
+                ";
+
+                if (mergeOnly) {
+                    string pkName = string.Join(", ", pkNames).ToLower();
+                    string colUpdateEx = string.Join(", ", colUpdate.Select(c => $"{c} = excluded.{c}")).ToLower();
+
+                    sqlQuery += $@"
+                        ON CONFLICT ({pkName})
+                        DO
+                            UPDATE SET
+                                {colUpdateEx}
+                    ";
+                }
+
+                sqlParam = new DynamicParameters();
+                sqlParam.Add("updrec_id", currSession);
+
+                int res = await db.ExecQueryWithResultAsync(sqlQuery, sqlParam, token: http.RequestAborted);
+
+                await db.TransactionCommitAndCloseAsync();
+
+                return res;
+            }
+            catch {
+                await db.TransactionRollbackAndCloseAsync();
+                throw;
             }
         }
 
