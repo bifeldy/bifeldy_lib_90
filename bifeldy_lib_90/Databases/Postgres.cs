@@ -67,6 +67,36 @@ namespace bifeldy_lib_90.Databases {
             this.DbConnection = dataSource.CreateConnection();
         }
 
+        public override async Task<DynamicParameters> ExecProcedureAsync(string procedureName, DynamicParameters procedureParameter = null, int commandTimeoutSeconds = 3600, CancellationToken token = default) {
+            try {
+                await this.OpenConnectionAsync();
+
+                IEnumerable<string> paramNames = procedureParameter?.ParameterNames;
+                string sql;
+
+                if (paramNames != null && paramNames.Any()) {
+                    string formattedParams = string.Join(", ", paramNames.Select(p => $"{p} => @{p}"));
+                    sql = $"CALL {procedureName}({formattedParams})";
+                }
+                else {
+                    sql = $"CALL {procedureName}()";
+                }
+
+                _ = await this.DbConnection.ExecuteAsync(
+                    sql,
+                    procedureParameter,
+                    this.DbTransaction,
+                    commandTimeoutSeconds,
+                    CommandType.Text
+                );
+
+                return procedureParameter;
+            }
+            finally {
+                await this.TryCloseConnectionAsync();
+            }
+        }
+
         public override async Task<string> BulkGetCsv(string sqlQuery, string delimiter, string filename, string outputFolderPath = null, bool includeHeader = true, bool useDoubleQuote = true, bool allUppercase = true, DynamicParameters sqlParameter = null, int commandTimeoutSeconds = 3600, Encoding encoding = null, CancellationToken token = default) {
             string result = null;
             Exception exception = null;

@@ -89,14 +89,19 @@ namespace bifeldy_lib_90.Abstractions {
 
         /// <summary> Jangan Lupa Di Commit Atau Rollback Sebelum Menjalankan Ini </summary>
         public async Task TryCloseConnectionAsync(bool forceCloseConnection = false, CancellationToken token = default) {
-            if (this.DbTransaction != null && forceCloseConnection) {
+            if (this.DbTransaction != null) {
+                if (!forceCloseConnection) {
+                    return;
+                }
+
                 await this.DbTransaction.RollbackAsync(token);
                 await this.DbTransaction.DisposeAsync();
+
                 this.DbTransaction = null;
             }
 
-            if (this.DbConnection.State != ConnectionState.Closed) {
-                await this.DbConnection.CloseAsync();
+            if (this.DbConnection != null && this.DbConnection.State != ConnectionState.Closed) {
+                this.DbConnection.Close();
             }
         }
 
