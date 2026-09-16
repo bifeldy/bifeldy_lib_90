@@ -27,7 +27,7 @@ namespace bifeldy_lib_90.Services {
         List<string> AllowedIpOrigin { get; set; }
         string GetSecretData(HttpRequest request, RequestJson reqBody);
         string GetApiKeyData(HttpRequest request, RequestJson reqBody);
-        string GetIpOriginData(ConnectionInfo connection, HttpRequest request, bool ipOnly = false, bool removeReverseProxyRoute = false);
+        string GetIpOriginData(ConnectionInfo connection, HttpRequest request, bool ipOnly = false, bool removeReverseProxyPath = false);
         string CleanIpOrigin(string ipOrigins);
         string GetTokenData(HttpRequest request, RequestJson reqBody);
         Task<(string, string)> ParseHttpRequestBodyJsonString(HttpRequest request);
@@ -126,35 +126,44 @@ namespace bifeldy_lib_90.Services {
             return apiKey;
         }
 
-        public string GetIpOriginData(ConnectionInfo connection, HttpRequest request, bool ipOnly = false, bool removeReverseProxyRoute = false) {
-            string ipOrigin = connection?.RemoteIpAddress?.ToString();
+        public string GetIpOriginData(ConnectionInfo connection, HttpRequest request, bool ipOnly = false, bool removeReverseProxyPath = false) {
+            string targetValue = string.Empty;
 
-            if (request != null) {
-                if (!string.IsNullOrEmpty(request.Headers["cf-connecting-ip"])) {
-                    ipOrigin = request.Headers["cf-connecting-ip"];
+            if (!ipOnly && request != null) {
+                if (!string.IsNullOrEmpty(request.Headers["origin"])) {
+                    targetValue = request.Headers["origin"];
                 }
-                else if (!string.IsNullOrEmpty(request.Headers["x-forwarded-for"])) {
-                    ipOrigin = request.Headers["x-forwarded-for"];
+                else if (!string.IsNullOrEmpty(request.Headers["referer"])) {
+                    targetValue = request.Headers["referer"];
                 }
-                else if (!string.IsNullOrEmpty(request.Headers["x-real-ip"])) {
-                    ipOrigin = request.Headers["x-real-ip"];
-                }
+            }
 
-                if (!ipOnly) {
-                    if (!string.IsNullOrEmpty(request.Headers["origin"])) {
-                        ipOrigin = request.Headers["origin"];
+            // Jika ipOnly true atau header origin/referer kosong, ambil IP
+            if (string.IsNullOrEmpty(targetValue)) {
+                targetValue = connection?.RemoteIpAddress?.ToString();
+
+                if (request != null) {
+                    if (!string.IsNullOrEmpty(request.Headers["cf-connecting-ip"])) {
+                        targetValue = request.Headers["cf-connecting-ip"];
                     }
-                    else if (!string.IsNullOrEmpty(request.Headers["referer"])) {
-                        ipOrigin = request.Headers["referer"];
+                    else if (!string.IsNullOrEmpty(request.Headers["x-real-ip"])) {
+                        targetValue = request.Headers["x-real-ip"];
+                    }
+                    else if (!string.IsNullOrEmpty(request.Headers["x-forwarded-for"])) {
+                        targetValue = request.Headers["x-forwarded-for"];
                     }
                 }
             }
 
-            string resultIpOrigin = this.CleanIpOrigin(ipOrigin);
-            return removeReverseProxyRoute ? resultIpOrigin.Split(",").Select(rio => rio?.Trim()).FirstOrDefault() : resultIpOrigin;
+            string result = this.CleanIpOrigin(targetValue);
+            return removeReverseProxyPath ? result.Split(",").Select(rio => rio?.Trim()).FirstOrDefault() ?? string.Empty : result;
         }
 
         public string CleanIpOrigin(string ipOrigins) {
+            if (string.IsNullOrEmpty(ipOrigins)) {
+                return string.Empty;
+            }
+
             return string.Join(", ", ipOrigins.Split(",").Select(io => {
                 string ipOrigin = io?.Trim() ?? string.Empty;
 

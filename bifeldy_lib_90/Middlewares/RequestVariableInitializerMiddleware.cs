@@ -41,16 +41,18 @@ namespace bifeldy_lib_90.Middlewares {
             string requestPath = request.Path;
             string requestQuery = request.QueryString.ToString();
 
-            string addrIp = this._gs.GetIpOriginData(connection, request, true, true);
+            // 1. Ambil IP asli user saja
+            string addrIp = this._gs.GetIpOriginData(connection, request, ipOnly: true, removeReverseProxyPath: true);
             context.Items["address_ip"] = addrIp;
 
-            string addrIpProxy = this._gs.GetIpOriginData(connection, request, true);
+            string addrIpProxy = this._gs.GetIpOriginData(connection, request, ipOnly: true);
             context.Items["address_ip_proxy"] = addrIpProxy;
 
-            string addrOrigin = this._gs.GetIpOriginData(connection, request, removeReverseProxyRoute: true);
+            // 2. Ambil Origin / Referer saja (ipOnly: false)
+            string addrOrigin = this._gs.GetIpOriginData(connection, request, ipOnly: false, removeReverseProxyPath: true);
             context.Items["address_origin"] = addrOrigin;
 
-            string ipOrigin = addrOrigin == addrIp ? addrOrigin : $"{addrOrigin}@{addrIp}";
+            string ipOrigin = string.IsNullOrEmpty(addrOrigin) || addrOrigin == addrIp ? addrIp : $"{addrOrigin}@{addrIp}";
             context.Items["ip_origin"] = ipOrigin;
 
             RequestJson reqBody = await this._gs.GetHttpRequestBody(request, RequestJsonSerializerContext.Default.RequestJson);
