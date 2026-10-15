@@ -1,4 +1,4 @@
-﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Abstractions;
 using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Resolvers;
@@ -252,6 +252,14 @@ namespace bifeldy_lib_90.Services {
                 }
 
                 return obj;
+            }
+
+            if (value is byte[] rawBytes) {
+                return JsonValue.Create(Convert.ToBase64String(rawBytes));
+            }
+
+            if (value is byte?[] nullableBytes) {
+                return JsonValue.Create(Convert.ToBase64String([.. nullableBytes.Select(b => b ?? 0)]));
             }
 
             if (value is IEnumerable enumerable and not string) {

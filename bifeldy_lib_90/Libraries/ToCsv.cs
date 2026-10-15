@@ -1,4 +1,4 @@
-﻿namespace bifeldy_lib_90.Libraries {
+namespace bifeldy_lib_90.Libraries {
 
     public static class ToCsv {
 
@@ -19,12 +19,24 @@
                 return "";
             }
 
-            string text = value.ToString();
-            if (value is DateTime dt) {
+            string text;
+            bool isBinary = false;
+            if (value is byte[] rawBytes) {
+                text = Convert.ToBase64String(rawBytes);
+                isBinary = true;
+            }
+            else if (value is byte?[] nullableBytes) {
+                text = Convert.ToBase64String([.. nullableBytes.Select(b => b ?? 0)]);
+                isBinary = true;
+            }
+            else if (value is DateTime dt) {
                 text = dt.ToString("O");
             }
+            else {
+                text = value.ToString();
+            }
 
-            if (allUppercase) {
+            if (allUppercase && !isBinary) {
                 text = text.ToUpper();
             }
 

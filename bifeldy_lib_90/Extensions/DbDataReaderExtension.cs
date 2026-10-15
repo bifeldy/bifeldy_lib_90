@@ -1,4 +1,4 @@
-﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Abstractions;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
@@ -37,7 +37,18 @@ namespace bifeldy_lib_90.Extensions {
                 var t when t == typeof(DateTime) => dr.GetDateTime(index),
                 var t when t == typeof(DateTimeOffset) => dr.GetFieldValue<DateTimeOffset>(index),
                 var t when t == typeof(Guid) => dr.GetGuid(index),
-                var t when t == typeof(byte[]) => (byte[])dr.GetValue(index),
+                var t when t == typeof(byte[]) => dr.GetValue(index) switch {
+                    byte[] b => b,
+                    byte?[] nb => [.. nb.Select(x => x ?? 0)],
+                    string s => Convert.FromBase64String(s),
+                    _ => (byte[])dr.GetValue(index)
+                },
+                var t when t == typeof(byte?[]) => dr.GetValue(index) switch {
+                    byte[] b => [.. b.Select(x => (byte?)x)],
+                    byte?[] nb => nb,
+                    string s => [.. Convert.FromBase64String(s).Select(x => (byte?)x)],
+                    _ => (byte?[])dr.GetValue(index)
+                },
                 _ => dr.GetValue(index)
             };
         }
@@ -81,7 +92,18 @@ namespace bifeldy_lib_90.Extensions {
 
                     if (!await dr.IsDBNullAsync(0, token)) {
                         object val = dr.GetValue(0);
-                        objT = (T)Convert.ChangeType(val, typeof(T));
+                        if (typeof(T).IsAssignableFrom(val.GetType())) {
+                            objT = (T)val;
+                        }
+                        else if (typeof(T) == typeof(byte[]) && val is byte?[] nb) {
+                            objT = (T)(object)(byte[])[.. nb.Select(x => x ?? 0)];
+                        }
+                        else if (typeof(T) == typeof(byte?[]) && val is byte[] b) {
+                            objT = (T)(object)(byte?[])[.. b.Select(x => (byte?)x)];
+                        }
+                        else {
+                            objT = (T)Convert.ChangeType(val, typeof(T));
+                        }
                     }
 
                     callback?.Invoke(objT);

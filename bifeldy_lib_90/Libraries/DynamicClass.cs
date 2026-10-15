@@ -1,4 +1,4 @@
-﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Abstractions;
 using bifeldy_lib_90.Models;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
@@ -233,7 +233,30 @@ namespace bifeldy_lib_90.Libraries {
                 }
                 else {
                     try {
-                        object converted = Convert.ChangeType(value, underlying);
+                        object converted;
+                        if (underlying == typeof(byte[])) {
+                            converted = value switch {
+                                byte[] b => b,
+                                byte?[] nb => [.. nb.Select(x => x ?? 0)],
+                                string s => Convert.FromBase64String(s),
+                                _ => (byte[])value
+                            };
+                        }
+                        else if (underlying == typeof(byte?[])) {
+                            converted = value switch {
+                                byte[] b => [.. b.Select(x => (byte?)x)],
+                                byte?[] nb => nb,
+                                string s => [.. Convert.FromBase64String(s).Select(x => (byte?)x)],
+                                _ => (byte?[])value
+                            };
+                        }
+                        else if (underlying.IsArray) {
+                            converted = value;
+                        }
+                        else {
+                            converted = Convert.ChangeType(value, underlying);
+                        }
+
                         this._fields[key] = (field.Type, converted);
                     }
                     catch (Exception ex) {
@@ -435,6 +458,28 @@ namespace bifeldy_lib_90.Libraries {
                     return nestedClass;
                 }
 
+                return value;
+            }
+
+            if (coreType == typeof(byte[])) {
+                return value switch {
+                    byte[] b => b,
+                    byte?[] nb => [.. nb.Select(x => x ?? 0)],
+                    string s => Convert.FromBase64String(s),
+                    _ => (byte[])value
+                };
+            }
+
+            if (coreType == typeof(byte?[])) {
+                return value switch {
+                    byte[] b => [.. b.Select(x => (byte?)x)],
+                    byte?[] nb => nb,
+                    string s => [.. Convert.FromBase64String(s).Select(x => (byte?)x)],
+                    _ => (byte?[])value
+                };
+            }
+
+            if (coreType.IsArray) {
                 return value;
             }
 

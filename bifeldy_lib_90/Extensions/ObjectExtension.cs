@@ -1,4 +1,4 @@
-﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Abstractions;
 using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -12,6 +12,7 @@ namespace bifeldy_lib_90.Extensions {
 
         private static readonly HashSet<Type> ExtraSimpleTypes = [
             typeof(byte[]),
+            typeof(byte?[]),
             typeof(string),
             typeof(decimal),
             typeof(DateOnly),

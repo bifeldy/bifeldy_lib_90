@@ -1,4 +1,4 @@
-﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Abstractions;
 using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Models;
@@ -98,7 +98,12 @@ namespace bifeldy_lib_90.Services {
                 csvColumn = [.. csvColumn.OrderBy(c => c.Position)];
 
                 foreach (CCsvColumn cc in csvColumn) {
-                    csv = csv.WithField(cc.ColumnName, cc.Position, cc.FieldType, fieldName: cc.ColumnName);
+                    Type fieldType = cc.FieldType;
+                    if (fieldType == typeof(byte[]) || fieldType == typeof(byte?[])) {
+                        fieldType = typeof(string);
+                    }
+
+                    csv = csv.WithField(cc.ColumnName, cc.Position, fieldType, fieldName: cc.ColumnName);
                 }
             }
             else {
@@ -190,7 +195,7 @@ namespace bifeldy_lib_90.Services {
                                 val = s.Replace("\"\"", "\"");
                             }
 
-                            val = Convert.ChangeType(val, map.PropType);
+                            val = ChangeType(val, map.PropType);
                             map.Setter(objT, val);
                         }
                     }
@@ -235,7 +240,7 @@ namespace bifeldy_lib_90.Services {
                                 val = s.Replace("\"\"", "\"");
                             }
 
-                            val = Convert.ChangeType(val, map.TargetType);
+                            val = ChangeType(val, map.TargetType);
                             map.Prop.Set(objT, val);
                         }
                     }
@@ -243,6 +248,34 @@ namespace bifeldy_lib_90.Services {
                     yield return objT;
                 }
             }
+        }
+
+        private static object ChangeType(object val, Type targetType) {
+            Type actualType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+            if (actualType == typeof(byte[])) {
+                return val switch {
+                    byte[] b => b,
+                    byte?[] nb => [.. nb.Select(x => x ?? 0)],
+                    string s => Convert.FromBase64String(s),
+                    _ => (byte[])val
+                };
+            }
+
+            if (actualType == typeof(byte?[])) {
+                return val switch {
+                    byte[] b => [.. b.Select(x => (byte?)x)],
+                    byte?[] nb => nb,
+                    string s => [.. Convert.FromBase64String(s).Select(x => (byte?)x)],
+                    _ => (byte?[])val
+                };
+            }
+
+            if (actualType.IsArray) {
+                return val;
+            }
+
+            return Convert.ChangeType(val, actualType);
         }
 
         private record CsvMapping(Type PropType, Action<object, object> Setter, int Index);

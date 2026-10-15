@@ -1,4 +1,4 @@
-﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Abstractions;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -132,6 +132,28 @@ namespace bifeldy_lib_90.Extensions {
 
             if (actualType == typeof(Guid)) {
                 return value is Guid guid ? guid : Guid.Parse(value.ToString());
+            }
+
+            if (actualType == typeof(byte[])) {
+                return value switch {
+                    byte[] b => b,
+                    byte?[] nb => [.. nb.Select(x => x ?? 0)],
+                    string s => Convert.FromBase64String(s),
+                    _ => (byte[])value
+                };
+            }
+
+            if (actualType == typeof(byte?[])) {
+                return value switch {
+                    byte[] b => [.. b.Select(x => (byte?)x)],
+                    byte?[] nb => nb,
+                    string s => [.. Convert.FromBase64String(s).Select(x => (byte?)x)],
+                    _ => (byte?[])value
+                };
+            }
+
+            if (actualType.IsArray) {
+                return value;
             }
 
             if (actualType.IsEnum) {

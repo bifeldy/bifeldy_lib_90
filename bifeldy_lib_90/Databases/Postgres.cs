@@ -1,4 +1,4 @@
-﻿using bifeldy_lib_90.Abstractions;
+using bifeldy_lib_90.Abstractions;
 using bifeldy_lib_90.Extensions;
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Repositories;
@@ -72,15 +72,13 @@ namespace bifeldy_lib_90.Databases {
                 await this.OpenConnectionAsync();
 
                 IEnumerable<string> paramNames = procedureParameter?.ParameterNames;
-                string sql;
 
+                string formattedParams = string.Empty;
                 if (paramNames != null && paramNames.Any()) {
-                    string formattedParams = string.Join(", ", paramNames.Select(p => $"{p} => @{p}"));
-                    sql = $"CALL {procedureName}({formattedParams})";
+                    formattedParams = string.Join(", ", paramNames.Select(p => $"{p} => @{p}"));
                 }
-                else {
-                    sql = $"CALL {procedureName}()";
-                }
+
+                string sql = $"CALL {procedureName}({formattedParams})";
 
                 _ = await this.DbConnection.ExecuteAsync(
                     sql,
@@ -289,7 +287,13 @@ namespace bifeldy_lib_90.Databases {
                     await writer.WriteAsync(Convert.ToDateTime(obj), types, token);
                     break;
                 case NpgsqlDbType.Bytea:
-                    await writer.WriteAsync((byte[])obj, types, token);
+                    byte[] byteData = obj switch {
+                        byte[] b => b,
+                        byte?[] nb => [.. nb.Select(x => x ?? 0)],
+                        string s => Convert.FromBase64String(s),
+                        _ => (byte[])obj
+                    };
+                    await writer.WriteAsync(byteData, types, token);
                     break;
                 default:
                     await writer.WriteAsync(obj, types, token);
