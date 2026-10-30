@@ -610,7 +610,7 @@ namespace bifeldy_lib_90 {
             });
         }
 
-        public static void AddKafkaAutoProducerConsumerBackground(IDictionary<string, KafkaInstance> kafkaSettings) {
+        public static void AddKafkaAutoProducerConsumerBackground(Dictionary<string, KafkaInstance> kafkaSettings) {
             if (kafkaSettings != null) {
                 foreach (KeyValuePair<string, KafkaInstance> ks in kafkaSettings) {
                     if (ks.Key.StartsWith("PRODUCER_")) {

@@ -25,6 +25,7 @@ namespace bifeldy_lib_90.Extensions {
             InputJsonDcPingPongJsonSerializerContext.Default,
             JobTrackerJsonContext.Default,
             JsonSerDeJsonSerializerContext.Default,
+            KafkaInstanceJsonSerializerContext.Default,
             KunciRequestJsonSerializerContext.Default,
             ListApiDcJsonSerializerContext.Default,
             LoginInfoJsonSerializerContext.Default,
