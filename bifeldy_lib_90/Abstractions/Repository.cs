@@ -8,8 +8,9 @@ namespace bifeldy_lib_90.Abstractions {
         Task<EJenisDc> GetJenisDc(IDatabase db);
         Task<string> GetKodeDc(IDatabase db);
         Task<string> GetNamaDc(IDatabase db);
-        Task<bool> IsDcHo(IDatabase db);
         Task<bool> IsNonDc(IDatabase db);
+        Task<bool> IsIgr(IDatabase db);
+        Task<bool> IsDcHo(IDatabase db);
         Task<bool> IsWhHo(IDatabase db);
         Task<bool> IsHo(IDatabase db);
         Task<bool> IsDc(IDatabase db);
@@ -49,6 +50,9 @@ namespace bifeldy_lib_90.Abstractions {
                     ) {
                         this.JenisDc = EJenisDc.NONDC;
                     }
+                    else if (_dbConStr.Contains("IDEL") || _dbConStr.Contains("IGRDEL")) {
+                        this.JenisDc = EJenisDc.IGR;
+                    }
                     else if (_dbConStr.Contains("DCHO") || _dbConStr.Contains("WHHO")) {
                         this.JenisDc = EJenisDc.HO;
                     }
@@ -80,6 +84,9 @@ namespace bifeldy_lib_90.Abstractions {
                     else if (_dbConStr.Contains("RLTM") || _dbConStr.Contains("REALTIME") || _dbConStr.Contains("TIMESCALE")) {
                         this.KodeDc = "RLTM";
                     }
+                    else if (_dbConStr.Contains("IDEL") || _dbConStr.Contains("IGRDEL")) {
+                        this.KodeDc = "IDEL";
+                    }
                     else if (_dbConStr.Contains("DCHO")) {
                         this.KodeDc = "DCHO";
                     }
@@ -107,6 +114,9 @@ namespace bifeldy_lib_90.Abstractions {
                     else if (_dbConStr.Contains("RLTM") || _dbConStr.Contains("REALTIME") || _dbConStr.Contains("TIMESCALE")) {
                         this.NamaDc = "REAL-TIME-SCALE";
                     }
+                    else if (_dbConStr.Contains("IDEL") || _dbConStr.Contains("IGRDEL")) {
+                        this.NamaDc = "IGR DELIVERY";
+                    }
                     else if (_dbConStr.Contains("DCHO")) {
                         this.NamaDc = "DC HEAD OFFICE";
                     }
@@ -127,6 +137,11 @@ namespace bifeldy_lib_90.Abstractions {
             return jenisDc == EJenisDc.NONDC;
         }
 
+        public async Task<bool> IsIgr(IDatabase db) {
+            EJenisDc jenisDc = await this.GetJenisDc(db);
+            return jenisDc == EJenisDc.IGR;
+        }
+
         public async Task<bool> IsDcHo(IDatabase db) {
             string kodeDc = await this.GetKodeDc(db);
             return kodeDc == "DCHO";
@@ -144,10 +159,11 @@ namespace bifeldy_lib_90.Abstractions {
 
         public async Task<bool> IsDc(IDatabase db) {
             bool isNonDc = await this.IsNonDc(db);
+            bool isIgr = await this.IsIgr(db);
             bool isDcHo = await this.IsDcHo(db);
             bool isWhHo = await this.IsWhHo(db);
             bool isHo = await this.IsHo(db);
-            return !isNonDc && !isDcHo && !isWhHo && !isHo;
+            return !isNonDc && !isIgr && !isDcHo && !isWhHo && !isHo;
         }
 
     }

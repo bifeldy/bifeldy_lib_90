@@ -3,6 +3,7 @@
     public enum EJenisDc {
         UNKNOWN = 0,
         NONDC,
+        IGR,
         HO,
         INDUK,
         DEPO,
