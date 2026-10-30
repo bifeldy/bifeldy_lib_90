@@ -142,7 +142,6 @@ namespace bifeldy_lib_90.Repositories {
                 string hashed = this._chiper.HashText(this._as.AppName);
 
                 NameValueCollection queryUrlDc = HttpUtility.ParseQueryString(uri.Query);
-                queryUrlDc.Set("key", hashed);
                 queryUrlDc.Set("secret", hashed);
 
                 var uriBuilder = new UriBuilder(uri) {
@@ -158,7 +157,7 @@ namespace bifeldy_lib_90.Repositories {
                         kode_dc = kodeDc,
                         version = this._as.AppVersion,
                         port_api = this._env.API_PORT,
-                        port_grpc = 0
+                        port_grpc = -1
                     },
                     InputJsonDcPingPongJsonSerializerContext.Default.InputJsonDcPingPong
                 );
