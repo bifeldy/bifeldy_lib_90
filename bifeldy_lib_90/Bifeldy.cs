@@ -12,8 +12,6 @@ using Helmet;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Routing;
@@ -91,16 +89,6 @@ namespace bifeldy_lib_90 {
                 options.SupportedUICultures = supportedCultures;
 
                 options.ApplyCurrentCultureToResponseHeaders = true;
-            });
-        }
-
-        public static void ConfigureFormDataBody() {
-            _ = Services.Configure<JsonOptions>(opt => {
-                opt.SerializerOptions.Converters.Add(new DecimalConverter());
-                opt.SerializerOptions.Converters.Add(new NullableDecimalConverter());
-            });
-            _ = Services.Configure<FormOptions>(o => {
-                o.MultipartBodyLengthLimit = long.MaxValue;
             });
         }
 

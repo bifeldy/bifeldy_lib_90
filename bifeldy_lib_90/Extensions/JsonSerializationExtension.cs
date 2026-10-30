@@ -3,6 +3,8 @@ using bifeldy_lib_90.Libraries;
 using bifeldy_lib_90.Models;
 using bifeldy_lib_90.Resolvers;
 using bifeldy_lib_90.TableView;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -13,7 +15,6 @@ namespace bifeldy_lib_90.Extensions {
 
     public static class JsonSerializationExtension {
 
-        // TODO: Add additional JsonSerializerContext generated resolvers here
         private static readonly IJsonTypeInfoResolver[] JsonTypeInfoResolvers = [
             CDynamicClassPropertyJsonSerializerContext.Default,
             CDynamicClassPropertyV2JsonSerializerContext.Default,
@@ -41,71 +42,86 @@ namespace bifeldy_lib_90.Extensions {
             KAFKA_SERVER_T_JsonSerializerContext.Default,
         ];
 
-        private static List<IJsonTypeInfoResolver> ActiveJsonTypeInfoResolvers = null;
         private static readonly Lock _resolverLock = new();
+        private static JsonSerializerOptions _jsonSerializerOptions = null;
 
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "Safety guaranteed by JsonTypeInfo usage.")]
         public static JsonSerializerOptions ConfigureJson(JsonSerializerOptions options = null, IJsonTypeInfoResolver[] jsonTypeInfoResolversExtended = null) {
-            options ??= new JsonSerializerOptions();
+            if (options == null) {
+                if (_jsonSerializerOptions == null) {
+                    lock (_resolverLock) {
+                        if (_jsonSerializerOptions == null) {
+                            var baseOptions = new JsonSerializerOptions() {
+                                PropertyNamingPolicy = null,
+                                PropertyNameCaseInsensitive = true,
+                                TypeInfoResolver = JsonTypeInfoResolver.Combine([.. JsonTypeInfoResolvers])
+                            };
 
-            options.PropertyNamingPolicy = null;
-            options.PropertyNameCaseInsensitive = true;
+                            baseOptions.Converters.Add(new DecimalConverter());
+                            baseOptions.Converters.Add(new NullableDecimalConverter());
 
-            if (!options.Converters.Any(c => c is DecimalConverter)) {
-                options.Converters.Add(new DecimalConverter());
-            }
-
-            if (!options.Converters.Any(c => c is NullableDecimalConverter)) {
-                options.Converters.Add(new NullableDecimalConverter());
-            }
-
-            List<IJsonTypeInfoResolver> currentActive = ActiveJsonTypeInfoResolvers;
-
-            int targetCount = (JsonTypeInfoResolvers?.Length ?? 0) + (jsonTypeInfoResolversExtended?.Length ?? 0) + (RuntimeFeature.IsDynamicCodeSupported ? 1 : 0);
-
-            if (currentActive == null || currentActive.Count < targetCount) {
-                lock (_resolverLock) {
-                    if (ActiveJsonTypeInfoResolvers == null || ActiveJsonTypeInfoResolvers.Count < targetCount) {
-                        var tempResolvers = new List<IJsonTypeInfoResolver>(JsonTypeInfoResolvers);
-
-                        if (jsonTypeInfoResolversExtended != null) {
-                            tempResolvers.AddRange(jsonTypeInfoResolversExtended);
+                            _jsonSerializerOptions = baseOptions;
                         }
-
-                        if (RuntimeFeature.IsDynamicCodeSupported) {
-                            tempResolvers.Add(new DefaultJsonTypeInfoResolver());
-                        }
-
-                        ActiveJsonTypeInfoResolvers = tempResolvers;
                     }
+                }
 
-                    currentActive = ActiveJsonTypeInfoResolvers;
+                if (jsonTypeInfoResolversExtended == null || jsonTypeInfoResolversExtended.Length == 0) {
+                    return _jsonSerializerOptions;
                 }
             }
 
-            options.TypeInfoResolverChain.Clear();
-            options.TypeInfoResolverChain.Add(new AutoRegisterTypeInfoResolver());
+            JsonSerializerOptions targetOptions = options ?? _jsonSerializerOptions;
 
-            var finalResolvers = new List<IJsonTypeInfoResolver>();
+            targetOptions.PropertyNamingPolicy = null;
+            targetOptions.PropertyNameCaseInsensitive = true;
 
-            if (options.TypeInfoResolver != null) {
-                finalResolvers.Add(options.TypeInfoResolver);
+            if (!targetOptions.Converters.Any(c => c is DecimalConverter)) {
+                targetOptions.Converters.Add(new DecimalConverter());
             }
 
-            finalResolvers.AddRange(currentActive);
+            if (!targetOptions.Converters.Any(c => c is NullableDecimalConverter)) {
+                targetOptions.Converters.Add(new NullableDecimalConverter());
+            }
 
-            IJsonTypeInfoResolver combined = JsonTypeInfoResolver.Combine([.. finalResolvers]);
-            options.TypeInfoResolverChain.Add(new JsonSerDeTypeInfoResolver(combined));
+            bool hasAuto = targetOptions.TypeInfoResolverChain.Any(tir => tir is AutoRegisterTypeInfoResolver);
+            bool hasJson = targetOptions.TypeInfoResolverChain.Any(tir => tir is JsonSerDeTypeInfoResolver);
 
-            return options;
+            if (!hasAuto || !hasJson || (jsonTypeInfoResolversExtended != null && jsonTypeInfoResolversExtended.Length > 0)) {
+                targetOptions.TypeInfoResolverChain.Clear();
+                targetOptions.TypeInfoResolverChain.Add(new AutoRegisterTypeInfoResolver());
+
+                var finalResolvers = new List<IJsonTypeInfoResolver>();
+
+                if (targetOptions.TypeInfoResolver != null) {
+                    finalResolvers.Add(targetOptions.TypeInfoResolver);
+                }
+
+                if (JsonTypeInfoResolvers != null) {
+                    finalResolvers.AddRange(JsonTypeInfoResolvers);
+                }
+
+                if (jsonTypeInfoResolversExtended != null) {
+                    finalResolvers.AddRange(jsonTypeInfoResolversExtended);
+                }
+
+                if (RuntimeFeature.IsDynamicCodeSupported) {
+                    finalResolvers.Add(new DefaultJsonTypeInfoResolver());
+                }
+
+                IJsonTypeInfoResolver combined = JsonTypeInfoResolver.Combine([.. finalResolvers]);
+                targetOptions.TypeInfoResolverChain.Add(new JsonSerDeTypeInfoResolver(combined));
+            }
+
+            return targetOptions;
         }
 
-        public static IServiceCollection ConfigureHttpJsonOptionsEx(this IServiceCollection services, IJsonTypeInfoResolver[] jsonTypeInfoResolversExtended) {
+        public static IServiceCollection ConfigureHttpJsonOptionsEx(this IServiceCollection services, IJsonTypeInfoResolver[] jsonTypeInfoResolversExtended = null) {
             _ = ConfigureJson(null, jsonTypeInfoResolversExtended);
 
-            return services.ConfigureHttpJsonOptions(options => {
-                _ = ConfigureJson(options.SerializerOptions, jsonTypeInfoResolversExtended);
-            });
+            _ = services.Configure<JsonOptions>(options => ConfigureJson(options.SerializerOptions, jsonTypeInfoResolversExtended));
+            _ = services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = long.MaxValue);
+
+            return services.ConfigureHttpJsonOptions(options => ConfigureJson(options.SerializerOptions, jsonTypeInfoResolversExtended));
         }
 
     }
