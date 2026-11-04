@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <RootNamespace>bifeldy_lib_90</RootNamespace>
@@ -29,7 +29,7 @@
         </None>
     </ItemGroup>
 
-    <Target Name="FormatOnBuild" BeforeTargets="BeforeBuild">
+    <Target Name="FormatOnBuild" BeforeTargets="BeforeBuild" Condition="'$(DOTNET_RUNNING_IN_CONTAINER)' != 'true'">
         <Message Text="Running dotnet format on $(ProjectFileName)..." Importance="high" />
         <Exec Command="dotnet format &quot;$(ProjectPath)&quot; --no-restore" ContinueOnError="false" />
     </Target>
