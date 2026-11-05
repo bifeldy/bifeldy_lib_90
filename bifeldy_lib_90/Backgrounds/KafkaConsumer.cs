@@ -140,10 +140,8 @@ namespace bifeldy_lib_90.Backgrounds {
 
                 ulong i = 0;
                 while (!stoppingToken.IsCancellationRequested) {
-                    await Task.Yield();
-
                     try {
-                        ConsumeResult<string, string> result = consumer.Consume(stoppingToken);
+                        ConsumeResult<string, string> result = await Task.Run(() => consumer.Consume(stoppingToken), stoppingToken);
                         _ = await generalRepo.SaveKafkaToTable(pg, result.Topic, result.Offset.Value, result.Partition.Value, result.Message, this._logTableName);
 
                         var msg = new Message<string, string>() {
@@ -169,6 +167,13 @@ namespace bifeldy_lib_90.Backgrounds {
                 this._logger.LogError("[KAFKA_CONSUMER_ERROR] 🏗 {ex}", ex.Message);
             }
             finally {
+                try {
+                    consumer?.Close();
+                }
+                catch {
+                    /* ignored */
+                }
+
                 consumer?.Dispose();
                 observeable?.Dispose();
             }
@@ -182,7 +187,7 @@ namespace bifeldy_lib_90.Backgrounds {
 
                 IEnumerable<ServerConfigKunci> kunci = await scr.GetKodeServerKunciDc();
                 foreach (ServerConfigKunci k in kunci) {
-                    Task task = await Task.Factory.StartNew(async () => {
+                    var task = Task.Run(async () => {
                         using (IServiceScope scope = this._scopedService.ServiceProvider.CreateScope()) {
                             IServiceProvider _sp = scope.ServiceProvider;
                             IServerConfigRepository _scr = _sp.GetRequiredService<IServerConfigRepository>();
@@ -191,7 +196,7 @@ namespace bifeldy_lib_90.Backgrounds {
 
                             await this.DoWorkMultiDc(_sp, stoppingToken);
                         }
-                    }, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                    }, stoppingToken);
 
                     tasks.Add(task);
                 }

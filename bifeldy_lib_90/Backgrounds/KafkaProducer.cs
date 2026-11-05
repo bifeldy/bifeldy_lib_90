@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Reactive.Subjects;
+using System.Threading.Channels;
 
 namespace bifeldy_lib_90.Backgrounds {
 
@@ -16,7 +17,6 @@ namespace bifeldy_lib_90.Backgrounds {
         private readonly ILogger<KafkaProducer> _logger;
         private readonly IPubSubService _pubSub;
         private readonly IKafkaService _kafka;
-        private readonly ILockerService _locker;
 
         private readonly string _hostPort;
         private readonly string _topicName;
@@ -40,7 +40,6 @@ namespace bifeldy_lib_90.Backgrounds {
             this._logger = serviceProvider.GetRequiredService<ILogger<KafkaProducer>>();
             this._pubSub = serviceProvider.GetRequiredService<IPubSubService>();
             this._kafka = serviceProvider.GetRequiredService<IKafkaService>();
-            this._locker = serviceProvider.GetRequiredService<ILockerService>();
 
             this._scopedService = serviceProvider.CreateScope();
 
@@ -63,9 +62,14 @@ namespace bifeldy_lib_90.Backgrounds {
         private async Task DoWorkMultiDc(IServiceProvider sp, CancellationToken stoppingToken) {
             BehaviorSubject<Message<string, string>> observeable = null;
             IProducer<string, string> producer = null;
-
             IDisposable subs = null;
-            List<Message<string, string>> msgs = [];
+
+            var channel = Channel.CreateUnbounded<Message<string, string>>(
+                new UnboundedChannelOptions() {
+                    SingleReader = true,
+                    SingleWriter = true
+                }
+            );
 
             try {
                 IPostgres pg = sp.GetRequiredService<IPostgres>();
@@ -124,45 +128,24 @@ namespace bifeldy_lib_90.Backgrounds {
                 producer = this._kafka.CreateKafkaProducerInstance<string, string>(hostPort);
 
                 observeable = this._pubSub.GetGlobalAppBehaviorSubject<Message<string, string>>(this.KAFKA_NAME);
-                subs = observeable.Subscribe(async data => {
+                subs = observeable.Subscribe(data => {
                     if (data != null) {
-                        _ = await this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).WaitAsync(-1, stoppingToken);
+                        var msg = new Message<string, string>() {
+                            Key = data.Key,
+                            Value = data.Value
+                        };
 
-                        try {
-                            var msg = new Message<string, string>() {
-                                Key = data.Key,
-                                Value = data.Value
-                            };
-
-                            msgs.Add(msg);
-                        }
-                        finally {
-                            _ = this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).Release();
-                        }
+                        _ = channel.Writer.TryWrite(msg);
                     }
                 });
 
-                while (!stoppingToken.IsCancellationRequested) {
-                    await Task.Yield();
-
-                    if (msgs.Count > 0) {
-                        _ = await this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).WaitAsync(-1, stoppingToken);
-
+                while (await channel.Reader.WaitToReadAsync(stoppingToken)) {
+                    while (channel.Reader.TryRead(out Message<string, string> msg)) {
                         try {
-                            Message<string, string>[] cpMsgs = [.. msgs];
-                            msgs.Clear();
-
-                            foreach (Message<string, string> msg in cpMsgs) {
-                                try {
-                                    _ = await producer.ProduceAsync(topicName, msg, stoppingToken);
-                                }
-                                catch (Exception e) {
-                                    this._logger.LogError("[KAFKA_PRODUCER_MESSAGE] {e}", e.Message);
-                                }
-                            }
+                            _ = await producer.ProduceAsync(topicName, msg, stoppingToken);
                         }
-                        finally {
-                            _ = this._locker.SemaphoreGlobalApp(this.KAFKA_NAME).Release();
+                        catch (Exception e) {
+                            this._logger.LogError("[KAFKA_PRODUCER_MESSAGE] {e}", e.Message);
                         }
                     }
                 }
@@ -171,6 +154,8 @@ namespace bifeldy_lib_90.Backgrounds {
                 this._logger.LogError("[KAFKA_PRODUCER_ERROR] 🏗 {ex}", ex.Message);
             }
             finally {
+                _ = channel.Writer.TryComplete();
+
                 subs?.Dispose();
                 producer?.Dispose();
                 observeable?.Dispose();
@@ -185,7 +170,7 @@ namespace bifeldy_lib_90.Backgrounds {
 
                 IEnumerable<ServerConfigKunci> kunci = await scr.GetKodeServerKunciDc();
                 foreach (ServerConfigKunci k in kunci) {
-                    Task task = await Task.Factory.StartNew(async () => {
+                    var task = Task.Run(async () => {
                         using (IServiceScope scope = this._scopedService.ServiceProvider.CreateScope()) {
                             IServiceProvider _sp = scope.ServiceProvider;
                             IServerConfigRepository _scr = _sp.GetRequiredService<IServerConfigRepository>();
@@ -194,7 +179,7 @@ namespace bifeldy_lib_90.Backgrounds {
 
                             await this.DoWorkMultiDc(_sp, stoppingToken);
                         }
-                    }, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                    }, stoppingToken);
 
                     tasks.Add(task);
                 }
